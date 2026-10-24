@@ -2,7 +2,7 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : bibliothèques portables et écoute de MP3 locaux disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'indexer ses MP3 et de les écouter. Le téléchargement YouTube et les filtres avancés arrivent dans les prochaines issues.
+**Statut : import YouTube, bibliothèques portables et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3 et de les écouter. La fiche détaillée et les filtres avancés arrivent dans les prochaines issues.
 
 ## Installer et lancer
 
@@ -29,6 +29,20 @@ Le dossier contient `library.json`, `catalog.sqlite3` et les sous-dossiers `audi
 La dernière bibliothèque est rouverte au lancement si elle reste accessible. Un disque absent donne un message explicite et ne crée aucun catalogue vide. Fermer la bibliothèque libère le verrou pour cette session et conserve le choix pour le prochain lancement. Pour changer de machine : fermer le moteur avec Ctrl+C, éjecter le disque puis ouvrir le même dossier sur l'autre poste. Le fichier `.library.lock` peut rester présent : le verrou dépend du processus actif, pas de la présence du fichier.
 
 Une sauvegarde cohérente du catalogue est créée dans `backups` avant une migration. Le journal SQLite est en mode DELETE, avec synchronisation FULL. Les bibliothèques sur partage réseau et les liens symboliques internes ne sont pas pris en charge. Le transfert sur le disque physique de l'utilisateur reste à valider dans l'issue #8 ; la CI ne constitue pas cette recette matérielle.
+
+## Importer une vidéo YouTube
+
+Ouvrir une bibliothèque, coller une URL YouTube dans **Une nouvelle prod ?**, puis cliquer sur **Importer la prod**. Une vidéo par import : les liens courts et classiques sont acceptés ; un paramètre de playlist dans un lien vidéo n'importe que cette vidéo. L'import de playlists complètes reste hors de cette version.
+
+Le traitement continue en arrière-plan : attente, lecture des informations, téléchargement, conversion, vérification, puis disponibilité dans la grille. Le pourcentage affiché vient du téléchargeur ; aucun pourcentage de conversion n'est inventé. Le MP3 et une éventuelle pochette JPEG sont locaux, avec titre, chaîne, publication, description et métadonnées musicales explicites quand disponibles. La chaîne n'est pas automatiquement traitée comme beatmaker.
+
+Les limites initiales sont 30 minutes par vidéo, 100 Mo à la récupération et un délai de téléchargement de 10 minutes. Les vidéos privées, directs en cours et cookies de navigateur ne sont pas pris en charge. Node, FFmpeg et ffprobe sont requis. Les composants EJS sont fournis par les dépendances verrouillées de yt-dlp.
+
+Une même vidéo ne peut être en cours qu'une fois et n'est pas réimportée si elle est déjà au catalogue. Après erreur ou arrêt, utiliser **Réessayer**. Avant fermeture de la bibliothèque, le moteur arrête l'import et ses sous-processus. La reprise nettoie uniquement les fichiers générés qu'elle peut identifier par nom, empreinte et absence de référence au catalogue ; les originaux et les prods prêtes sont conservés.
+
+### Mettre à jour le téléchargeur
+
+Si YouTube change son fonctionnement, mettre à jour yt-dlp/EJS dans une branche avec `uv lock --upgrade-package yt-dlp --upgrade-package yt-dlp-ejs`, puis `uv sync --locked`. Exécuter les contrôles et un essai réel avant de conserver le nouveau lockfile. Le moteur ne s'auto-met pas à jour au lancement. Le diagnostic indique les versions actives.
 
 ## Voir et écouter un MP3 local
 

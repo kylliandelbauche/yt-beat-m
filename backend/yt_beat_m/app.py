@@ -25,6 +25,10 @@ class LibrarySelection(BaseModel):
     name: str = Field(default="Ma bibliothèque", min_length=1, max_length=120)
 
 
+class YouTubeImport(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
+
+
 def create_app(
     *,
     port: int = 8765,
@@ -120,6 +124,16 @@ def create_app(
     def close_library():
         manager.close()
         return manager.status()
+
+    @app.post("/api/imports")
+    def enqueue_import(payload: YouTubeImport):
+        with manager.active():
+            return manager.worker.enqueue(payload.url)
+
+    @app.get("/api/imports")
+    def import_jobs():
+        with manager.active():
+            return {"jobs": manager.worker.jobs()}
 
     @app.post("/api/library/scan")
     def scan_library():
