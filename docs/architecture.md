@@ -1,6 +1,6 @@
 # Architecture proposée
 
-Statut : référence du MVP ; socle moteur/interface (#1), catalogue portable (#2), cartes et lecteur de MP3 locaux (#15) disponibles. L'import YouTube, la fiche détaillée et les filtres restent dans les tranches suivantes.
+Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L'édition et les filtres musicaux avancés restent dans #6.
 
 ## Composants
 
@@ -11,9 +11,9 @@ Statut : référence du MVP ; socle moteur/interface (#1), catalogue portable (#
 | Catalogue | SQLite via sqlite3, migrations SQL versionnées | Un catalogue local transportable, sans service de base de données séparé |
 | Import | yt-dlp avec dépendances `default`, FFmpeg/ffprobe | Extraction de métadonnées, récupération audio et conversion MP3 |
 | Runtime JavaScript | Node.js 24 LTS | Utilisé pour le frontend et explicitement configuré pour les challenges YouTube de yt-dlp |
-| Vérification | pytest, Ruff, TypeScript/Oxlint, puis Playwright | Tester les opérations sur fichiers, les erreurs d'import, l'audio et les parcours utilisateur |
+| Vérification | pytest, Ruff, TypeScript/Oxlint et Playwright | Tester les opérations sur fichiers, les erreurs d'import, l'audio et les parcours utilisateur |
 
-Les versions sont verrouillées dans `uv.lock` et `frontend/package-lock.json`. Le template Vite retenu utilise Oxlint, conservé à la place d'ESLint pour éviter une seconde configuration de lint. Pas de dépendances à `latest` lors d'une exécution normale. Playwright sera ajouté pour les parcours métier.
+Les versions sont verrouillées dans `uv.lock` et `frontend/package-lock.json`. Le template Vite retenu utilise Oxlint, conservé à la place d'ESLint pour éviter une seconde configuration de lint. Pas de dépendances à `latest` lors d'une exécution normale. Playwright vérifie les parcours métier sur Chromium, avec une bibliothèque temporaire et un téléchargement simulé, sur Mac et Windows en CI.
 
 ## ADR-001 — Navigateur et moteur local
 
@@ -73,7 +73,7 @@ Le téléchargement dépend des évolutions de YouTube. Prévoir un diagnostic d
 
 ## API et lecture
 
-Contrat à préciser dans l'implémentation ; ressources attendues : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, édition des métadonnées, fichier audio/pochette et action de localisation.
+Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée et combine recherche textuelle normalisée (titre, beatmaker, chaîne) et filtre favori. L'édition des autres métadonnées et la localisation restent dans les prochaines tranches.
 
 Le fichier audio est servi avec les requêtes HTTP Range pour permettre le déplacement dans la piste. Tester les statuts 200, 206 et 416, ainsi que l'absence du fichier. Un seul élément audio persistant dans l'interface évite la lecture simultanée de plusieurs cartes. Les fichiers et pochettes sont servis localement, sans dépendance à un embed YouTube.
 

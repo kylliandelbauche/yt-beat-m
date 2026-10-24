@@ -2,7 +2,7 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : import YouTube, bibliothèques portables et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3 et de les écouter. La fiche détaillée et les filtres avancés arrivent dans les prochaines issues.
+**Statut : import YouTube, catalogue portable, fiches détaillées et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3, de rechercher et de gérer ses favoris. L'édition des métadonnées et les filtres musicaux avancés restent à venir (#6).
 
 ## Installer et lancer
 
@@ -50,6 +50,12 @@ Déposer un MP3 directement dans le sous-dossier `audio` de la bibliothèque ouv
 
 La carte permet de lancer l'écoute dans un lecteur unique avec pause, déplacement dans la piste et volume. Le lecteur apparaît sans démarrer automatiquement la lecture. L'indexage porte sur les MP3 directement présents dans `audio`, sans sous-dossiers ; les fichiers invalides sont signalés. Les modifications de tags d'un fichier déjà indexé ne sont pas resynchronisées dans cette première tranche.
 
+## Parcourir sa collection
+
+Rechercher un titre, un beatmaker ou une chaîne, sans distinction de casse ni d'accents. Plusieurs mots se combinent et le bouton **Favoris uniquement** se combine à la recherche. Le cœur enregistre le favori dans le catalogue portable ; il est conservé au redémarrage. La grille charge 48 prods à la fois, avec **Afficher plus de prods**.
+
+**Détails** ouvre une fiche latérale avec durée, BPM, tonalité, dates de publication et d'ajout, chaîne, beatmaker et liens de la description. Les valeurs absentes restent indiquées comme non renseignées. La description s'affiche comme texte, sans exécuter de HTML. Échap ferme la fiche et rend le focus à son bouton. Rechercher, filtrer ou consulter une fiche laisse la piste en cours continuer.
+
 ## Vérifier
 
 ```sh
@@ -58,9 +64,11 @@ uv run ruff format --check .
 uv run pytest
 npm --prefix frontend run lint
 npm --prefix frontend run build
+npm --prefix frontend exec playwright install chromium
+npm --prefix frontend run test:e2e
 ```
 
-Les mêmes contrôles tournent dans GitHub Actions sur Mac et Windows. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
+Les mêmes contrôles tournent dans GitHub Actions sur Mac et Windows. Playwright démarre un moteur isolé sur le port 8767 avec une bibliothèque temporaire, un son synthétique et un téléchargement simulé ; les médias et préférences personnels ne sont pas utilisés. Les parcours couvrent clavier, description non fiable, favoris persistants, import/doublon, recherche pendant la lecture et consultation avec les requêtes Internet bloquées. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
 
 ## Expérience visée
 
@@ -79,7 +87,7 @@ L'application et ses dépendances sont installées sur chaque ordinateur. Les MP
 - [Plan de livraison, backlog et critères de validation](docs/delivery.md)
 - [Méthode de contribution](CONTRIBUTING.md)
 
-La stack est React + TypeScript + Vite, Python + FastAPI et yt-dlp + FFmpeg ; SQLite porte le futur catalogue. Les décisions sont détaillées dans l'architecture.
+La stack est React + TypeScript + Vite, Python + FastAPI et yt-dlp + FFmpeg ; SQLite porte le catalogue portable. Les décisions sont détaillées dans l'architecture.
 
 ## Suivi GitHub
 

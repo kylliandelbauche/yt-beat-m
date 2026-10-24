@@ -11,10 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from platformdirs import user_config_path
 from pydantic import BaseModel, Field
 
+from yt_beat_m.catalog import beat_details, list_beats, set_favorite
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
-from yt_beat_m.local_audio import list_beats, media_path, scan_local_audio
+from yt_beat_m.local_audio import media_path, scan_local_audio
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,6 +28,10 @@ class LibrarySelection(BaseModel):
 
 class YouTubeImport(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
+
+
+class FavoriteUpdate(BaseModel):
+    favorite: bool
 
 
 def create_app(
@@ -142,9 +147,29 @@ def create_app(
             return {**result, "library": library.summary()}
 
     @app.get("/api/beats")
-    def beats(limit: int = Query(48, ge=1, le=100), offset: int = Query(0, ge=0)):
+    def beats(
+        limit: int = Query(48, ge=1, le=100),
+        offset: int = Query(0, ge=0),
+        q: str = Query("", max_length=300),
+        favorites: bool = False,
+    ):
         with manager.active() as library:
-            return list_beats(library, limit, offset)
+            return list_beats(library, limit, offset, q, favorites)
+
+    @app.get("/api/beats/{identity}")
+    def beat_detail(identity: UUID):
+        with manager.active() as library:
+            result = beat_details(library, str(identity))
+            if result is None:
+                raise HTTPException(404, "Prod introuvable.")
+            return result
+
+    @app.patch("/api/beats/{identity}/favorite")
+    def update_favorite(identity: UUID, payload: FavoriteUpdate):
+        with manager.active() as library:
+            if not set_favorite(library, str(identity), payload.favorite):
+                raise HTTPException(404, "Prod introuvable.")
+            return {"id": str(identity), "favorite": payload.favorite}
 
     @app.get("/api/beats/{identity}/audio")
     def audio(identity: UUID):

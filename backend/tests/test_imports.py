@@ -115,6 +115,14 @@ def test_metadata_is_explicit_and_does_not_invent_dates():
         source_metadata({**metadata(), "is_live": True}, VIDEO)
 
 
+def test_purchase_links_include_short_urls_without_following_them():
+    info = {
+        **metadata(),
+        "description": "Achat : https://bsta.rs/FnRNxy\nhttps://bsta.rs.evil.test/no",
+    }
+    assert source_metadata(info, VIDEO)["links"] == ["https://bsta.rs/FnRNxy"]
+
+
 def test_success_and_source_deduplication(worker):
     result = worker.enqueue(URL)
     assert worker.enqueue(f"https://youtu.be/{VIDEO}")["duplicate"] is True
