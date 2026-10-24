@@ -2,7 +2,35 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : cadrage et planification. Aucune application exécutable à ce stade.**
+**Statut : socle exécutable.** Le moteur local, le diagnostic et une première interface sont disponibles. L'import et la gestion des prods seront livrés dans les issues suivantes.
+
+## Installer et lancer
+
+Prérequis sur chaque ordinateur : [uv](https://docs.astral.sh/uv/getting-started/installation/), [Node.js 24 LTS](https://nodejs.org/) et [FFmpeg/ffprobe](https://ffmpeg.org/download.html) dans le PATH. uv installe Python 3.13 si nécessaire. Les mêmes commandes fonctionnent dans un terminal Mac et dans PowerShell Windows, depuis la racine du dépôt :
+
+```sh
+uv sync --locked
+npm --prefix frontend ci
+npm --prefix frontend run build
+uv run yt-beat-m doctor
+uv run yt-beat-m serve
+```
+
+Le navigateur s'ouvre sur `http://127.0.0.1:8765`. Le terminal doit rester ouvert ; **Ctrl+C** arrête le moteur. `doctor` retourne un code 1 et un conseil si un prérequis manque. Le diagnostic ne télécharge aucune vidéo. Utiliser `serve --no-browser` pour un lancement sans ouverture du navigateur. `serve --port 8766` permet de changer de port.
+
+En développement, utiliser deux terminaux : `uv run yt-beat-m serve --dev --no-browser` et `npm --prefix frontend run dev`, puis ouvrir `http://127.0.0.1:5173`.
+
+## Vérifier
+
+```sh
+uv run ruff check .
+uv run ruff format --check .
+uv run pytest
+npm --prefix frontend run lint
+npm --prefix frontend run build
+```
+
+Les mêmes contrôles tournent dans GitHub Actions sur Mac et Windows. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
 
 ## Expérience visée
 
@@ -21,12 +49,17 @@ L'application et ses dépendances sont installées sur chaque ordinateur. Les MP
 - [Plan de livraison, backlog et critères de validation](docs/delivery.md)
 - [Méthode de contribution](CONTRIBUTING.md)
 
-La stack proposée est React + TypeScript + Vite, Python + FastAPI, SQLite et yt-dlp + FFmpeg. Le choix détaillé et ses limites sont documentés avant le développement. Les versions exactes et fichiers de verrouillage seront ajoutés dans l'issue de fondation.
+La stack est React + TypeScript + Vite, Python + FastAPI et yt-dlp + FFmpeg ; SQLite porte le futur catalogue. Les décisions sont détaillées dans l'architecture.
 
 ## Suivi GitHub
 
 - [Issues](https://github.com/kylliandelbauche/yt-beat-m/issues)
 - [Jalons](https://github.com/kylliandelbauche/yt-beat-m/milestones)
+- [Kanban](https://github.com/users/kylliandelbauche/projects/2) : Open, In progress, In review, Done, Closed.
+
+`Done` signifie livré ; `Closed` signifie fermé sans livraison. Le statut de l'issue GitHub (open/closed) et la colonne du kanban sont deux informations distinctes. Le déplacement s'effectue avec `python3 scripts/project_status.py NUMERO "In progress"`, puis `"In review"` et `"Done"`.
+
+Le suivi de temps et tokens demandé par l'utilisateur est conservé dans un commentaire de chaque issue. Voir [les instructions de suivi](AGENTS.md). `python3 scripts/worklog.py start NUMERO` relève la borne initiale ; `finish NUMERO --publish --note "Résultat et vérifications"` publie la durée et les compteurs disponibles. Les bornes brutes restent dans `.local/`, exclu de Git ; les journaux de conversation ne sont jamais publiés. La configuration du kanban et l'amorçage avant le premier relevé ne sont pas imputés rétroactivement à une issue.
 
 Le MVP vise une vidéo par import. Les playlists, l'enrichissement depuis les marketplaces, l'analyse audio par IA et le suivi des morceaux sont prévus après le MVP.
 

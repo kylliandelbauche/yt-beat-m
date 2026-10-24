@@ -1,6 +1,6 @@
 # Architecture proposée
 
-Statut : proposition de référence pour le MVP, à éprouver par une tranche fonctionnelle avant de multiplier les écrans. Aucun code applicatif n'est encore livré.
+Statut : référence du MVP ; le socle moteur/interface est implémenté dans l'issue #1. Les sections bibliothèque et import décrivent les tranches suivantes.
 
 ## Composants
 
@@ -11,9 +11,9 @@ Statut : proposition de référence pour le MVP, à éprouver par une tranche fo
 | Catalogue | SQLite via sqlite3, migrations SQL versionnées | Un catalogue local transportable, sans service de base de données séparé |
 | Import | yt-dlp avec dépendances `default`, FFmpeg/ffprobe | Extraction de métadonnées, récupération audio et conversion MP3 |
 | Runtime JavaScript | Node.js 24 LTS | Utilisé pour le frontend et explicitement configuré pour les challenges YouTube de yt-dlp |
-| Vérification | pytest, Ruff, TypeScript/ESLint, Playwright | Tester les opérations sur fichiers, les erreurs d'import, l'audio et les parcours utilisateur |
+| Vérification | pytest, Ruff, TypeScript/Oxlint, puis Playwright | Tester les opérations sur fichiers, les erreurs d'import, l'audio et les parcours utilisateur |
 
-Les versions exactes seront choisies et verrouillées dans `uv.lock` et `package-lock.json` dans l'issue de fondation, après vérification de leur compatibilité. Pas de dépendances à `latest` lors d'une exécution normale.
+Les versions sont verrouillées dans `uv.lock` et `frontend/package-lock.json`. Le template Vite retenu utilise Oxlint, conservé à la place d'ESLint pour éviter une seconde configuration de lint. Pas de dépendances à `latest` lors d'une exécution normale. Playwright sera ajouté pour les parcours métier.
 
 ## ADR-001 — Navigateur et moteur local
 

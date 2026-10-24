@@ -10,4 +10,4 @@ Les choix techniques restent discutables : consigner une modification substantie
 
 Ne pas ajouter de tests qui recopient simplement l'implémentation. Privilégier les garanties utilisateur : fichiers conservés, imports récupérables, lecture fonctionnelle, annotations persistantes et portabilité.
 
-Les commandes exactes de développement et de vérification seront ajoutées lorsque l'environnement de l'issue de fondation existera. Ne pas présenter les commandes futures comme déjà exécutables.
+Les commandes de développement et de vérification disponibles sont dans le README. Appliquer le suivi de temps, tokens et quotas décrit dans `AGENTS.md` pour chaque issue. Ne pas présenter les fonctionnalités futures comme déjà exécutables.
