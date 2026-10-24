@@ -5,7 +5,7 @@ from yt_beat_m.app import create_app
 
 @pytest.fixture
 def client(tmp_path):
-    app = create_app(frontend=tmp_path)
+    app = create_app(frontend=tmp_path, preferences=tmp_path / "preferences.json")
 
     @app.post("/api/test-action")
     def protected_action():
@@ -46,7 +46,10 @@ def test_mutation_requires_origin_and_current_token(client):
 
 
 def test_stale_token_is_rejected(client, tmp_path):
-    with TestClient(create_app(frontend=tmp_path), base_url="http://127.0.0.1:8765") as old:
+    with TestClient(
+        create_app(frontend=tmp_path, preferences=tmp_path / "preferences.json"),
+        base_url="http://127.0.0.1:8765",
+    ) as old:
         token = old.get("/api/session").json()["token"]
     headers = {"Origin": "http://127.0.0.1:8765", "X-Session-Token": token}
     assert client.post("/api/test-action", headers=headers).status_code == 403
@@ -54,7 +57,10 @@ def test_stale_token_is_rejected(client, tmp_path):
 
 def test_compiled_interface_is_served_safely(tmp_path):
     (tmp_path / "index.html").write_text("<html>YT Beat M</html>", encoding="utf-8")
-    with TestClient(create_app(frontend=tmp_path), base_url="http://127.0.0.1:8765") as client:
+    with TestClient(
+        create_app(frontend=tmp_path, preferences=tmp_path / "preferences.json"),
+        base_url="http://127.0.0.1:8765",
+    ) as client:
         response = client.get("/")
         assert response.status_code == 200
         assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
@@ -65,6 +71,7 @@ def test_dev_origin_is_opt_in(tmp_path):
     origin = {"Origin": "http://127.0.0.1:5173"}
     for enabled, expected in ((False, 403), (True, 200)):
         with TestClient(
-            create_app(dev=enabled, frontend=tmp_path), base_url="http://127.0.0.1:8765"
+            create_app(dev=enabled, frontend=tmp_path, preferences=tmp_path / "preferences.json"),
+            base_url="http://127.0.0.1:8765",
         ) as client:
             assert client.get("/api/session", headers=origin).status_code == expected
