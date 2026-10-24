@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
+from yt_beat_m.imports import ImportWorker
 from yt_beat_m.library import Library, LibraryError, absolute_root
 
 
@@ -13,6 +14,7 @@ class LibraryManager:
     def __init__(self, preferences: Path):
         self.preferences = preferences
         self.library: Library | None = None
+        self.worker: ImportWorker | None = None
         self.error: str | None = None
         self._mutex = threading.RLock()
 
@@ -26,6 +28,8 @@ class LibraryManager:
                 self.library.close()
                 self.library = None
                 raise LibraryError("Le dossier mémorisé contient une autre bibliothèque.")
+            self.worker = ImportWorker(self.library)
+            self.worker.start()
         except (OSError, ValueError, KeyError, TypeError, LibraryError):
             if self.library:
                 self.library.close()
@@ -40,10 +44,17 @@ class LibraryManager:
             if self.library and self.library.root == root:
                 if create:
                     raise LibraryError("Cette bibliothèque existe déjà ; utiliser Ouvrir.")
+                if self.worker and self.worker.stopping.is_set():
+                    self.worker.stop()
+                    self.worker = ImportWorker(self.library)
+                    self.worker.start()
                 return self.library.summary()
             candidate = Library.create(root, name) if create else Library.open(root)
             try:
                 summary = candidate.summary()
+                candidate_worker = ImportWorker(candidate)
+                if self.worker:
+                    self.worker.stop()
                 self.preferences.parent.mkdir(parents=True, exist_ok=True)
                 temporary = self.preferences.with_name(f"preferences-{uuid4()}.tmp")
                 try:
@@ -59,6 +70,8 @@ class LibraryManager:
                 raise
             previous = self.library
             self.library = candidate
+            self.worker = candidate_worker
+            self.worker.start()
             self.error = None
             if previous:
                 previous.close()
@@ -84,6 +97,9 @@ class LibraryManager:
     def close(self) -> None:
         with self._mutex:
             if self.library:
+                if self.worker:
+                    self.worker.stop()
+                    self.worker = None
                 self.library.close()
                 self.library = None
             self.error = None

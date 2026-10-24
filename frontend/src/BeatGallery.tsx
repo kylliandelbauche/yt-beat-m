@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from './api'
 import './BeatGallery.css'
+import { ImportPanel } from './ImportPanel'
 
 type Beat = {
   id: string
@@ -36,6 +37,13 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const audio = useRef<HTMLAudioElement>(null)
+
+  const refreshImported = useCallback(async () => {
+    const result = await api<BeatPage>('/api/beats')
+    setPage(result)
+    setSelection((current) => current || (result.beats[0] ? { beat: result.beats[0], play: false } : null))
+    onIndexed(result.total)
+  }, [onIndexed])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -86,6 +94,7 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
   }
 
   return <div className="beat-collection">
+    <ImportPanel onImported={refreshImported} />
     <div className="collection-toolbar">
       <p>Les MP3 de ton dossier <strong>audio</strong>, à portée d’écoute.</p>
       <button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button>
