@@ -54,7 +54,7 @@ Un favori, des tags et les corrections doivent survivre à un redémarrage, au r
 
 ## Interface
 
-Écran principal : nom de bibliothèque, recherche, action « Importer », filtres compacts et grille de pochettes. Chaque carte montre pochette, titre, beatmaker si connu, favori et action de lecture. Les métadonnées détaillées restent dans une fiche latérale.
+Écran principal : nom de bibliothèque, recherche, action « Importer », filtres compacts et grille de pochettes. Chaque carte montre pochette, titre, beatmaker si connu, favori et action de lecture. Les métadonnées détaillées apparaissent dans une pop-up centrée (#20), avec défilement interne et fermeture toujours accessible. La page arrière reste immobile pendant sa consultation.
 
 Lecteur persistant en bas : pochette réduite, titre, lecture/pause, progression et volume. Changer de recherche ne coupe pas la piste. Sélectionner une autre prod remplace la piste active. Prévoir navigation clavier, focus visible, libellés accessibles et contraste lisible malgré la transparence.
 
