@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from './api'
 import './BeatGallery.css'
@@ -20,7 +21,7 @@ function Artwork({ beat }: { beat: Beat }) {
   </div>
 }
 
-export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void }) {
+export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onIndexed: (count: number) => void; heading: ReactNode; tools: ReactNode; libraryName: string }) {
   const [page, setPage] = useState<BeatPage | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [error, setError] = useState('')
@@ -108,14 +109,15 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
 
   return <div className="beat-collection">
     <ImportPanel onImported={refreshImported} onShowBeat={setDetails} />
+    {heading}
     <div className="catalog-filters">
-      <label><span className="sr-only">Rechercher une prod</span><input type="search" value={query} placeholder="Titre, beatmaker ou chaîne…" onChange={(event) => { filtersChanged(); setQuery(event.target.value) }} /></label>
-      <button aria-pressed={favoritesOnly} onClick={() => { filtersChanged(); setFavoritesOnly((value) => !value) }}>♥ Favoris uniquement</button>
+      <label><span className="sr-only">Rechercher une prod</span><input type="search" value={query} placeholder="⌕  Titre…" onChange={(event) => { filtersChanged(); setQuery(event.target.value) }} /></label>
+      {['BPM', 'Tonalité', 'Beatmaker'].map((label) => <button key={label} disabled title="Disponible avec les filtres avancés (issue #6)">{label} ⌄</button>)}
+      <span className="future-tags">Tags <small>bientôt</small></span>
+      <button aria-pressed={favoritesOnly} onClick={() => { filtersChanged(); setFavoritesOnly((value) => !value) }} aria-label="♥ Favoris uniquement">♡ Favoris</button>
+      <span className="sort-indicator">↓ Plus récentes</span>
+      <span className="view-indicator" aria-label="Vue grandes pochettes">▦</span>
       {(query || favoritesOnly) && <button onClick={() => { filtersChanged(); setQuery(''); setFavoritesOnly(false) }}>Effacer les filtres</button>}
-    </div>
-    <div className="collection-toolbar">
-      <p>Les MP3 de ton dossier <strong>audio</strong>, à portée d’écoute.</p>
-      <button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button>
     </div>
     {error && <p className="library-error" role="alert">{error}</p>}
     {notice && <p className="scan-notice" role="status">{notice}</p>}
@@ -130,12 +132,16 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
       <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}>{beat.favorite ? '♥' : '♡'}</button>
       <button className="beat-select" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}>
         <Artwork beat={beat} />
-        <span className="beat-card-info"><ScrollingTitle title={beat.title} /><span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || (beat.channel ? `Chaîne : ${beat.channel}` : 'Fichier local')}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span></span>
+        <span className="beat-card-info"><ScrollingTitle title={beat.title} /><span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || (beat.channel || 'Fichier local')}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span></span>
         <span className="listen-label">▶ Écouter</span>
       </button>
       <button className="beat-details-button" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>Détails ↗</button>
     </article>)}</div>}
     {!loading && page && page.beats.length < page.total && <button disabled={busy} onClick={() => { void more() }}>Afficher plus de prods</button>}
+    <div className="collection-toolbar">
+      <p>● Bibliothèque locale · {libraryName}</p>
+      <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button>{tools}</div>
+    </div>
     {details && <BeatDetailsPanel key={details} identity={details} onClose={() => setDetails(null)} onFavorite={toggleFavorite} />}
     {selection && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <div className="player-description"><span className="player-note" aria-hidden="true">♫</span><div><p>{selection.beat.title}</p><span>{selection.beat.beatmaker || 'Audio local'} · {duration(selection.beat.duration_seconds)}</span></div></div>

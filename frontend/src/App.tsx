@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { LibraryPanel } from './LibraryPanel'
+import './PaperV1.css'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
@@ -26,24 +27,8 @@ function App() {
     return () => controller.abort()
   }, [attempt])
 
-  return (
-    <main className="workspace">
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="YT Beat M, accueil">
-          <span className="brand-mark">b.</span> beat m
-          <span className="brand-caption">YOUR LOCAL CRATE</span>
-        </a>
-        <span className="status"><span className={error ? 'dot error-dot' : 'dot'} />
-          {error ? 'Moteur indisponible' : diagnostic ? 'Moteur connecté' : 'Connexion…'}
-        </span>
-      </header>
-      <section className="intro">
-        <p className="eyebrow">MOINS CHERCHER. PLUS CRÉER.</p>
-        <h1>Ta prochaine idée<br />commence ici.</h1>
-        <p className="intro-copy">Un espace pour tes prods, leurs pochettes et les sons à venir.<br />Ta bibliothèque reste avec toi, sur ton disque.</p>
-      </section>
-      <LibraryPanel />
-      <section className="glass diagnostic" aria-label="État du moteur local">
+  const diagnosticPanel = <details className="diagnostic-toggle" open={Boolean(error || (diagnostic && !diagnostic.ready))}><summary>Diagnostic</summary>
+      <section className="diagnostic" aria-label="État du moteur local">
         <div className="section-heading">
           <div><h2>État du moteur</h2>
             <p role="status">{error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
@@ -58,7 +43,20 @@ function App() {
           </li>)}</ul>
         </details>}
       </section>
-      <footer>Stockage local · Mac & Windows <span>MVP en construction</span></footer>
+  </details>
+
+  return (
+    <main className="workspace">
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="YT Beat M, accueil">
+          <span className="brand-mark">b.</span> beat m
+        </a>
+        <span className="status"><span className={error ? 'dot error-dot' : 'dot'} />
+          {error ? 'Moteur indisponible' : diagnostic ? 'Moteur connecté' : 'Connexion…'}
+        </span>
+      </header>
+      <LibraryPanel diagnostic={diagnosticPanel} />
+
     </main>
   )
 }

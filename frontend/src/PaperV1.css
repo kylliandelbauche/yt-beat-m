@@ -1,0 +1,55 @@
+/* Values exported from Paper / Beat m / V1 — Grandes pochettes. */
+:root { --paper-bg: #10131b; --paper-text: #edf0f5; --paper-mint: #c7eed9; --paper-input: #080c1444; --paper-border: #ffffff24; }
+body { background-color: var(--paper-bg); color: var(--paper-text); }
+.workspace { padding: 28px 48px 130px; }
+.topbar { height: 38px; margin-bottom: 24px; }
+.brand { font-weight: 700; }
+.library-placeholder { padding: 0; }
+.beat-collection { margin-top: 0; }
+.import-panel { padding: 0 0 7px; margin: 0 0 24px; border: 0; border-bottom: 3px solid #ffffff14; border-radius: 0; background: none; }
+.import-panel > div:first-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.import-form { margin: 0; min-height: 46px; }
+.import-form input { background: var(--paper-input); border-color: var(--paper-border); }
+.import-submit { background: var(--paper-mint); }
+.import-history { margin: 10px 0 3px; }
+.section-heading { margin-bottom: 18px; }
+.section-heading h2 { font-size: 26px; line-height: 34px; font-weight: 600; letter-spacing: -.6px; }
+.catalog-filters { align-items: center; gap: 8px; margin: 0 0 20px; }
+.catalog-filters label { min-width: 160px; }
+.catalog-filters input, .catalog-filters button, .sort-indicator, .future-tags { border-radius: 20px; font-size: 12px; height: 38px; padding: 0 14px; }
+.catalog-filters input { background: var(--paper-input); }
+.catalog-filters button { background: #ffffff07; white-space: nowrap; }
+.catalog-filters button:disabled { cursor: default; opacity: .55; }
+.future-tags, .sort-indicator { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border: 1px solid var(--paper-border); }
+.future-tags { border-style: dashed; color: #8c98a9; }
+.future-tags small { font-size: 10px; }
+.sort-indicator { color: #c4d0df; }
+.view-indicator { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--paper-mint); color: #172b20; font-size: 24px; }
+.beat-grid { grid-template-columns: repeat(auto-fill, minmax(min(265px, 100%), 265px)); gap: 22px; margin: 0; }
+.collection-toolbar { margin: 18px 0 0; align-items: flex-start; }
+.collection-toolbar p { color: #99a7ba; font-size: 11px; padding-top: 8px; }
+.collection-tools { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; gap: 20px; }
+.collection-tools > button { border: 0; background: transparent; padding: 8px 0; font-size: 11px; color: #aeb9cb; }
+.library-switch, .diagnostic-toggle { margin: 0; }
+.library-switch > summary, .diagnostic-toggle > summary { cursor: pointer; list-style: none; padding: 8px 0; font-size: 11px; color: #aeb9cb; }
+.library-switch > summary::after, .diagnostic-toggle > summary::after { content: ' ⌄'; }
+.library-switch[open], .diagnostic-toggle[open] { flex-basis: 100%; padding: 16px; border: 1px solid var(--paper-border); border-radius: 16px; background: var(--paper-input); }
+.library-switch .library-form { max-width: none; }
+.diagnostic { padding: 0; margin: 12px 0 0; }
+.diagnostic .section-heading { margin-bottom: 0; }
+.local-player { width: calc(100% - 96px); }
+.beat-details-button:focus-visible { outline-offset: -3px; }
+@media (max-width: 650px) {
+  .beat-grid { grid-template-columns: minmax(0, 1fr); }
+  .workspace { padding: 24px 20px 180px; }
+  .import-form { flex-direction: row; flex-wrap: wrap; }
+  .import-form input { flex-basis: 160px; }
+  .import-submit { flex-grow: 1; min-height: 42px; }
+  .section-heading h2 { font-size: 22px; }
+  .section-heading .phase { display: block; flex-shrink: 0; }
+  .catalog-filters label { flex-basis: 100%; }
+  .catalog-filters button, .sort-indicator, .future-tags { padding-inline: 12px; }
+  .collection-toolbar { gap: 6px; }
+  .collection-tools { justify-content: flex-start; gap: 16px; width: 100%; }
+  .local-player { width: calc(100% - 24px); }
+}
