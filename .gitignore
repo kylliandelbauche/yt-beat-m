@@ -16,6 +16,7 @@
 
 # Secrets et réglages locaux
 .env
+.local/
 .env.*
 !.env.example
 *.log
