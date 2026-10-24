@@ -2,6 +2,7 @@
 
 import json
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
@@ -71,6 +72,14 @@ class LibraryManager:
                 except LibraryError as exc:
                     return {"library": None, "error": str(exc)}
             return {"library": None, "error": self.error}
+
+    @contextmanager
+    def active(self):
+        """Keep library selection stable for the duration of an operation."""
+        with self._mutex:
+            if self.library is None:
+                raise LibraryError("Ouvrir une bibliothèque avant cette opération.")
+            yield self.library
 
     def close(self) -> None:
         with self._mutex:

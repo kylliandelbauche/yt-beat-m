@@ -644,6 +644,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "mutagen" },
     { name = "platformdirs" },
     { name = "portalocker" },
     { name = "uvicorn", extra = ["standard"] },
@@ -660,6 +661,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.162.0" },
+    { name = "mutagen", specifier = ">=1.48.1" },
     { name = "platformdirs", specifier = ">=4.13.5" },
     { name = "portalocker", specifier = ">=4.4.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },

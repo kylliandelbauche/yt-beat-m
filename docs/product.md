@@ -40,7 +40,7 @@ Ces choix réduisent la première livraison ; ils ne sont pas présentés comme 
 | Lien d'achat | Oui, limité | Extraire les liens candidats de la description, permettre correction ; affichage comme lien externe |
 | Playlists complètes | Après MVP | Import par lot avec progression et échecs par vidéo |
 | Analyse de pages marchandes | Après MVP | Adaptateurs par marketplace ; aucun extracteur universel promis |
-| Import de MP3 existants | Après MVP | Utile mais non prioritaire pour les quelques fichiers actuels |
+| MP3 déposés dans audio | Première tranche avancée (#15) | Demande utilisateur : indexer sans déplacer les originaux, afficher une carte et écouter ; l'import de fichiers depuis un autre dossier reste pour plus tard |
 | Historique des morceaux | Après MVP | Associer une prod à un morceau et à une date d'utilisation |
 | Analyse audio par IA | Après MVP | Proposer des styles et ambiances à partir du son |
 

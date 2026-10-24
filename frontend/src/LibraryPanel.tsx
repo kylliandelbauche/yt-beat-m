@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from './api'
+import { BeatGallery } from './BeatGallery'
 
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
@@ -70,11 +71,7 @@ export function LibraryPanel() {
     {(error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
     {!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}
     {library ? <>
-      <div className="empty-state">
-        <span className="empty-mark" aria-hidden="true">♫</span>
-        <h3>Ta bibliothèque est ouverte.</h3>
-        <p>Les prochaines étapes ajouteront l’import et l’écoute de tes prods.<br />Tes fichiers et annotations resteront dans ce dossier.</p>
-      </div>
+      <BeatGallery key={library.id} onIndexed={(count) => setStatus((current) => current?.library ? { ...current, library: { ...current.library, beat_count: count } } : current)} />
       <p className="library-path">{library.root}</p>
       <details className="library-switch"><summary>Changer de bibliothèque</summary>{form}</details>
       <button className="close-library" disabled={busy} onClick={() => { void close() }}>Fermer la bibliothèque</button>

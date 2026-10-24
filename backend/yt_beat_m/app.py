@@ -3,9 +3,10 @@
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
+from uuid import UUID
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from platformdirs import user_config_path
 from pydantic import BaseModel, Field
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
+from yt_beat_m.local_audio import list_beats, media_path, scan_local_audio
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -118,6 +120,35 @@ def create_app(
     def close_library():
         manager.close()
         return manager.status()
+
+    @app.post("/api/library/scan")
+    def scan_library():
+        with manager.active() as library:
+            result = scan_local_audio(library)
+            return {**result, "library": library.summary()}
+
+    @app.get("/api/beats")
+    def beats(limit: int = Query(48, ge=1, le=100), offset: int = Query(0, ge=0)):
+        with manager.active() as library:
+            return list_beats(library, limit, offset)
+
+    @app.get("/api/beats/{identity}/audio")
+    def audio(identity: UUID):
+        with manager.active() as library:
+            path = media_path(library, str(identity))
+            if path is None:
+                raise HTTPException(404, "Fichier audio introuvable ; vérifier le disque.")
+            return FileResponse(path, media_type="audio/mpeg")
+
+    @app.get("/api/beats/{identity}/artwork")
+    def artwork(identity: UUID):
+        with manager.active() as library:
+            path = media_path(library, str(identity), artwork=True)
+            if path is None or path.suffix not in {".jpg", ".png"}:
+                raise HTTPException(404, "Pochette indisponible.")
+            return FileResponse(
+                path, media_type="image/png" if path.suffix == ".png" else "image/jpeg"
+            )
 
     frontend = frontend if frontend is not None else ROOT / "frontend" / "dist"
     if (frontend / "index.html").is_file():
