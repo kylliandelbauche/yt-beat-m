@@ -54,7 +54,7 @@ Un favori, des tags et les corrections doivent survivre à un redémarrage, au r
 
 ## Interface
 
-Écran principal : nom de bibliothèque, recherche, action « Importer », filtres compacts et grille de pochettes. Chaque carte montre pochette, titre, beatmaker si connu, favori et action de lecture. Les espaces réservés au titre, au beatmaker et aux actions restent constants ; les titres longs défilent sur une seule ligne au survol ou au focus clavier (#21), avec respect de la réduction des animations et accès au texte complet sans mouvement. Les métadonnées détaillées apparaissent dans une pop-up centrée (#20), avec défilement interne et fermeture toujours accessible. La page arrière reste immobile pendant sa consultation.
+Écran principal : nom de bibliothèque, recherche, action « Importer », filtres compacts et grille de pochettes. Chaque carte montre pochette, titre, beatmaker si connu, favori et action de lecture. Les espaces réservés au titre, au beatmaker et aux actions restent constants ; les titres longs défilent sur une seule ligne au survol ou au focus clavier (#21), avec respect de la réduction des animations et accès au texte complet sans mouvement. Les métadonnées détaillées apparaissent dans une pop-up centrée (#20), avec défilement interne et fermeture toujours accessible. La page arrière reste immobile pendant sa consultation ; un clic à l’extérieur ferme la pop-up, avec protection contre les glissers accidentels.
 
 Lecteur persistant en bas : pochette réduite, titre, lecture/pause, progression et volume. Changer de recherche ne coupe pas la piste. Sélectionner une autre prod remplace la piste active. Prévoir navigation clavier, focus visible, libellés accessibles et contraste lisible malgré la transparence.
 

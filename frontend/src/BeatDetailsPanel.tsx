@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { MouseEvent, PointerEvent } from 'react'
 import { api } from './api'
 import { duration, externalLink } from './beat'
 import type { Beat, BeatDetails } from './beat'
@@ -15,6 +16,7 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite }: {
   onFavorite: (beat: Beat) => Promise<boolean>
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
+  const pressedOutside = useRef(false)
   const [beat, setBeat] = useState<BeatDetails | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -56,7 +58,20 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite }: {
   }
 
   const source = externalLink(beat?.source_url || null)
-  return <dialog ref={dialog} className="beat-details" aria-labelledby="beat-details-title" onCancel={onClose}>
+  function isOutside(event: MouseEvent<HTMLDialogElement> | PointerEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) return false
+    const bounds = event.currentTarget.getBoundingClientRect()
+    return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
+  }
+
+  return <dialog ref={dialog} className="beat-details" aria-labelledby="beat-details-title" onCancel={onClose}
+    onPointerDown={(event) => { pressedOutside.current = event.isPrimary && event.button === 0 && isOutside(event) }}
+    onPointerCancel={() => { pressedOutside.current = false }}
+    onClick={(event) => {
+      const dismiss = pressedOutside.current && isOutside(event)
+      pressedOutside.current = false
+      if (dismiss) onClose()
+    }}>
     <header className="details-header"><p className="eyebrow">DANS TA COLLECTION</p><button autoFocus onClick={onClose} aria-label="Fermer la fiche">✕</button></header>
     <div className="details-content">
       <h2 id="beat-details-title">{beat?.title || 'Détails de la prod'}</h2>

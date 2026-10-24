@@ -54,7 +54,7 @@ La carte permet de lancer l'écoute dans un lecteur unique avec pause, déplacem
 
 Rechercher un titre, un beatmaker ou une chaîne, sans distinction de casse ni d'accents. Plusieurs mots se combinent et le bouton **Favoris uniquement** se combine à la recherche. Le cœur enregistre le favori dans le catalogue portable ; il est conservé au redémarrage. La grille charge 48 prods à la fois, avec **Afficher plus de prods**. Les cartes gardent leurs éléments alignés : le titre reste sur une ligne et défile au survol ou au focus clavier seulement lorsqu’il dépasse. La préférence de réduction des animations est respectée ; le titre complet reste disponible dans l’infobulle et la fiche.
 
-**Détails** ouvre une pop-up centrée et adaptée à la fenêtre avec durée, BPM, tonalité, dates de publication et d'ajout, chaîne, beatmaker et liens de la description. Les valeurs absentes restent indiquées comme non renseignées. La description s'affiche comme texte, sans exécuter de HTML. Le contenu défile à l’intérieur tandis que le bouton de fermeture reste accessible. Échap ferme la fiche et rend le focus à son bouton. Rechercher, filtrer ou consulter une fiche laisse la piste en cours continuer.
+**Détails** ouvre une pop-up centrée et adaptée à la fenêtre avec durée, BPM, tonalité, dates de publication et d'ajout, chaîne, beatmaker et liens de la description. Les valeurs absentes restent indiquées comme non renseignées. La description s'affiche comme texte, sans exécuter de HTML. Le contenu défile à l’intérieur tandis que le bouton de fermeture reste accessible. Un clic sur le fond autour de la pop-up ou Échap ferme la fiche et rend le focus à son bouton. Rechercher, filtrer ou consulter une fiche laisse la piste en cours continuer.
 
 ## Vérifier
 
