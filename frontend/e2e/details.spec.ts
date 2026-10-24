@@ -57,3 +57,56 @@ test('une piste en pause garde sa position après ouverture et fermeture de la p
   await expect(audio).toHaveJSProperty('paused', true)
   await expect(audio).toHaveJSProperty('currentTime', 7)
 })
+
+test('clic extérieur : fermeture, retour du focus et lecture conservée sans clic traversant', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
+  const audio = page.locator('audio')
+  await expect(audio).toHaveJSProperty('paused', false)
+  await audio.evaluate((element: HTMLAudioElement) => { element.currentTime = 5 })
+  const trigger = page.getByRole('button', { name: 'Détails de R&B Mélancolique', exact: true })
+  await trigger.click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('heading', { name: 'R&B Mélancolique', exact: true }).click()
+  const bounds = (await dialog.boundingBox())!
+  await page.mouse.click(bounds.x + 2, bounds.y + 2)
+  await expect(dialog).toBeVisible()
+  const underneath = (await page.locator('.beat-details-button').first().boundingBox())!
+  expect(underneath.x + 2).toBeLessThan(bounds.x)
+  await page.mouse.click(underneath.x + 2, underneath.y + underneath.height / 2)
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await expect(audio).toHaveJSProperty('paused', false)
+  expect(await audio.evaluate((element: HTMLAudioElement) => element.currentTime)).toBeGreaterThanOrEqual(5)
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('')
+})
+
+test('un glisser entre la fiche et le fond ne ferme pas la pop-up', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Détails de R&B Mélancolique', exact: true }).click()
+  const dialog = page.getByRole('dialog')
+  const bounds = (await dialog.boundingBox())!
+  for (const [from, to] of [
+    [[bounds.x + 2, bounds.y + 2], [2, 2]],
+    [[2, 2], [bounds.x + 2, bounds.y + 2]],
+  ]) {
+    await page.mouse.move(from[0], from[1])
+    await page.mouse.down()
+    await page.mouse.move(to[0], to[1], { steps: 5 })
+    await page.mouse.up()
+    await expect(dialog).toBeVisible()
+  }
+  await page.mouse.click(2, 2)
+  await expect(dialog).toHaveCount(0)
+})
+
+test.describe('tactile', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 650 } })
+  test('un tap sur le fond ferme la fiche', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Détails de R&B Mélancolique', exact: true }).tap()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.touchscreen.tap(2, 2)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+})
