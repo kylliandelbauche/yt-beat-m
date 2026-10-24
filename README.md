@@ -2,7 +2,7 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : socle exécutable.** Le moteur local, le diagnostic et une première interface sont disponibles. L'import et la gestion des prods seront livrés dans les issues suivantes.
+**Statut : moteur local et bibliothèques portables disponibles.** L'interface permet de créer ou d'ouvrir un dossier de bibliothèque et de consulter le diagnostic. L'import, les cartes de prods et la lecture arrivent dans les prochaines issues.
 
 ## Installer et lancer
 
@@ -19,6 +19,16 @@ uv run yt-beat-m serve
 Le navigateur s'ouvre sur `http://127.0.0.1:8765`. Le terminal doit rester ouvert ; **Ctrl+C** arrête le moteur. `doctor` retourne un code 1 et un conseil si un prérequis manque. Le diagnostic ne télécharge aucune vidéo. Utiliser `serve --no-browser` pour un lancement sans ouverture du navigateur. `serve --port 8766` permet de changer de port.
 
 En développement, utiliser deux terminaux : `uv run yt-beat-m serve --dev --no-browser` et `npm --prefix frontend run dev`, puis ouvrir `http://127.0.0.1:5173`.
+
+## Ouvrir une bibliothèque
+
+Dans l'interface, coller le chemin absolu du dossier et choisir **Ouvrir** pour une bibliothèque existante, ou **Créer** pour un dossier nouveau/vide. Le parent du dossier doit exister ; aucun média existant n'est scanné ou modifié. Un dossier non vide n'est pas écrasé.
+
+Le dossier contient `library.json`, `catalog.sqlite3` et les sous-dossiers `audio`, `artwork`, `staging`, `backups`. Le catalogue utilise des chemins relatifs ; seule la préférence locale de sélection contient le chemin absolu. Cette préférence se trouve dans le dossier de configuration utilisateur déterminé par platformdirs (`yt-beat-m/preferences.json`). Elle conserve aussi l'identifiant de la bibliothèque pour détecter un remplacement inattendu du dossier.
+
+La dernière bibliothèque est rouverte au lancement si elle reste accessible. Un disque absent donne un message explicite et ne crée aucun catalogue vide. Fermer la bibliothèque libère le verrou pour cette session et conserve le choix pour le prochain lancement. Pour changer de machine : fermer le moteur avec Ctrl+C, éjecter le disque puis ouvrir le même dossier sur l'autre poste. Le fichier `.library.lock` peut rester présent : le verrou dépend du processus actif, pas de la présence du fichier.
+
+Une sauvegarde cohérente du catalogue est créée dans `backups` avant une migration. Le journal SQLite est en mode DELETE, avec synchronisation FULL. Les bibliothèques sur partage réseau et les liens symboliques internes ne sont pas pris en charge. Le transfert sur le disque physique de l'utilisateur reste à valider dans l'issue #8 ; la CI ne constitue pas cette recette matérielle.
 
 ## Vérifier
 

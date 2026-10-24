@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { LibraryPanel } from './LibraryPanel'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
@@ -41,17 +42,7 @@ function App() {
         <h1>Ta prochaine idée<br />commence ici.</h1>
         <p className="intro-copy">Un espace pour tes prods, leurs pochettes et les sons à venir.<br />Ta bibliothèque reste avec toi, sur ton disque.</p>
       </section>
-      <section className="glass library-placeholder" aria-labelledby="library-heading">
-        <div className="section-heading">
-          <div><p className="eyebrow">TON ESPACE</p><h2 id="library-heading">Bibliothèque locale</h2></div>
-          <span className="phase">Fondation · 01</span>
-        </div>
-        <div className="empty-state">
-          <span className="empty-mark" aria-hidden="true">♫</span>
-          <h3>Le point de départ de ta collection.</h3>
-          <p>Le moteur local est en place. L’ouverture d’une bibliothèque<br />et l’import des prods arrivent dans les prochaines étapes.</p>
-        </div>
-      </section>
+      <LibraryPanel />
       <section className="glass diagnostic" aria-label="État du moteur local">
         <div className="section-heading">
           <div><h2>État du moteur</h2>

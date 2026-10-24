@@ -1,19 +1,65 @@
 """Local API and same-origin static interface."""
 
 import secrets
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from platformdirs import user_config_path
+from pydantic import BaseModel, Field
 
 from yt_beat_m.diagnostics import get_diagnostics
+from yt_beat_m.library import LibraryBusyError, LibraryError
+from yt_beat_m.library_manager import LibraryManager
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def create_app(*, port: int = 8765, dev: bool = False, frontend: Path | None = None) -> FastAPI:
-    app = FastAPI(title="YT Beat M", docs_url=None, redoc_url=None, openapi_url=None)
+class LibrarySelection(BaseModel):
+    path: str = Field(min_length=1, max_length=4096)
+    create: bool = False
+    name: str = Field(default="Ma bibliothèque", min_length=1, max_length=120)
+
+
+def create_app(
+    *,
+    port: int = 8765,
+    dev: bool = False,
+    frontend: Path | None = None,
+    preferences: Path | None = None,
+) -> FastAPI:
+    manager = LibraryManager(
+        preferences
+        if preferences is not None
+        else user_config_path("yt-beat-m") / "preferences.json"
+    )
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        manager.restore()
+        try:
+            yield
+        finally:
+            manager.close()
+
+    app = FastAPI(
+        title="YT Beat M", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+    )
+
+    @app.exception_handler(LibraryError)
+    async def library_error(request: Request, error: LibraryError):
+        return JSONResponse(
+            {"detail": str(error)}, status_code=409 if isinstance(error, LibraryBusyError) else 400
+        )
+
+    @app.exception_handler(OSError)
+    async def storage_error(request: Request, error: OSError):
+        return JSONResponse(
+            {"detail": "Stockage inaccessible ; vérifier le disque et son accès."}, status_code=400
+        )
+
     token = secrets.token_urlsafe(32)
     origins = {f"http://127.0.0.1:{port}", f"http://localhost:{port}"}
     if dev:
@@ -58,6 +104,20 @@ def create_app(*, port: int = 8765, dev: bool = False, frontend: Path | None = N
     @app.get("/api/diagnostics")
     def diagnostics():
         return get_diagnostics()
+
+    @app.get("/api/library")
+    def library_status():
+        return manager.status()
+
+    @app.post("/api/library")
+    def select_library(selection: LibrarySelection):
+        summary = manager.select(selection.path, create=selection.create, name=selection.name)
+        return {"library": summary, "error": None}
+
+    @app.post("/api/library/close")
+    def close_library():
+        manager.close()
+        return manager.status()
 
     frontend = frontend if frontend is not None else ROOT / "frontend" / "dist"
     if (frontend / "index.html").is_file():

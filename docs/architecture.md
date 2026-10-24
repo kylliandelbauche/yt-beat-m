@@ -1,6 +1,6 @@
 # Architecture proposée
 
-Statut : référence du MVP ; le socle moteur/interface est implémenté dans l'issue #1. Les sections bibliothèque et import décrivent les tranches suivantes.
+Statut : référence du MVP ; le socle moteur/interface est implémenté dans l'issue #1 et le catalogue portable dans l'issue #2. L'import et le lecteur décrivent les tranches suivantes.
 
 ## Composants
 
