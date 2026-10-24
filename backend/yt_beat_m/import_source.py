@@ -85,6 +85,7 @@ def source_metadata(info: dict, identity: str) -> dict:
                 host == domain or host.endswith("." + domain)
                 for domain in (
                     "beatstars.com",
+                    "bsta.rs",
                     "airbit.com",
                     "traktrain.com",
                     "soundee.com",

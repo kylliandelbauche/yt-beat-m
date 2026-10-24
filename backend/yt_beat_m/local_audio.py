@@ -87,28 +87,6 @@ def scan_local_audio(library: Library) -> dict:
     return {"added": added, "skipped": skipped, "errors": errors}
 
 
-def list_beats(library: Library, limit: int, offset: int) -> dict:
-    with library.catalog() as catalog:
-        total = catalog.execute("SELECT COUNT(*) FROM beats").fetchone()[0]
-        rows = catalog.execute(
-            "SELECT id, title, beatmaker, duration_seconds, artwork_path FROM beats "
-            "ORDER BY added_at DESC, id LIMIT ? OFFSET ?",
-            (limit, offset),
-        ).fetchall()
-    beats = [
-        {
-            "id": row["id"],
-            "title": row["title"],
-            "beatmaker": row["beatmaker"],
-            "duration_seconds": row["duration_seconds"],
-            "artwork_url": f"/api/beats/{row['id']}/artwork" if row["artwork_path"] else None,
-            "audio_url": f"/api/beats/{row['id']}/audio",
-        }
-        for row in rows
-    ]
-    return {"beats": beats, "total": total}
-
-
 def media_path(library: Library, identity: str, *, artwork: bool = False) -> Path | None:
     column = "artwork_path" if artwork else "audio_path"
     with library.catalog() as catalog:

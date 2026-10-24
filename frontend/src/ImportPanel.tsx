@@ -13,7 +13,7 @@ const stages: Record<string, string> = {
   failed: 'Import échoué', interrupted: 'Import interrompu',
 }
 
-export function ImportPanel({ onImported }: { onImported: (id?: string) => Promise<void> }) {
+export function ImportPanel({ onImported, onShowBeat }: { onImported: () => Promise<void>; onShowBeat: (id: string) => void }) {
   const [url, setUrl] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [busy, setBusy] = useState(false)
@@ -34,7 +34,7 @@ export function ImportPanel({ onImported }: { onImported: (id?: string) => Promi
         for (const job of result.jobs) {
           if (job.state === 'completed' && !completed.current.has(job.id)) {
             completed.current.add(job.id)
-            if (initialized.current) await onImported(job.beat_id || undefined)
+            if (initialized.current) await onImported()
           }
         }
         initialized.current = true
@@ -58,7 +58,8 @@ export function ImportPanel({ onImported }: { onImported: (id?: string) => Promi
       const result = await api<Queued>('/api/imports', { method: 'POST', body: JSON.stringify({ url: value }) })
       initialized.current = true
       if (result.beat_id) {
-        await onImported(result.beat_id)
+        await onImported()
+        onShowBeat(result.beat_id)
         setNotice('Cette prod est déjà dans ta bibliothèque.')
       } else {
         setNotice(result.duplicate ? 'Cette vidéo est déjà dans la file d’import.' : 'Vidéo ajoutée à la file d’import.')
@@ -91,7 +92,7 @@ export function ImportPanel({ onImported }: { onImported: (id?: string) => Promi
         {job.stage === 'downloading' && job.progress !== null && <progress aria-label="Progression du téléchargement" value={job.progress} max={100} />}
         {job.error_message && <p className="job-error">{job.error_message}</p>}
         {['failed', 'interrupted'].includes(job.state) && <button disabled={busy} onClick={() => { void enqueue(job.source_url) }}>Réessayer</button>}
-        {job.state === 'completed' && <button onClick={() => { void onImported(job.beat_id || undefined).catch(() => setError('La bibliothèque n’a pas pu être actualisée.')) }}>Voir la prod</button>}
+        {job.state === 'completed' && job.beat_id && <button onClick={() => { if (job.beat_id) onShowBeat(job.beat_id) }}>Voir la prod</button>}
       </li>)}</ul>
     </details>}
   </section>
