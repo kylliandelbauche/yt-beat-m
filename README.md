@@ -2,7 +2,7 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : moteur local et bibliothèques portables disponibles.** L'interface permet de créer ou d'ouvrir un dossier de bibliothèque et de consulter le diagnostic. L'import, les cartes de prods et la lecture arrivent dans les prochaines issues.
+**Statut : bibliothèques portables et écoute de MP3 locaux disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'indexer ses MP3 et de les écouter. Le téléchargement YouTube et les filtres avancés arrivent dans les prochaines issues.
 
 ## Installer et lancer
 
@@ -29,6 +29,12 @@ Le dossier contient `library.json`, `catalog.sqlite3` et les sous-dossiers `audi
 La dernière bibliothèque est rouverte au lancement si elle reste accessible. Un disque absent donne un message explicite et ne crée aucun catalogue vide. Fermer la bibliothèque libère le verrou pour cette session et conserve le choix pour le prochain lancement. Pour changer de machine : fermer le moteur avec Ctrl+C, éjecter le disque puis ouvrir le même dossier sur l'autre poste. Le fichier `.library.lock` peut rester présent : le verrou dépend du processus actif, pas de la présence du fichier.
 
 Une sauvegarde cohérente du catalogue est créée dans `backups` avant une migration. Le journal SQLite est en mode DELETE, avec synchronisation FULL. Les bibliothèques sur partage réseau et les liens symboliques internes ne sont pas pris en charge. Le transfert sur le disque physique de l'utilisateur reste à valider dans l'issue #8 ; la CI ne constitue pas cette recette matérielle.
+
+## Voir et écouter un MP3 local
+
+Déposer un MP3 directement dans le sous-dossier `audio` de la bibliothèque ouverte, puis cliquer sur **Actualiser les fichiers**. Le titre vient du tag ID3 s'il existe, sinon du nom du fichier. La pochette intégrée est affichée si elle est au format JPEG/PNG ; une tuile de remplacement est utilisée sinon. Les fichiers restent à leur emplacement et ne sont pas modifiés. Un nouvel indexage ne crée pas de doublon pour un même chemin.
+
+La carte permet de lancer l'écoute dans un lecteur unique avec pause, déplacement dans la piste et volume. Le lecteur apparaît sans démarrer automatiquement la lecture. L'indexage porte sur les MP3 directement présents dans `audio`, sans sous-dossiers ; les fichiers invalides sont signalés. Les modifications de tags d'un fichier déjà indexé ne sont pas resynchronisées dans cette première tranche.
 
 ## Vérifier
 

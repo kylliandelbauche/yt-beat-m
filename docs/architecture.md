@@ -1,6 +1,6 @@
 # Architecture proposée
 
-Statut : référence du MVP ; le socle moteur/interface est implémenté dans l'issue #1 et le catalogue portable dans l'issue #2. L'import et le lecteur décrivent les tranches suivantes.
+Statut : référence du MVP ; socle moteur/interface (#1), catalogue portable (#2), cartes et lecteur de MP3 locaux (#15) disponibles. L'import YouTube, la fiche détaillée et les filtres restent dans les tranches suivantes.
 
 ## Composants
 
@@ -36,6 +36,8 @@ MaBibliotheque/
 ```
 
 Tous les chemins persistés dans le catalogue sont relatifs, utilisent `/` et ne contiennent ni lettre de lecteur Windows ni point de montage Mac. Ils sont résolus sous la racine configurée. Les noms physiques fondés sur UUID évitent caractères interdits Windows, titres trop longs et collisions. Le titre affiché reste indépendant du nom physique.
+
+Exception pour les MP3 déposés manuellement (#15) : l'indexage explicite conserve le nom et l'emplacement de l'original dans `audio`, avec un chemin relatif et une identité UUID au catalogue. Il ne réécrit pas le fichier. La durée et le titre ID3 sont lus avec Mutagen ; le nom du fichier sert de titre de repli. Les pochettes JPEG/PNG intégrées sont extraites dans `artwork` sous un nom UUID. Les chemins sortants et liens symboliques sont refusés. Les tests utilisent un son synthétique, jamais les fichiers personnels.
 
 La racine absolue sélectionnée est une préférence propre à chaque machine, en dehors du catalogue portable. L'identifiant de bibliothèque permet de vérifier que le dossier réouvert est le bon. Un dossier inaccessible ne doit jamais provoquer la création silencieuse d'un catalogue de remplacement.
 
