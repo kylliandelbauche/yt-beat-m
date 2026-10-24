@@ -4,6 +4,7 @@ import { api } from './api'
 import './BeatGallery.css'
 import { ImportPanel } from './ImportPanel'
 import { BeatDetailsPanel } from './BeatDetailsPanel'
+import { ScrollingTitle } from './ScrollingTitle'
 import { duration } from './beat'
 import type { Beat } from './beat'
 type BeatPage = { beats: Beat[]; total: number }
@@ -129,7 +130,7 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
       <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}>{beat.favorite ? '♥' : '♡'}</button>
       <button className="beat-select" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}>
         <Artwork beat={beat} />
-        <span className="beat-card-info"><span className="beat-title">{beat.title}</span><span className="beat-subtitle">{beat.beatmaker || (beat.channel ? `Chaîne : ${beat.channel}` : 'Fichier local')}<span>{duration(beat.duration_seconds)}</span></span></span>
+        <span className="beat-card-info"><ScrollingTitle title={beat.title} /><span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || (beat.channel ? `Chaîne : ${beat.channel}` : 'Fichier local')}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span></span>
         <span className="listen-label">▶ Écouter</span>
       </button>
       <button className="beat-details-button" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>Détails ↗</button>
