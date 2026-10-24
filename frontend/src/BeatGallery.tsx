@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { api } from './api'
 import './BeatGallery.css'
 
@@ -105,9 +106,9 @@ export function BeatGallery({ onIndexed }: { onIndexed: (count: number) => void 
       </button>
     </article>)}</div>
     {page && page.beats.length < page.total && <button disabled={busy} onClick={() => { void more() }}>Afficher plus de prods</button>}
-    {selection && <aside className="local-player glass" aria-label="Lecteur audio">
+    {selection && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <div className="player-description"><span className="player-note" aria-hidden="true">♫</span><div><p>{selection.beat.title}</p><span>{selection.beat.beatmaker || 'Audio local'} · {duration(selection.beat.duration_seconds)}</span></div></div>
       <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onError={() => setError('Fichier audio indisponible ou illisible. Vérifie le disque.')} />
-    </aside>}
+    </aside>, document.body)}
   </div>
 }
