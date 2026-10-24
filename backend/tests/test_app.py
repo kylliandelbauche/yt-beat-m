@@ -36,6 +36,13 @@ def test_mutation_requires_origin_and_current_token(client):
     assert client.post("/api/test-action", headers=headers).json() == {"changed": True}
     headers["Origin"] = "https://attacker.test"
     assert client.post("/api/test-action", headers=headers).status_code == 403
+    assert (
+        client.post(
+            "/api/test-action",
+            headers=[(b"origin", b"http://127.0.0.1:8765"), (b"x-session-token", b"\xff")],
+        ).status_code
+        == 403
+    )
 
 
 def test_stale_token_is_rejected(client, tmp_path):

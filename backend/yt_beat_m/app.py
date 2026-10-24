@@ -31,7 +31,9 @@ def create_app(*, port: int = 8765, dev: bool = False, frontend: Path | None = N
             return JSONResponse({"detail": "Requête externe refusée."}, status_code=403)
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             candidate = request.headers.get("x-session-token", "")
-            if origin not in origins or not secrets.compare_digest(candidate, token):
+            if origin not in origins or not secrets.compare_digest(
+                candidate.encode(), token.encode()
+            ):
                 return JSONResponse({"detail": "Session locale non valide."}, status_code=403)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
