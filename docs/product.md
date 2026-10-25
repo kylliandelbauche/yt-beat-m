@@ -56,6 +56,8 @@ Un favori, des tags et les corrections doivent survivre à un redémarrage, au r
 
 Écran principal : nom de bibliothèque, recherche, action « Importer », filtres compacts et grille de pochettes. Chaque carte montre pochette, titre, beatmaker si connu, favori et action de lecture. Les espaces réservés au titre, au beatmaker et aux actions restent constants ; les titres longs défilent sur une seule ligne au survol ou au focus clavier (#21), avec respect de la réduction des animations et accès au texte complet sans mouvement. Les métadonnées détaillées apparaissent dans une pop-up centrée (#20), avec défilement interne et fermeture toujours accessible. La page arrière reste immobile pendant sa consultation ; un clic à l’extérieur ferme la pop-up, avec protection contre les glissers accidentels.
 
+Règle générale de stabilité : un changement d’état conserve l’emplacement et les dimensions des éléments. Les confirmations, erreurs et avertissements utilisent un emplacement réservé ou une présentation hors du flux. Dans la fiche, une sauvegarde réussie affiche brièvement une coche dans le même bouton de 36 × 36 px ; elle ne rajoute aucun texte dans les colonnes. Les messages restent accessibles sans déplacement du focus ni interruption audio.
+
 Lecteur persistant en bas : pochette réduite, titre, lecture/pause, progression et volume. Changer de recherche ne coupe pas la piste. Sélectionner une autre prod remplace la piste active. Prévoir navigation clavier, focus visible, libellés accessibles et contraste lisible malgré la transparence.
 
 Import : champ URL, validation, état explicite, erreur récupérable et lien vers la prod lorsqu'elle est prête. Un doublon mène à la prod existante. Une URL de playlist seule explique que l'import par lot viendra ensuite.

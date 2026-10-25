@@ -34,7 +34,7 @@ export function Modal({ label, title, closeLabel, onClose, actions, className = 
   </dialog>
 }
 
-export function Icon({ name, filled = false }: { name: 'heart' | 'edit' | 'save' | 'close' | 'grid' | 'rows' | 'refresh'; filled?: boolean }) {
+export function Icon({ name, filled = false }: { name: 'heart' | 'edit' | 'save' | 'close' | 'grid' | 'rows' | 'refresh' | 'check'; filled?: boolean }) {
   const paths = {
     heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
     edit: 'M15 4L20 9M4 15L15 4a3.5 3.5 0 0 1 5 5L9 20L3 21Z',
@@ -42,7 +42,8 @@ export function Icon({ name, filled = false }: { name: 'heart' | 'edit' | 'save'
     close: 'M6 6L18 18M6 18L18 6',
     grid: 'M3 3H9V9H3ZM15 3H21V9H15ZM3 15H9V21H3ZM15 15H21V21H15Z',
     rows: 'M3 4H9V10H3ZM12 5H21M12 9H21M3 14H9V20H3ZM12 15H21M12 19H21',
+    check: 'M5 12L10 17L20 6',
     refresh: 'M20 8a8 8 0 1 0 0 8M20 2V8H14',
   }
-  return <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]} fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+  return <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" data-icon={name}><path d={paths[name]} fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
 }

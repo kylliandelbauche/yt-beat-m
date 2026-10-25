@@ -33,13 +33,19 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
     }).catch((cause: unknown) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Fiche indisponible.') })
     return () => controller.abort()
   }, [identity, attempt])
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(''), 4000)
+    return () => clearTimeout(timer)
+  }, [notice])
   function update<T extends keyof Draft>(field: T, value: Draft[T]) { setDraft((current) => current ? { ...current, [field]: value } : current) }
   function close() {
     if (busy) return
     if (editing && beat && draft && JSON.stringify(draft) !== JSON.stringify(draftFor(beat))) setConfirmDiscard(true)
     else onClose()
   }
-  function cancel() { if (beat) setDraft(draftFor(beat)); setEditing(false); setConfirmDiscard(false); setError('') }
+  function focusEditor() { form.current?.closest('dialog')?.querySelector<HTMLButtonElement>('.edit-save')?.focus() }
+  function cancel() { if (beat) setDraft(draftFor(beat)); setEditing(false); setConfirmDiscard(false); setError(''); focusEditor() }
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (!beat || !draft) return
@@ -71,12 +77,12 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
   const originals = beat?.metadata_provenance?.original_metadata as Record<string, { value: unknown }> | undefined
   return <Modal label={beat?.title || 'Détails de la prod'} title={<div className="detail-mode-title"><p className="eyebrow">{editing ? 'MODIFICATION DES INFORMATIONS' : 'DÉTAILS DE LA PROD'}</p>{editing && <button type="button" disabled={busy} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button>}</div>} closeLabel="Fermer la fiche" onClose={close} className={`beat-details${editing ? ' is-editing' : ''}`} actions={<>
     <button className="icon-button details-favorite" disabled={busy || !beat} aria-label={beat?.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={beat?.favorite || false} onClick={() => { void favorite() }}><Icon name="heart" filled={beat?.favorite} /></button>
-    <button className={`icon-button edit-save${editing ? ' saving-mode' : ''}`} disabled={busy || !beat} type="button" aria-label={editing ? 'Enregistrer les modifications' : 'Modifier la prod'} title={editing ? 'Enregistrer les modifications' : 'Modifier la prod'} onClick={() => { if (editing) form.current?.requestSubmit(); else { if (beat) setDraft(draftFor(beat)); setEditing(true); setError(''); setNotice('') } }}><Icon name={editing ? 'save' : 'edit'} /></button>
+    <button className={`icon-button edit-save${editing ? ' saving-mode' : notice ? ' saved-mode' : ''}`} disabled={busy || !beat} type="button" aria-label={editing ? 'Enregistrer les modifications' : 'Modifier la prod'} title={editing ? 'Enregistrer les modifications' : notice ? 'Informations enregistrées. Modifier la prod' : 'Modifier la prod'} onClick={() => { if (editing) form.current?.requestSubmit(); else { if (beat) setDraft(draftFor(beat)); setEditing(true); setError(''); setNotice('') } }}><Icon name={editing ? 'save' : notice ? 'check' : 'edit'} /></button>
   </>}>
-    {(error || notice || confirmDiscard) && <div className="detail-feedback">
-      {error && <p className="library-error" role="alert">{error}</p>}
-      {notice && <p className="scan-notice" role="status">{notice}</p>}
-      {confirmDiscard && <div className="discard-prompt" role="alert"><p>Des modifications ne sont pas enregistrées.</p><button onClick={() => setConfirmDiscard(false)}>Continuer l’édition</button><button onClick={onClose}>Abandonner et fermer</button></div>}
+    <div className="sr-only" role="status" aria-atomic="true">{notice}</div>
+    {(error || confirmDiscard) && <div className="detail-feedback">
+      {error && <div className="detail-error"><p className="library-error" role="alert">{error}</p>{beat && <button type="button" aria-label="Masquer le message d’erreur" onClick={() => { setError(''); focusEditor() }}>✕</button>}</div>}
+      {confirmDiscard && <div className="discard-prompt" role="alert"><p>Des modifications ne sont pas enregistrées.</p><button onClick={() => { setConfirmDiscard(false); focusEditor() }}>Continuer l’édition</button><button onClick={onClose}>Abandonner et fermer</button></div>}
     </div>}
     {!beat && !error && <p className="form-hint" role="status">Chargement de la fiche…</p>}
     {!beat && error && <button onClick={() => { setError(''); setAttempt((n) => n + 1) }}>Réessayer</button>}
