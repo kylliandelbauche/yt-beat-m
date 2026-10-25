@@ -2,6 +2,7 @@
 
 import unicodedata
 
+from yt_beat_m.beatmakers import channel_alias, channel_key, provenance
 from yt_beat_m.library import Library
 
 
@@ -19,6 +20,8 @@ def beat_view(row) -> dict:
         "title": row["title"],
         "beatmaker": row["beatmaker"],
         "channel": row["channel"],
+        "beatmaker_source": provenance(row).get("beatmaker")
+        or ("legacy" if row["beatmaker"] else None),
         "duration_seconds": row["duration_seconds"],
         "favorite": bool(row["favorite"]),
         "artwork_url": f"/api/beats/{row['id']}/artwork" if row["artwork_path"] else None,
@@ -71,6 +74,9 @@ def beat_details(library: Library, identity: str) -> dict | None:
             "published_on": row["published_on"],
             "added_at": row["added_at"],
             "description": row["description"],
+            "can_remember_channel": channel_key(dict(row)) is not None,
+            "channel_id_known": bool(row["channel_id"]),
+            "channel_alias": channel_alias(connection, dict(row)),
             "styles": [tag["label"] for tag in tags if tag["kind"] == "style"],
             "moods": [tag["label"] for tag in tags if tag["kind"] == "mood"],
             "links": [dict(link) for link in links],

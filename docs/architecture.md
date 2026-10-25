@@ -57,6 +57,14 @@ La compatibilité du format ne garantit pas la fiabilité de n'importe quel disq
 
 La publication YouTube est une date et non un instant UTC fabriqué. L'ajout et les événements techniques utilisent des instants UTC. Les tags libres restent éditables ; pas d'ontologie musicale imposée.
 
+## ADR-004 — Identité du producteur (#22)
+
+La migration 2 ajoute l'identifiant YouTube stable de chaîne et une table de règles de noms dans le catalogue portable. Les nouvelles vidéos conservent cet identifiant ; pour les imports anciens qui ne le possèdent pas, une règle peut être attachée au nom de chaîne normalisé, avec cette limite indiquée dans la fiche. Une règle par nom déjà mémorisée reste un repli pour un nouvel import si aucune règle par identifiant ne s'applique ; elle peut donc aussi correspondre à une chaîne homonyme, ce qui est signalé. Une règle par identifiant est prioritaire. Aucun accès web automatique n'est ajouté.
+
+Un crédit explicite cohérent propose le beatmaker ; sinon la chaîne sert de proposition identifiée comme telle. Des crédits contradictoires restent à préciser. Une collaboration explicite est conservée comme crédit collectif, sans créer ni fusionner arbitrairement des personnes.
+
+Une correction par prod est prioritaire, y compris un champ volontairement vidé. Une règle mémorisée s'applique aux prochains imports sans crédit différent, ou dont le crédit correspond au nom corrigé ; elle ne masque pas une nouvelle collaboration ou un autre producteur explicitement crédité. La règle peut être retirée et la correction d'une prod peut revenir à la proposition automatique. L'actualisation des anciennes prods est une action explicite, locale et transactionnelle, qui conserve les corrections, les autres annotations et les médias.
+
 ## ADR-003 — Import sérialisé et récupérable
 
 1. Valider le lien et extraire un identifiant vidéo YouTube ; accepter uniquement les hôtes et formes d'URL prévus. Les playlists seules sont hors MVP.

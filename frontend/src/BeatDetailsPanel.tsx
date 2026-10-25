@@ -3,6 +3,7 @@ import type { MouseEvent, PointerEvent } from 'react'
 import { api } from './api'
 import { duration, externalLink } from './beat'
 import type { Beat, BeatDetails } from './beat'
+import { BeatmakerEditor } from './BeatmakerEditor'
 
 function dateLabel(value: string | null, dateOnly = false) {
   if (!value) return 'Non renseignée'
@@ -10,10 +11,11 @@ function dateLabel(value: string | null, dateOnly = false) {
   return Number.isNaN(date.valueOf()) ? 'Non renseignée' : new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date)
 }
 
-export function BeatDetailsPanel({ identity, onClose, onFavorite }: {
+export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
   identity: string
   onClose: () => void
   onFavorite: (beat: Beat) => Promise<boolean>
+  onChanged: () => void
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const pressedOutside = useRef(false)
@@ -89,6 +91,7 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite }: {
           <div><dt>Publication YouTube</dt><dd>{dateLabel(beat.published_on, true)}</dd></div>
           <div><dt>Ajout à la bibliothèque</dt><dd>{dateLabel(beat.added_at)}</dd></div>
         </dl>
+        <BeatmakerEditor beat={beat} onSaved={(value) => { setBeat(value); onChanged() }} />
         <section className="details-section"><h3>Styles et ambiances</h3>
           {beat.styles.length || beat.moods.length ? <div className="tag-list">{beat.styles.map((tag) => <span key={`style:${tag}`}>{tag}</span>)}{beat.moods.map((tag) => <span key={`mood:${tag}`}>{tag}</span>)}</div> : <p>Pas encore renseignés.</p>}
         </section>

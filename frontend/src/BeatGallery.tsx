@@ -93,6 +93,19 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     } finally { setBusy(false) }
   }
 
+  async function refreshBeatmakers() {
+    setBusy(true)
+    setError('')
+    setNotice('')
+    try {
+      const result = await api<{ updated: number; preserved: number; unresolved: number }>('/api/library/beatmakers/refresh', { method: 'POST' })
+      await refreshImported()
+      setNotice(`${result.updated} beatmaker(s) actualisé(s) · ${result.preserved} correction(s) conservée(s) · ${result.unresolved} prod(s) à préciser.`)
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : 'Actualisation des beatmakers impossible.')
+    } finally { setBusy(false) }
+  }
+
   async function toggleFavorite(beat: Beat) {
     setFavoriteBusy((current) => new Set(current).add(beat.id))
     try {
@@ -140,9 +153,9 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     {!loading && page && page.beats.length < page.total && <button disabled={busy} onClick={() => { void more() }}>Afficher plus de prods</button>}
     <div className="collection-toolbar">
       <p>● Bibliothèque locale · {libraryName}</p>
-      <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button>{tools}</div>
+      <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button><button disabled={busy} onClick={() => { void refreshBeatmakers() }}>Actualiser les beatmakers</button>{tools}</div>
     </div>
-    {details && <BeatDetailsPanel key={details} identity={details} onClose={() => setDetails(null)} onFavorite={toggleFavorite} />}
+    {details && <BeatDetailsPanel key={details} identity={details} onClose={() => setDetails(null)} onFavorite={toggleFavorite} onChanged={() => setReload((value) => value + 1)} />}
     {selection && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <div className="player-description"><span className="player-note" aria-hidden="true">♫</span><div><p>{selection.beat.title}</p><span>{selection.beat.beatmaker || 'Audio local'} · {duration(selection.beat.duration_seconds)}</span></div></div>
       <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onError={() => setError('Fichier audio indisponible ou illisible. Vérifie le disque.')} />

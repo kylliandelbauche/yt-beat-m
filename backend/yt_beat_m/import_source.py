@@ -97,6 +97,7 @@ def source_metadata(info: dict, identity: str) -> dict:
     return {
         "title": title.strip()[:500],
         "channel": info.get("channel") or info.get("uploader"),
+        "channel_id": info["channel_id"][:256] if isinstance(info.get("channel_id"), str) else None,
         "description": description[:100_000],
         "published_on": published,
         "bpm": bpm,

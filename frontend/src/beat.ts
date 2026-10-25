@@ -2,6 +2,7 @@ export type Beat = {
   id: string
   title: string
   beatmaker: string | null
+  beatmaker_source: 'explicit_credit' | 'channel' | 'channel_alias' | 'ambiguous_credit' | 'manual' | 'legacy' | null
   channel: string | null
   duration_seconds: number | null
   favorite: boolean
@@ -16,6 +17,9 @@ export type BeatDetails = Beat & {
   published_on: string | null
   added_at: string
   description: string | null
+  can_remember_channel: boolean
+  channel_id_known: boolean
+  channel_alias: { beatmaker: string; uses_channel_id: boolean } | null
   styles: string[]
   moods: string[]
   links: { url: string; label: string | null }[]

@@ -11,7 +11,10 @@ from uuid import UUID, uuid4
 import portalocker
 
 FORMAT_VERSION = 1
-MIGRATIONS = {1: Path(__file__).parent / "migrations" / "001_initial.sql"}
+MIGRATIONS = {
+    1: Path(__file__).parent / "migrations" / "001_initial.sql",
+    2: Path(__file__).parent / "migrations" / "002_beatmakers.sql",
+}
 
 
 class LibraryError(Exception):

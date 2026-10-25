@@ -98,3 +98,13 @@
   .local-player audio { width: 100%; min-width: 0; }
   .workspace { padding-bottom: 180px; }
 }
+.beatmaker-editor { margin-top: 22px; padding: 18px 0; border-bottom: 1px solid #ffffff12; }
+.beatmaker-editor > button, .saved-alias button { margin-top: 12px; font-size: 12px; }
+.beatmaker-editor form { display: grid; gap: 12px; margin-top: 18px; }
+.beatmaker-editor label { display: grid; gap: 8px; font-size: 12px; line-height: 1.7; color: #d5deeb; }
+.beatmaker-editor input:not([type="checkbox"]) { width: 100%; min-width: 0; border: 1px solid #ffffff24; border-radius: 12px; padding: 12px; background: #080c1444; color: #edf0f5; }
+.beatmaker-editor .remember-channel { display: flex; align-items: flex-start; gap: 10px; }
+.remember-channel input { flex-shrink: 0; margin-top: 4px; accent-color: #c7eed9; }
+.beatmaker-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.beatmaker-actions button { font-size: 12px; }
+.saved-alias { margin-top: 18px; }
