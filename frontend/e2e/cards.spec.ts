@@ -46,6 +46,7 @@ test('cartes alignées malgré les titres longs, pochettes et données manquante
 })
 
 test('seul le titre trop long défile au survol ou au clavier et s’adapte au redimensionnement', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/')
   const listen = page.getByRole('button', { name: `Écouter ${longTitle}`, exact: true })
   const text = listen.locator('.scroll-title-text')

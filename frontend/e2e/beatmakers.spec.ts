@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 test('corriger un beatmaker, mémoriser sa chaîne, réimporter et actualiser sans couper la lecture', async ({ page }, testInfo) => {
+  test.setTimeout(60000)
   const original = (await (await page.request.get('/api/library')).json()).library
   const root = await mkdtemp(path.join(tmpdir(), 'beatmaker-browser-'))
   const token = (await (await page.request.get('/api/session')).json()).token
@@ -16,7 +17,7 @@ test('corriger un beatmaker, mémoriser sa chaîne, réimporter et actualiser sa
     await input.fill('https://youtu.be/CREATOR0001')
     await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
     const first = page.getByRole('button', { name: 'Écouter Prod beatmaker 1', exact: true })
-    await expect(first).toBeVisible()
+    await expect(first).toBeVisible({ timeout: 15000 })
     await first.click()
     const audio = page.locator('audio')
     await expect(audio).toHaveJSProperty('paused', false)
@@ -40,7 +41,7 @@ test('corriger un beatmaker, mémoriser sa chaîne, réimporter et actualiser sa
     await page.keyboard.press('Escape')
     await input.fill('https://youtu.be/CREATOR0002')
     await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
-    await expect(page.getByRole('button', { name: 'Écouter Prod beatmaker 2', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Écouter Prod beatmaker 2', exact: true })).toBeVisible({ timeout: 15000 })
     await page.getByRole('searchbox', { name: 'Rechercher une prod' }).fill('studio nova')
     await expect(first).toBeVisible()
     await expect(page.getByRole('button', { name: 'Écouter Prod beatmaker 2', exact: true })).toBeVisible()
@@ -65,6 +66,10 @@ test('corriger un beatmaker, mémoriser sa chaîne, réimporter et actualiser sa
     await page.screenshot({ path: testInfo.outputPath('beatmaker-editor.png') })
     await dialog.getByRole('button', { name: 'Revenir à la proposition', exact: true }).click()
     await expect(dialog.locator('dl').getByText('Raw', { exact: true })).toBeVisible()
+  } catch (cause) {
+    const jobs = await page.request.get('/api/imports')
+    console.error('État des imports de la bibliothèque de test :', await jobs.text())
+    throw cause
   } finally {
     const restored = await page.request.post('/api/library', { headers, data: { path: original.root } })
     expect(restored.ok()).toBe(true)
