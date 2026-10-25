@@ -1,6 +1,6 @@
 # Architecture proposée
 
-Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L'édition et les filtres musicaux avancés restent dans #6.
+Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L’édition locale et les filtres musicaux avancés sont disponibles (#6).
 
 ## Composants
 
@@ -65,6 +65,18 @@ Un crédit explicite cohérent propose le beatmaker ; sinon la chaîne sert de p
 
 Une correction par prod est prioritaire, y compris un champ volontairement vidé. Une règle mémorisée s'applique aux prochains imports sans crédit différent, ou dont le crédit correspond au nom corrigé ; elle ne masque pas une nouvelle collaboration ou un autre producteur explicitement crédité. La règle peut être retirée et la correction d'une prod peut revenir à la proposition automatique. L'actualisation des anciennes prods est une action explicite, locale et transactionnelle, qui conserve les corrections, les autres annotations et les médias.
 
+## ADR-005 — Corrections et recherche locale (#6)
+
+La fiche permet de corriger BPM, tonalité, styles, ambiances et liens d’achat. Le beatmaker conserve son éditeur dédié (#22). `PATCH /api/beats/{id}/metadata` modifie uniquement les champs transmis ; `null` vide le BPM ou la tonalité, `[]` vide les tags ou les liens. Les modifications sont validées avant une transaction unique et protégées par la session locale. Aucun lien marchand n’est récupéré par ce parcours.
+
+Le schéma 2 possède déjà les tables nécessaires : aucune migration ni modification des médias. `field_provenance` marque chaque champ corrigé `manual`, y compris une valeur vide, et garde la première valeur remplacée et sa provenance sous `original_metadata`. La description et les dates restent inchangées. Les futurs enrichissements doivent ignorer ces champs marqués manuels ; les doublons d’import et l’actualisation des beatmakers les préservent déjà. Les liens corrigés portent également `manually_edited=1` et `provenance=manual`.
+
+Les tags libres sont dédupliqués par catégorie sans casse, accents ni espaces superflus ; le premier libellé lisible est conservé. Les tonalités avec note et mode sont normalisées (Cmin, C minor et Do mineur correspondent). Les orthographes enharmoniques restent distinctes et aucune tonalité sans mode n’est inventée. Cette normalisation ne change pas l’extraction des descriptions, traitée séparément dans #27.
+
+`GET /api/catalog/filters` expose les valeurs utilisées dans toute la bibliothèque. La liste accepte des paramètres répétés `keys`, `makers`, `channels`, `styles`, `moods` : OU dans une catégorie, ET entre catégories, favoris et termes textuels. `bpm_min` / `bpm_max` sont inclusifs (0 exclu à 1000 inclus, bornes identiques pour une valeur exacte). Les options `*_missing` sélectionnent explicitement les données absentes et peuvent être combinées aux valeurs connues dans la même catégorie. Une plage inversée renvoie une erreur lisible. Les tris `added_desc`, `added_asc`, `published_desc`, `published_asc` utilisent l’identifiant comme départage stable et placent toujours les publications inconnues en dernier.
+
+L’interface recharge la première page après changement de filtre et ignore les anciennes réponses de pagination. Le lecteur conserve son identité, son état lecture/pause et sa position pendant recherche et édition ; il ne dépend pas des cartes actuellement visibles.
+
 ## ADR-003 — Import sérialisé et récupérable
 
 1. Valider le lien et extraire un identifiant vidéo YouTube ; accepter uniquement les hôtes et formes d'URL prévus. Les playlists seules sont hors MVP.
@@ -81,7 +93,7 @@ Le téléchargement dépend des évolutions de YouTube. Prévoir un diagnostic d
 
 ## API et lecture
 
-Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée et combine recherche textuelle normalisée (titre, beatmaker, chaîne) et filtre favori. L'édition des autres métadonnées et la localisation restent dans les prochaines tranches.
+Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée après filtrage et combine recherche textuelle normalisée (titre, beatmaker, chaîne, tags), favoris et catégories musicales. La localisation reste dans la prochaine tranche.
 
 Le fichier audio est servi avec les requêtes HTTP Range pour permettre le déplacement dans la piste. Tester les statuts 200, 206 et 416, ainsi que l'absence du fichier. Un seul élément audio persistant dans l'interface évite la lecture simultanée de plusieurs cartes. Les fichiers et pochettes sont servis localement, sans dépendance à un embed YouTube.
 
