@@ -1,6 +1,7 @@
 import json
 import shutil
 import sqlite3
+from contextlib import closing
 from uuid import uuid4
 
 import pytest
@@ -194,7 +195,7 @@ def test_real_v1_migration_backup_alias_and_correction_move_with_library(tmp_pat
     migrated = Library.open(root)
     assert migrated.summary()["schema_version"] == 2
     backup = next((root / "backups").glob("*.sqlite3"))
-    with sqlite3.connect(backup) as connection:
+    with closing(sqlite3.connect(backup)) as connection:
         assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
         assert connection.execute("SELECT channel FROM beats").fetchone()[0] == "prod_oson"
     refresh_beatmakers(migrated)
