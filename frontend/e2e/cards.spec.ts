@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
 test('cartes alignées malgré les titres longs, pochettes et données manquantes', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('button', { name: `Écouter ${longTitle}`, exact: true })).toBeVisible()
-  await expect(page.locator('.beat-artwork img')).toHaveJSProperty('complete', true)
+  await expect(page.locator('.beat-card .beat-artwork img')).toHaveJSProperty('complete', true)
   for (const viewport of [{ width: 1440, height: 900 }, { width: 1000, height: 800 }, { width: 390, height: 700 }]) {
     await page.setViewportSize(viewport)
     const layout = await page.locator('.beat-card').evaluateAll((cards) => cards.map((card) => {

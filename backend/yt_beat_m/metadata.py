@@ -8,7 +8,7 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from yt_beat_m.beatmakers import provenance
+from yt_beat_m.beatmakers import _write, channel_keys, propose, provenance, write_correction
 from yt_beat_m.library import Library, LibraryError
 
 
@@ -50,6 +50,12 @@ class PurchaseLink(BaseModel):
 
 class MetadataUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    title: str = Field(default="", max_length=500)
+    description: str | None = Field(default=None, max_length=100000)
+    beatmaker: str | None = Field(default=None, max_length=200)
+    remember_channel: bool = False
+    reset_beatmaker: bool = False
+    forget_channel_alias: bool = False
     bpm: float | None = None
     musical_key: str | None = Field(default=None, max_length=80)
     styles: list[str] = Field(default_factory=list, max_length=30)
@@ -73,6 +79,19 @@ def clean_tags(values: list[str], field: str) -> list[str]:
 
 def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -> bool:
     changes = payload.model_dump(exclude_unset=True)
+    remember = changes.pop("remember_channel", False)
+    reset = changes.pop("reset_beatmaker", False)
+    forget = changes.pop("forget_channel_alias", False)
+    maker_changed = "beatmaker" in changes
+    maker = changes.pop("beatmaker", None)
+    if "title" in changes:
+        changes["title"] = changes["title"].strip()
+        if not changes["title"] or any(
+            unicodedata.category(c).startswith("C") for c in changes["title"]
+        ):
+            raise LibraryError(
+                "Titre : indique un titre lisible sur une ligne (500 caractères maximum)."
+            )
     if "bpm" in changes:
         bpm = changes["bpm"]
         if bpm is not None and (not math.isfinite(bpm) or not 0 < bpm <= 1000):
@@ -118,10 +137,26 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
         row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
         if row is None:
             return False
+        if (reset and (maker_changed or remember)) or (forget and remember):
+            raise LibraryError(
+                "Beatmaker : choisir soit une correction, soit le retour à la proposition."
+            )
+        if forget:
+            for key in channel_keys(dict(row)):
+                connection.execute("DELETE FROM channel_aliases WHERE channel_key=?", (key,))
+        if reset:
+            _write(connection, row, *propose(connection, dict(row)))
+            row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
+        if maker_changed or remember:
+            if not write_correction(
+                connection, identity, maker if maker_changed else row["beatmaker"], remember
+            ):
+                return False
+            row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
         sources = provenance(row)
         originals = sources.setdefault("original_metadata", {})
         for field, value in changes.items():
-            if field in {"bpm", "musical_key"}:
+            if field in {"title", "description", "bpm", "musical_key"}:
                 original = row[field]
             elif field in {"styles", "moods"}:
                 original = [
@@ -143,7 +178,7 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
                 ]
             originals.setdefault(field, {"value": original, "source": sources.get(field)})
             sources[field] = "manual"
-            if field in {"bpm", "musical_key"}:
+            if field in {"title", "description", "bpm", "musical_key"}:
                 connection.execute(f"UPDATE beats SET {field}=? WHERE id=?", (value, identity))
             elif field in {"styles", "moods"}:
                 kind = "style" if field == "styles" else "mood"

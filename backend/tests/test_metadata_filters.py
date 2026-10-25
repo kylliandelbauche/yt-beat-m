@@ -266,3 +266,59 @@ def test_tag_edits_reuse_readable_labels_from_existing_catalogues(annotated):
     assert filter_options(library)["moods"].count("Mélancolique") == 1
     with library.catalog() as connection:
         assert connection.execute("SELECT count(*) FROM tags WHERE kind='mood'").fetchone()[0] == 2
+
+
+def test_unified_save_is_atomic_and_preserves_source_text(annotated):
+    library, ids = annotated
+    initial = beat_details(library, ids[0])
+    # A channel rule must not be recorded when another field is invalid.
+    with pytest.raises(LibraryError, match="Tonalité"):
+        correct_metadata(
+            library,
+            ids[0],
+            MetadataUpdate(beatmaker="Studio", remember_channel=True, musical_key="invalid"),
+        )
+    assert beat_details(library, ids[0]) == initial
+    assert correct_metadata(
+        library,
+        ids[0],
+        MetadataUpdate(
+            title="Titre corrigé",
+            description="Produced by Another",
+            beatmaker="Studio",
+            remember_channel=True,
+            bpm=155,
+        ),
+    )
+    corrected = beat_details(library, ids[0])
+    assert (
+        corrected["title"] == "Titre corrigé" and corrected["description"] == "Produced by Another"
+    )
+    assert corrected["beatmaker"] == "Studio" and corrected["channel"] == "Archives"
+    assert corrected["channel_alias"]["beatmaker"] == "Studio"
+    originals = corrected["metadata_provenance"]["original_metadata"]
+    assert originals["title"]["value"] == initial["title"]
+    assert originals["description"]["value"] == initial["description"]
+    # Deleting a rule and a bad producer correction in one save must roll back together.
+    with pytest.raises(LibraryError, match="beatmaker"):
+        correct_metadata(
+            library,
+            ids[0],
+            MetadataUpdate(
+                forget_channel_alias=True, beatmaker="bad\x00name", title="Pas enregistré"
+            ),
+        )
+    assert beat_details(library, ids[0]) == corrected
+    assert correct_metadata(
+        library, ids[0], MetadataUpdate(forget_channel_alias=True, reset_beatmaker=True)
+    )
+    reset = beat_details(library, ids[0])
+    assert reset["channel_alias"] is None
+    assert (
+        reset["beatmaker"] == "Archives"
+    )  # Proposal uses the original source, not the edited text.
+    assert reset["bpm"] == 155
+    assert (
+        reset["published_on"] == initial["published_on"]
+        and reset["added_at"] == initial["added_at"]
+    )

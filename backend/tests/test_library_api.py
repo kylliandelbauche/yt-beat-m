@@ -54,3 +54,47 @@ def test_invalid_selection_does_not_create_data(tmp_path):
             == 400
         )
         assert client.get("/api/library").json()["library"] is None
+
+
+def test_combined_refresh_is_protected_and_keeps_manual_annotations(tmp_path):
+    import base64
+    from pathlib import Path
+
+    from yt_beat_m.beatmakers import correct_beatmaker
+    from yt_beat_m.catalog import list_beats
+    from yt_beat_m.local_audio import scan_local_audio
+    from yt_beat_m.metadata import MetadataUpdate, correct_metadata
+
+    root = tmp_path / "collection"
+    library = Library.create(root)
+    audio = base64.b64decode((Path(__file__).parent / "fixtures/tone.mp3.base64").read_text())
+    (root / "audio/first.mp3").write_bytes(audio)
+    scan_local_audio(library)
+    identity = list_beats(library, 1, 0)["beats"][0]["id"]
+    correct_metadata(
+        library, identity, MetadataUpdate(bpm=150, musical_key="F mineur", styles=["Drill"])
+    )
+    correct_beatmaker(library, identity, "Studio corrigé", False)
+    library.close()
+    (root / "audio/second.mp3").write_bytes(audio)
+    with TestClient(
+        create_app(frontend=tmp_path, preferences=tmp_path / "prefs.json"),
+        base_url="http://127.0.0.1:8765",
+    ) as client:
+        assert client.post("/api/library/refresh").status_code == 403
+        headers = {
+            "Origin": "http://127.0.0.1:8765",
+            "X-Session-Token": client.get("/api/session").json()["token"],
+        }
+        assert (
+            client.post("/api/library", json={"path": str(root)}, headers=headers).status_code
+            == 200
+        )
+        refreshed = client.post("/api/library/refresh", headers=headers)
+        assert refreshed.status_code == 200
+        result = refreshed.json()
+        assert result["added"] == 1 and result["library"]["beat_count"] == 2
+        assert result["beatmakers"]["preserved"] == 1
+        beat = client.get(f"/api/beats/{identity}").json()
+        assert beat["beatmaker"] == "Studio corrigé" and beat["bpm"] == 150
+        assert beat["musical_key"] == "F minor" and beat["styles"] == ["Drill"]

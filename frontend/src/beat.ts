@@ -4,6 +4,8 @@ export type Beat = {
   beatmaker: string | null
   beatmaker_source: 'explicit_credit' | 'channel' | 'channel_alias' | 'ambiguous_credit' | 'manual' | 'legacy' | null
   channel: string | null
+  bpm: number | null
+  musical_key: string | null
   duration_seconds: number | null
   favorite: boolean
   artwork_url: string | null
@@ -12,8 +14,6 @@ export type Beat = {
 
 export type BeatDetails = Beat & {
   source_url: string | null
-  bpm: number | null
-  musical_key: string | null
   published_on: string | null
   added_at: string
   description: string | null
@@ -37,4 +37,13 @@ export function externalLink(value: string | null) {
     const url = new URL(value)
     return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : null
   } catch { return null }
+}
+
+export function musicalKeyLabel(value: string | null | undefined) {
+  if (!value) return '—'
+  const match = value.match(/^([A-G])([#b]?)\s*(minor|min|m|major|maj)$/i)
+  if (!match) return value
+  const notes: Record<string, string> = { C: 'Do', D: 'Ré', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' }
+  const accidental = match[2] === '#' ? '♯' : match[2] === 'b' ? '♭' : ''
+  return `${notes[match[1].toUpperCase()]}${accidental} ${['minor', 'min', 'm'].includes(match[3].toLowerCase()) ? 'min' : 'maj'}`
 }

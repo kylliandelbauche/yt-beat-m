@@ -22,6 +22,7 @@ export function ImportPanel({ onImported, onShowBeat }: { onImported: () => Prom
   const [refresh, setRefresh] = useState(0)
   const completed = useRef(new Set<string>())
   const initialized = useRef(false)
+  const [focusedJob, setFocusedJob] = useState<string | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -57,6 +58,7 @@ export function ImportPanel({ onImported, onShowBeat }: { onImported: () => Prom
     try {
       const result = await api<Queued>('/api/imports', { method: 'POST', body: JSON.stringify({ url: value }) })
       initialized.current = true
+      if (result.job) { setFocusedJob(result.job.id); setJobs((current) => [result.job!, ...current.filter((job) => job.id !== result.job!.id)]) }
       if (result.beat_id) {
         await onImported()
         onShowBeat(result.beat_id)
@@ -76,8 +78,8 @@ export function ImportPanel({ onImported, onShowBeat }: { onImported: () => Prom
     void enqueue(url)
   }
 
-  return <section className="import-panel" aria-labelledby="import-heading">
-    <div><h3 id="import-heading">Une nouvelle prod ?</h3><p>Colle son lien YouTube. Le MP3 et la pochette resteront sur ton disque.</p></div>
+  const visibleJobs = jobs.filter((job) => job.state !== 'completed' || job.id === focusedJob).slice(0, 5)
+  return <section className="import-panel" aria-label="Importer une prod">
     <form className="import-form" onSubmit={submit}>
       <label className="sr-only" htmlFor="youtube-url">Lien YouTube de la prod</label>
       <input id="youtube-url" type="url" placeholder="https://youtu.be/…" value={url} onChange={(event) => setUrl(event.target.value)} required disabled={busy} />
@@ -85,15 +87,17 @@ export function ImportPanel({ onImported, onShowBeat }: { onImported: () => Prom
     </form>
     {error && <p className="library-error" role="alert">{error}</p>}
     {notice && <p className="scan-notice" role="status">{notice}</p>}
-    {jobs.length > 0 && <details className="import-history" open={jobs.some((job) => job.state !== 'completed')}>
-      <summary>Imports récents</summary>
-      <ul>{jobs.slice(0, 5).map((job) => <li key={job.id}>
-        <div className="job-heading"><a href={job.source_url} target="_blank" rel="noreferrer">Vidéo YouTube ↗</a><span role="status">{stages[job.stage || job.state] || 'Import en cours'}{job.stage === 'downloading' && job.progress !== null ? ` · ${Math.floor(job.progress)} %` : ''}</span></div>
-        {job.stage === 'downloading' && job.progress !== null && <progress aria-label="Progression du téléchargement" value={job.progress} max={100} />}
-        {job.error_message && <p className="job-error">{job.error_message}</p>}
-        {['failed', 'interrupted'].includes(job.state) && <button disabled={busy} onClick={() => { void enqueue(job.source_url) }}>Réessayer</button>}
-        {job.state === 'completed' && job.beat_id && <button onClick={() => { if (job.beat_id) onShowBeat(job.beat_id) }}>Voir la prod</button>}
-      </li>)}</ul>
-    </details>}
+    <div className="import-progress-list">{visibleJobs.map((job) => {
+      const ready = job.state === 'completed'
+      const failed = ['failed', 'interrupted'].includes(job.state)
+      const measured = job.stage === 'downloading' && job.progress !== null && job.progress < 100 ? Math.floor(job.progress) : undefined
+      const progress = ready ? 100 : measured
+      return <div className="import-job" key={job.id}>
+        <div className="import-progress">{!failed && <progress aria-label="Progression de l’import" value={progress} max={100} />}<span role="status">{(failed ? stages[job.state] : stages[job.stage || job.state]) || 'Import en cours'}{progress !== undefined ? ` · ${progress} %` : ''}</span></div>
+        {failed && <p className="job-error" role="alert">{job.error_message || 'Import interrompu. Tu peux le relancer.'}</p>}
+        {failed && <button disabled={busy} onClick={() => { void enqueue(job.source_url) }}>Réessayer</button>}
+        {ready && job.beat_id && <button onClick={() => { if (job.beat_id) onShowBeat(job.beat_id) }}>Voir la prod</button>}
+      </div>
+    })}</div>
   </section>
 }

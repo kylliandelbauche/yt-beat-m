@@ -79,8 +79,16 @@ def channel_alias(connection, data) -> dict | None:
     return None
 
 
+def source_credit(data):
+    fields = provenance(data) if "field_provenance" in data else {}
+    originals = fields.get("original_metadata", {})
+    title = originals.get("title", {}).get("value", data["title"])
+    description = originals.get("description", {}).get("value", data.get("description"))
+    return producer_credit(title, description)
+
+
 def propose(connection, data) -> tuple[str | None, str | None]:
-    name, source = producer_credit(data["title"], data.get("description"))
+    name, source = source_credit(data)
     if source == "ambiguous_credit":
         return None, source
     alias = channel_alias(connection, data)
@@ -122,35 +130,39 @@ def refresh_beatmakers(library: Library) -> dict:
     return {"updated": updated, "preserved": preserved, "unresolved": unresolved}
 
 
-def correct_beatmaker(library: Library, identity: str, value: str | None, remember: bool) -> bool:
+def write_correction(connection, identity: str, value: str | None, remember: bool) -> bool:
     name = value.strip() if value else None
     name = name or None
     if name and (len(name) > 200 or any(unicodedata.category(c).startswith("C") for c in name)):
         raise LibraryError(
             "Le nom du beatmaker doit tenir sur une ligne de 200 caractères maximum."
         )
-    with library.catalog() as connection:
-        record = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
-        if record is None:
-            return False
-        row = dict(record)
-        if remember:
-            key = channel_key(row)
-            if not key or not name:
-                raise LibraryError("Choisir un nom et une chaîne pour mémoriser cette règle.")
-            credit, source = producer_credit(row["title"], row["description"])
-            if source == "ambiguous_credit":
-                raise LibraryError(
-                    "Crédits contradictoires : corriger cette prod sans règle de chaîne."
-                )
-            connection.execute(
-                "INSERT INTO channel_aliases(channel_key,beatmaker,credit_name) VALUES(?,?,?) "
-                "ON CONFLICT(channel_key) DO UPDATE SET beatmaker=excluded.beatmaker, "
-                "credit_name=excluded.credit_name",
-                (key, name, credit or row["channel"]),
+    record = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
+    if record is None:
+        return False
+    row = dict(record)
+    if remember:
+        key = channel_key(row)
+        if not key or not name:
+            raise LibraryError("Choisir un nom et une chaîne pour mémoriser cette règle.")
+        credit, source = source_credit(row)
+        if source == "ambiguous_credit":
+            raise LibraryError(
+                "Crédits contradictoires : corriger cette prod sans règle de chaîne."
             )
-        _write(connection, row, name, "manual")
+        connection.execute(
+            "INSERT INTO channel_aliases(channel_key,beatmaker,credit_name) VALUES(?,?,?) "
+            "ON CONFLICT(channel_key) DO UPDATE SET beatmaker=excluded.beatmaker, "
+            "credit_name=excluded.credit_name",
+            (key, name, credit or row["channel"]),
+        )
+    _write(connection, row, name, "manual")
     return True
+
+
+def correct_beatmaker(library: Library, identity: str, value: str | None, remember: bool) -> bool:
+    with library.catalog() as connection:
+        return write_correction(connection, identity, value, remember)
 
 
 def reset_beatmaker(library: Library, identity: str) -> bool:
