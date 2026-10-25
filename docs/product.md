@@ -58,7 +58,7 @@ Un favori, des tags et les corrections doivent survivre à un redémarrage, au r
 
 Règle générale de stabilité : un changement d’état conserve l’emplacement et les dimensions des éléments. Les confirmations, erreurs et avertissements utilisent un emplacement réservé ou une présentation hors du flux. Dans la fiche, une sauvegarde réussie affiche brièvement une coche dans le même bouton de 36 × 36 px ; elle ne rajoute aucun texte dans les colonnes. Les messages restent accessibles sans déplacement du focus ni interruption audio.
 
-Lecteur persistant en bas : pochette réduite, titre, lecture/pause, progression et volume. Changer de recherche ne coupe pas la piste. Sélectionner une autre prod remplace la piste active. Prévoir navigation clavier, focus visible, libellés accessibles et contraste lisible malgré la transparence.
+Lecteur persistant en bas : pochette réduite, titre, lecture/pause, progression et volume. Cliquer sur la pochette ou le titre ouvre la fiche de la prod active, même si elle est masquée par les filtres ; le raccourci est accessible au clavier et conserve la lecture et sa position (#45). Changer de recherche ne coupe pas la piste. Sélectionner une autre prod remplace la piste active. Prévoir navigation clavier, focus visible, libellés accessibles et contraste lisible malgré la transparence.
 
 Import : champ URL, validation, état explicite, erreur récupérable et lien vers la prod lorsqu'elle est prête. Un doublon mène à la prod existante. Une URL de playlist seule explique que l'import par lot viendra ensuite.
 

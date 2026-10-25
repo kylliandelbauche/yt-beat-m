@@ -113,3 +113,41 @@ test.describe('tactile', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0)
   })
 })
+
+for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 650 }]) {
+  test(`pochette, titre et clavier du lecteur ouvrent la prod masquée sans changer la lecture sur ${viewport.width}`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto('/')
+    await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
+    const audio = page.locator('audio')
+    await expect(audio).toHaveJSProperty('paused', false)
+    await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 7; el.dataset.identity = 'persistent-player' })
+    const source = await audio.getAttribute('src')
+    await page.getByRole('searchbox', { name: 'Rechercher une prod' }).fill('Drill')
+    await expect(page.getByRole('button', { name: 'Détails de R&B Mélancolique', exact: true })).toHaveCount(0)
+    const player = page.getByRole('complementary', { name: 'Lecteur audio' })
+    const trigger = player.getByRole('button', { name: 'Détails depuis le lecteur : R&B Mélancolique', exact: true })
+    const bounds = await player.boundingBox()
+    await expect(trigger).toHaveAttribute('aria-haspopup', 'dialog')
+    for (const target of ['.player-artwork', 'p', 'keyboard']) {
+      if (target === 'p') await audio.evaluate((el: HTMLAudioElement) => el.play())
+      else await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 7 })
+      const paused = target !== 'p'
+      if (target === 'keyboard') { await trigger.focus(); await page.keyboard.press('Enter') }
+      else await trigger.locator(target).click()
+      const dialog = page.getByRole('dialog')
+      await expect(dialog.getByRole('heading', { name: 'R&B Mélancolique', exact: true })).toBeVisible()
+      await expect(audio).toHaveCount(1)
+      await expect(audio).toHaveAttribute('data-identity', 'persistent-player')
+      await expect(audio).toHaveAttribute('src', source!)
+      await expect(audio).toHaveJSProperty('paused', paused)
+      if (paused) await expect(audio).toHaveJSProperty('currentTime', 7)
+      else expect(await audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThanOrEqual(7)
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      await expect(trigger).toBeFocused()
+      await expect(audio).toHaveJSProperty('paused', paused)
+      expect(await player.boundingBox()).toEqual(bounds)
+    }
+  })
+}
