@@ -30,7 +30,7 @@ test('corriger un beatmaker, mémoriser sa chaîne, réimporter et actualiser sa
     await dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true }).fill('Studio Nova')
     await dialog.getByRole('checkbox', { name: 'Mémoriser pour les prochains imports de cette chaîne', exact: true }).check()
     await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
-    await expect(dialog.getByText('Informations enregistrées.', { exact: true })).toBeVisible()
+    await expect(dialog.getByRole('status')).toHaveText('Informations enregistrées.')
     await expect(dialog.locator('dl').getByText('Studio Nova', { exact: true })).toBeVisible()
     await expect(audio).toHaveJSProperty('paused', false)
     await page.keyboard.press('Escape')

@@ -85,6 +85,8 @@ Le composant Modal partage les garanties de fermeture, verrouillage de page et r
 
 La liste expose BPM et tonalité pour les cartes horizontales. La disposition est une préférence de ce navigateur (`beat-m-layout`), sans chemin ni donnée musicale dans le stockage navigateur ; aucune migration du catalogue. L’import montre les tâches actives, erreurs récupérables et la dernière tâche explicitement importée, sans dépliant d’historique. Le taux du téléchargement n’est pas transformé en estimation globale : une conversion reste indéterminée, 100 % est réservé à l’état completed.
 
+La confirmation de sauvegarde remplace temporairement l’icône du bouton existant par une coche ; une zone d’annonce accessible hors du flux donne le résultat. Les erreurs et la demande d’abandon occupent une surface superposée dans la fiche, avec actions accessibles. Aucun de ces états ne crée de ligne supplémentaire entre l’en-tête et les colonnes (#37).
+
 ## ADR-003 — Import sérialisé et récupérable
 
 1. Valider le lien et extraire un identifiant vidéo YouTube ; accepter uniquement les hôtes et formes d'URL prévus. Les playlists seules sont hors MVP.
