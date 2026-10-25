@@ -72,6 +72,7 @@ def add_beat(
         ),
         ("Beat", "Produit par Étoile\nBPM : 130", ("Étoile", "explicit_credit")),
         ("Beat", "Beat by Nova", ("Nova", "explicit_credit")),
+        ("Beat (Prod. by Nova)", None, ("Nova", "explicit_credit")),
         ("Beat (prod.oson x jissa)", None, ("oson x jissa", "explicit_credit")),
         ("Beat", "Produced by Nova & Ryo", ("Nova & Ryo", "explicit_credit")),
         ("Beat (prod. Nova)", "Produced by Ryo", (None, "ambiguous_credit")),

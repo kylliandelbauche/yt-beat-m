@@ -7,7 +7,9 @@ import unicodedata
 from yt_beat_m.library import Library, LibraryError
 
 AUTOMATIC = {"explicit_credit", "channel", "channel_alias", "ambiguous_credit", None}
-LABEL = r"(?:produced[ \t]+by|prod(?:\.|[ \t]+by)?|produit(?:e)?[ \t]+par|beat[ \t]+by)"
+LABEL = (
+    r"(?:produced[ \t]+by|prod(?:\.(?:[ \t]+by)?|[ \t]+by)?|produit(?:e)?[ \t]+par|beat[ \t]+by)"
+)
 SEPARATOR = r"(?:[ \t]*[:.=–-][ \t]*|[ \t]+)"
 BRACKET_CREDIT = re.compile(r"[\[(][ \t]*" + LABEL + SEPARATOR + r"([^\])\n\r]+)[\])]", re.I)
 LINE_LABEL = (
