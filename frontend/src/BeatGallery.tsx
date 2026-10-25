@@ -47,6 +47,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
   const [reload, setReload] = useState(0)
   const [favoriteBusy, setFavoriteBusy] = useState(new Set<string>())
   const audio = useRef<HTMLAudioElement>(null)
+  const [playingId, setPlayingId] = useState<string | null>(null)
   const params = filterQuery(filters)
   params.set('q', query); params.set('favorites', String(favoritesOnly)); params.set('sort', sort)
   const catalogQuery = params.toString()
@@ -84,10 +85,31 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
   }, [catalogQuery, reload])
 
   useEffect(() => {
-    if (selection?.play) {
-      void audio.current?.play().catch(() => setError('La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.'))
-    }
+    const player = audio.current
+    if (selection?.play && player) startPlayback(player)
   }, [selection])
+
+  function startPlayback(player: HTMLAudioElement) {
+    void player.play().catch((cause: unknown) => {
+      if (cause instanceof DOMException && cause.name === 'AbortError') return
+      if (audio.current === player) {
+        setPlayingId(null)
+        setError('La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.')
+      }
+    })
+  }
+
+  function togglePlayback(beat: Beat) {
+    setError('')
+    const player = audio.current
+    if (selection?.beat.id === beat.id && player) {
+      if (!player.paused && !player.ended) player.pause()
+      else { if (player.ended) player.currentTime = 0; startPlayback(player) }
+    } else {
+      setPlayingId(null)
+      setSelection({ beat, play: true })
+    }
+  }
 
   async function scan() {
     setBusy(true)
@@ -156,7 +178,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     {!loading && <div className={`beat-grid ${layout === 'horizontal' ? 'horizontal-grid' : 'covers-grid'}`}>{page?.beats.map((beat) => <article className={`beat-card${selection?.beat.id === beat.id ? ' selected' : ''}`} key={beat.id}>
       <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}>{beat.favorite ? '♥' : '♡'}</button>
       {layout === 'horizontal' ? <>
-        <button className="horizontal-cover" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}><Artwork beat={beat} /><span className="cover-play" aria-hidden="true">▶</span></button>
+        <button className="horizontal-cover" aria-label={`${playingId === beat.id ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => togglePlayback(beat)}><Artwork beat={beat} /><span className={`cover-play${playingId === beat.id ? ' is-playing' : ''}`} aria-hidden="true"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled /></span></button>
         <button className="horizontal-details" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
           <span className="horizontal-title" title={beat.title}>{beat.title}</span>
           <span className="horizontal-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || beat.channel || 'Fichier local'}</span>
@@ -164,10 +186,10 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
           <span className="horizontal-footer"><span>{duration(beat.duration_seconds)}</span><span>Détails ↗</span></span>
         </button>
       </> : <>
-      <button className="beat-select" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}>
-        <Artwork beat={beat} />
+      <button className="beat-select" aria-label={`${playingId === beat.id ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => togglePlayback(beat)}>
+        <span className="card-cover"><Artwork beat={beat} /><span className={`cover-play${playingId === beat.id ? ' is-playing' : ''}`} aria-hidden="true"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled /></span></span>
         <span className="beat-card-info"><ScrollingTitle title={beat.title} /><span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || (beat.channel || 'Fichier local')}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span></span>
-        <span className="listen-label">▶ Écouter</span>
+        <span className="listen-label"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled />{playingId === beat.id ? 'Pause' : 'Écouter'}</span>
       </button>
       <button className="beat-details-button" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>Détails ↗</button>
       </>}
@@ -178,10 +200,10 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       <p>● Bibliothèque locale · {libraryName}</p>
       <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}><Icon name="refresh" />{busy ? 'Actualisation…' : 'Actualiser'}</button>{tools}</div>
     </div>
-    {details && <BeatDetailsPanel key={details} identity={details} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
+    {details && <BeatDetailsPanel key={details} identity={details} playing={playingId === details} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
     {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <div className="player-description"><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></div>
-      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onError={() => setError('Fichier audio indisponible ou illisible. Vérifie le disque.')} />
+      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onPlay={(event) => { if (audio.current === event.currentTarget) setPlayingId(selection.beat.id) }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setError('Fichier audio indisponible ou illisible. Vérifie le disque.') } }} />
     </aside>, document.body)}
   </div>
 }

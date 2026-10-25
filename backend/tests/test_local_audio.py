@@ -109,3 +109,96 @@ def test_listing_requires_an_open_library(tmp_path):
         base_url="http://127.0.0.1:8765",
     ) as client:
         assert client.get("/api/beats").status_code == 400
+
+
+def test_reveal_is_session_protected_and_uses_catalogue_path(collection, monkeypatch):
+    client, headers, audio = collection
+    calls = []
+    monkeypatch.setattr("yt_beat_m.app.reveal_file", calls.append)
+    client.post("/api/library/scan", headers=headers)
+    beat = client.get("/api/beats").json()["beats"][0]
+    url = f"/api/beats/{beat['id']}/reveal"
+    assert client.post(url).status_code == 403
+    assert client.post(url, headers={"Origin": headers["Origin"]}).status_code == 403
+    assert (
+        client.post(url, headers={**headers, "Origin": "https://evil.example"}).status_code == 403
+    )
+    assert calls == []
+    assert client.post(url, headers=headers, json={"path": "/other.mp3"}).json() == {
+        "revealed": True
+    }
+    assert calls == [audio.resolve()]
+    assert client.post(f"/api/beats/{uuid4()}/reveal", headers=headers).status_code == 404
+    assert client.post("/api/beats/not-a-uuid/reveal", headers=headers).status_code == 422
+    audio.unlink()
+    result = client.post(url, headers=headers)
+    assert result.status_code == 404
+    assert "disque" in result.json()["detail"]
+    assert calls == [audio.resolve()]
+
+
+def test_reveal_follows_library_after_move_and_recovers_from_disconnect(collection, monkeypatch):
+    client, headers, audio = collection
+    calls = []
+    monkeypatch.setattr("yt_beat_m.app.reveal_file", calls.append)
+    client.post("/api/library/scan", headers=headers)
+    beat = client.get("/api/beats").json()["beats"][0]
+    url = f"/api/beats/{beat['id']}/reveal"
+    root = audio.parent.parent
+    moved = root.with_name("Disque été déplacé")
+    client.post("/api/library/close", headers=headers)
+    root.rename(moved)
+    assert (
+        client.post("/api/library", headers=headers, json={"path": str(moved)}).status_code == 200
+    )
+    assert client.post(url, headers=headers).status_code == 200
+    assert calls == [moved / "audio" / audio.name]
+    manifest = moved / "library.json"
+    disconnected = moved / "library.disconnected"
+    manifest.rename(disconnected)
+    assert client.post(url, headers=headers).status_code == 400
+    disconnected.rename(manifest)
+    assert client.post(url, headers=headers).status_code == 200
+    assert len(calls) == 2
+
+
+def test_reveal_rejects_tampered_paths_and_symlinks(collection, monkeypatch, tmp_path):
+    from yt_beat_m.library import Library
+
+    client, headers, audio = collection
+    calls = []
+    monkeypatch.setattr("yt_beat_m.app.reveal_file", calls.append)
+    client.post("/api/library/scan", headers=headers)
+    beat = client.get("/api/beats").json()["beats"][0]
+    url = f"/api/beats/{beat['id']}/reveal"
+    root = audio.parent.parent
+    client.post("/api/library/close", headers=headers)
+    library = Library.open(root)
+    try:
+        with library.catalog() as connection:
+            connection.execute(
+                "UPDATE beats SET audio_path=? WHERE id=?", ("../private.mp3", beat["id"])
+            )
+    finally:
+        library.close()
+    client.post("/api/library", headers=headers, json={"path": str(root)})
+    assert client.post(url, headers=headers).status_code == 400
+    assert calls == []
+    client.post("/api/library/close", headers=headers)
+    library = Library.open(root)
+    try:
+        with library.catalog() as connection:
+            connection.execute(
+                "UPDATE beats SET audio_path=? WHERE id=?", (f"audio/{audio.name}", beat["id"])
+            )
+    finally:
+        library.close()
+    outside = tmp_path / "private.mp3"
+    audio.rename(outside)
+    try:
+        audio.symlink_to(outside)
+    except OSError:
+        pytest.skip("Liens symboliques non autorisés sur ce poste.")
+    client.post("/api/library", headers=headers, json={"path": str(root)})
+    assert client.post(url, headers=headers).status_code == 400
+    assert calls == []

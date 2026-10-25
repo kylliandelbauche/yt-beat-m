@@ -103,7 +103,7 @@ Le téléchargement dépend des évolutions de YouTube. Prévoir un diagnostic d
 
 ## API et lecture
 
-Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée après filtrage et combine recherche textuelle normalisée (titre, beatmaker, chaîne, tags), favoris et catégories musicales. La localisation reste dans la prochaine tranche.
+Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée après filtrage et combine recherche textuelle normalisée (titre, beatmaker, chaîne, tags), favoris et catégories musicales. La localisation du MP3 est disponible depuis la fiche (#7, #41).
 
 Le fichier audio est servi avec les requêtes HTTP Range pour permettre le déplacement dans la piste. Tester les statuts 200, 206 et 416, ainsi que l'absence du fichier. Un seul élément audio persistant dans l'interface évite la lecture simultanée de plusieurs cartes. Les fichiers et pochettes sont servis localement, sans dépendance à un embed YouTube.
 
@@ -145,3 +145,14 @@ Le frontend suit les tâches actives toutes les 250 ms et actualise le catalogue
 La barre est rendue en CSS et ARIA, sans composant progress natif : couleur menthe et largeur contrôlée par les mesures ; animation distincte pour les étapes non mesurables, respect de la réduction des animations. Le signal yt-dlp est sollicité au plus toutes les 0,2 s. Un test du vrai processus yt-dlp sur un serveur HTTP local contrôlé valide plusieurs pourcentages intermédiaires, sans contacter YouTube ni importer de média personnel.
 
 La fiche ne prépare plus de corrections de tags/règles/provenance. Elle envoie uniquement les champs visibles modifiés et remplace le premier lien si son URL change ; les liens secondaires et annotations sont préservés par le PATCH partiel existant. Aucune migration. Les anciennes fonctions avancées restent disponibles dans le moteur, sans contrôles dans cette fiche.
+
+
+## Lecture et localisation depuis les pochettes (#41, #7)
+
+Les boutons Play/Pause des deux dispositions et de la fiche utilisent le même élément audio persistant. Les événements natifs play, pause, ended et error déterminent l’icône, y compris avec les contrôles du lecteur. Une pause/reprise sur la même prod ne recrée pas l’audio ; un changement de prod remplace sa source. Les événements et rejets tardifs d’un ancien élément sont ignorés. Les recherches, changements de disposition et fiches ne touchent pas à la position de lecture. Les boutons gardent leurs dimensions.
+
+La zone de progression conserve 24 px, au repos comme pendant l’import ; la marge avant la bibliothèque passe à 16 px sur ordinateur et petite fenêtre.
+
+`POST /api/beats/{UUID}/reveal` exige l’origine locale et le jeton de session. Le moteur résout le chemin relatif enregistré avec `media_path`/`safe_path`, vérifie le fichier et bloque les sorties de bibliothèque et liens symboliques. Aucun chemin fourni par le navigateur n’est utilisé. Le verrou de sélection de bibliothèque reste détenu pendant la résolution et l’appel natif. Fichier absent, disque déconnecté et erreur système donnent un message récupérable sans déplacer la fiche. Aucune migration.
+
+macOS utilise `/usr/bin/open -R` avec arguments séparés et délai de dix secondes. Windows appelle les API Unicode `SHParseDisplayName` puis `SHOpenFolderAndSelectItems` avec un item et cidl=0 : l’Explorateur ouvre le dossier parent et sélectionne le MP3. COM est initialisé dans le thread de requête puis libéré, ainsi que la mémoire de l’item, même en erreur. Cette voie évite les ambiguïtés de guillemets et virgules d’une ligne de commande Explorer ; aucune exécution shell. Référence : [Microsoft — SHOpenFolderAndSelectItems](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shopenfolderandselectitems). La recette Windows avec interface graphique et disque physique reste dans #8.

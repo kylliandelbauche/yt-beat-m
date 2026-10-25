@@ -25,6 +25,7 @@ from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
 from yt_beat_m.metadata import MetadataUpdate, correct_metadata
+from yt_beat_m.reveal import reveal_file
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -273,6 +274,15 @@ def create_app(
             if not set_favorite(library, str(identity), payload.favorite):
                 raise HTTPException(404, "Prod introuvable.")
             return {"id": str(identity), "favorite": payload.favorite}
+
+    @app.post("/api/beats/{identity}/reveal")
+    def reveal(identity: UUID):
+        with manager.active() as library:
+            path = media_path(library, str(identity))
+            if path is None:
+                raise HTTPException(404, "Fichier audio introuvable ; vérifier le disque.")
+            reveal_file(path)
+            return {"revealed": True}
 
     @app.get("/api/beats/{identity}/audio")
     def audio(identity: UUID):

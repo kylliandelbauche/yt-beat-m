@@ -34,8 +34,10 @@ export function Modal({ label, title, closeLabel, onClose, actions, className = 
   </dialog>
 }
 
-export function Icon({ name, filled = false }: { name: 'heart' | 'edit' | 'save' | 'close' | 'grid' | 'rows' | 'refresh' | 'check'; filled?: boolean }) {
+export function Icon({ name, filled = false }: { name: 'heart' | 'edit' | 'save' | 'close' | 'grid' | 'rows' | 'refresh' | 'check' | 'play' | 'pause'; filled?: boolean }) {
   const paths = {
+    play: 'M7 4L21 12L7 20Z',
+    pause: 'M6 4H10V20H6ZM14 4H18V20H14Z',
     heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
     edit: 'M15 4L20 9M4 15L15 4a3.5 3.5 0 0 1 5 5L9 20L3 21Z',
     save: 'M5 3H17L21 7V21H3V3ZM7 3V9H16V3M7 21V14H17V21',
