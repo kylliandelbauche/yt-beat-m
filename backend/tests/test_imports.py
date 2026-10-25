@@ -137,7 +137,7 @@ def test_success_and_source_deduplication(worker):
         assert row["bpm"] == 140 and row["published_on"] == "2025-03-12"
         assert worker.library.safe_path(row["audio_path"]).is_file()
         assert row["audio_path"] == (
-            f"audio/{job['id']}/Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+            f"audio/{job['id']}/Source-channel_Test-beat-—-140-BPM_140BPM_F#-minor.mp3"
         )
         assert catalog.execute("SELECT COUNT(*) FROM source_links").fetchone()[0] == 1
     assert not worker._staging(job["id"]).exists()
@@ -346,7 +346,7 @@ def test_new_import_keeps_channel_id_and_uses_remembered_producer(worker, monkey
     with worker.library.catalog() as catalog:
         row = catalog.execute("SELECT * FROM beats WHERE id=?", (second["id"],)).fetchone()
         assert row["beatmaker"] == "Canonical"
-        assert Path(row["audio_path"]).name.startswith("Canonical - ")
+        assert Path(row["audio_path"]).name.startswith("Canonical_")
         assert row["channel"] == "Renamed channel"
         assert row["channel_id"] == "UC-stable-producer"
         assert json.loads(row["field_provenance"])["beatmaker"] == "channel_alias"
@@ -487,7 +487,7 @@ def test_preexisting_target_folder_is_never_claimed_or_deleted(worker):
     job = worker.enqueue(URL)["job"]
     folder = worker.library.safe_path(f"audio/{job['id']}")
     folder.mkdir()
-    final = folder / "Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+    final = folder / "Source-channel_Test-beat-—-140-BPM_140BPM_F#-minor.mp3"
     original = base64.b64decode((Path(__file__).parent / "fixtures/tone.mp3.base64").read_text())
     final.write_bytes(original)
     worker.perform(job)
@@ -533,7 +533,7 @@ def test_readable_import_playback_reveal_and_portability(tmp_path, monkeypatch):
         assert response.status_code == 206 and len(response.content) == 20
         assert client.post(f"/api/beats/{identity}/reveal", headers=headers).status_code == 200
         original = revealed[0]
-        assert original.name == "Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+        assert original.name == "Source-channel_Test-beat-—-140-BPM_140BPM_F#-minor.mp3"
         assert client.post("/api/library/close", headers=headers).status_code == 200
         moved = tmp_path / "Été"
         root.rename(moved)

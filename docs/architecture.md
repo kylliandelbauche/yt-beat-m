@@ -29,7 +29,7 @@ Ce choix évite un hébergement distant pour les fichiers personnels. Il demande
 MaBibliotheque/
   library.json                 # identifiant et version du format
   catalog.sqlite3              # catalogue, tags, favoris, tâches
-  audio/<uuid>/<Beatmaker - Titre - BPM - Tonalité>.mp3
+  audio/<uuid>/<Beatmaker_Titre_BPM_Tonalité>.mp3
   artwork/<uuid>.jpg
   staging/<job-uuid>/           # fichiers temporaires non publiés
   backups/                     # sauvegardes avant migration
@@ -158,9 +158,9 @@ La zone de progression conserve 24 px, au repos comme pendant l’import ; la ma
 macOS utilise `/usr/bin/open -R` avec arguments séparés et délai de dix secondes. Windows appelle les API Unicode `SHParseDisplayName` puis `SHOpenFolderAndSelectItems` avec un item et cidl=0 : l’Explorateur ouvre le dossier parent et sélectionne le MP3. COM est initialisé dans le thread de requête puis libéré, ainsi que la mémoire de l’item, même en erreur. Cette voie évite les ambiguïtés de guillemets et virgules d’une ligne de commande Explorer ; aucune exécution shell. Référence : [Microsoft — SHOpenFolderAndSelectItems](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shopenfolderandselectitems). La recette Windows avec interface graphique et disque physique reste dans #8.
 
 
-## Nommage lisible à la publication (#43)
+## Nommage lisible à la publication (#43, #47)
 
-Le worker calcule le beatmaker et le nom final dans la même transaction que la publication, après vérification du MP3 ; une règle mémorisée concurrente ne peut pas désynchroniser le nom et le catalogue. `audio_filename` produit quatre champs séparés par « - », puis `.mp3`. La normalisation NFC conserve les accents ; les caractères interdits Windows et contrôles sont nettoyés, les noms réservés neutralisés et chaque champ borné. La taille totale reste sous 180 octets même en Unicode décomposé, sans tronquer la fin musicale au profit d’un long titre. Le chemin complet dépend toujours de la racine choisie et des limites du système de fichiers.
+Le worker calcule le beatmaker et le nom final dans la même transaction que la publication, après vérification du MP3 ; une règle mémorisée concurrente ne peut pas désynchroniser le nom et le catalogue. `audio_filename` produit quatre champs séparés par `_`, puis `.mp3` : `Beatmaker_Titre_150BPM_Tonalité.mp3`. Les espaces Unicode, tabulations et retours à la ligne deviennent `-` dans chaque champ avant nettoyage des contrôles ; aucun espace ne subsiste, y compris dans les replis. Le nombre et BPM sont collés. La normalisation NFC conserve les accents ; les caractères interdits Windows et contrôles sont nettoyés, les noms réservés neutralisés et chaque champ borné. La taille totale reste sous 180 octets même en Unicode décomposé, sans tronquer la fin musicale au profit d’un long titre. Le chemin complet dépend toujours de la racine choisie et des limites du système de fichiers.
 
 La publication conserve un chemin relatif dans le schéma 2 existant. Le dossier UUID est créé exclusivement, après contrôle de tous les fichiers cibles et avant le marqueur de publication ; un emplacement préexistant n’est jamais revendiqué. Le marqueur est écrit avant les déplacements pour permettre la reprise en cas d’arrêt. Le nettoyage accepte les anciens fichiers UUID et le nouveau nom uniquement sous le dossier de cette tâche ; empreinte SHA-256 et absence de référence au catalogue restent obligatoires. Un fichier remplacé, étranger ou référencé est conservé. Seuls les dossiers devenus vides sont retirés. Le scan de MP3 manuels reste limité au premier niveau de `audio` ; les fichiers importés dans les sous-dossiers sont déjà catalogués par le worker.
 
