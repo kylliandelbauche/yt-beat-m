@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 650 }, { width: 1024, height: 420 }]) {
-  test(`pop-up centrée et contenu défilant sur ${viewport.width}×${viewport.height}`, async ({ page }) => {
+  test(`pop-up centrée et contenu défilant sur ${viewport.width}×${viewport.height}`, async ({ page }, testInfo) => {
     await page.setViewportSize(viewport)
     const title = 'Une prod au titre très long '.repeat(18)
     await page.route('**/api/beats/00000000-0000-0000-0000-000000000001', async (route) => {
@@ -20,7 +20,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 650 
     expect(bounds.y).toBeGreaterThan(0)
     expect(bounds.x + bounds.width).toBeLessThan(viewport.width)
     expect(bounds.y + bounds.height).toBeLessThan(viewport.height)
-    const scroll = dialog.locator('.details-content')
+    const scroll = dialog.locator('.description-scroll')
     await scroll.evaluate((element) => { element.scrollTop = element.scrollHeight })
     await expect.poll(() => scroll.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
     expect(await scroll.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
@@ -32,7 +32,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 650 
     await trigger.evaluate((element: HTMLElement) => element.focus())
     expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
     await page.keyboard.press('Shift+Tab')
-    await expect(close).toBeFocused()
+    expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+    expect((await scroll.boundingBox())!.height).toBe(280)
+    if (viewport.width > 1000 && viewport.height > 700) { expect(bounds.width).toBe(900); expect(bounds.height).toBe(652) }
+    await page.screenshot({ path: testInfo.outputPath('detail-read.png') })
     const backgroundPosition = await page.evaluate(() => window.scrollY)
     await page.mouse.move(2, 2)
     await page.mouse.wheel(0, 600)

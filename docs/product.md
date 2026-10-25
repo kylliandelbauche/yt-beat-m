@@ -68,6 +68,16 @@ Cette phase de cadrage ne fixe ni date de livraison ni qualité d'extraction gar
 
 ## Édition et filtres livrés (#6)
 
-Dans la fiche, « Modifier les informations » permet de renseigner ou vider BPM, tonalité, styles, ambiances et liens d’achat. Les corrections restent locales et prioritaires ; les valeurs d’origine sont consultables séparément. Les tags se saisissent avec des virgules. Une page marchande peut être ouverte pour recopier ses informations ; son analyse automatique reste dans #10.
+Dans la fiche, l’icône crayon permet de renseigner ou vider BPM, tonalité, styles, ambiances et liens d’achat. Les corrections restent locales et prioritaires ; les valeurs d’origine sont consultables séparément. Les tags se saisissent avec des virgules. Une page marchande peut être ouverte pour recopier ses informations ; son analyse automatique reste dans #10.
 
 La grille combine BPM, tonalité, beatmaker, chaîne, style, ambiance, favoris et recherche textuelle. Les filtres musicaux proposent les données non renseignées ; les sélections actives se retirent individuellement ou ensemble. Les tris distinguent ajout et publication YouTube. L’écoute continue pendant ces opérations.
+
+## Référence Officiel intégrée (#33)
+
+La ligne « Officiel » de Paper est la référence approuvée ; les deux dispositions (grandes pochettes et cartes horizontales 384 × 128 px) coexistent. Les futures propositions vont dans « À valider » et les révisions remplacées dans « Historique » après accord. Les filtres Style et Ambiance restent directement actifs, conformément à la clarification utilisateur ; aucun « bientôt » ne masque une fonction déjà livrée.
+
+L’import affiche directement son suivi, sans historique dépliant. Seul le téléchargement fournit un pourcentage mesuré ; les autres étapes restent indéterminées et 100 % signifie que la prod est prête. Une erreur conserve sa relance accessible.
+
+La fiche de référence 900 × 652 px comporte deux colonnes et une description de 280 px qui défile indépendamment. Le crayon devient Save menthe dans le même emplacement 36 × 36 px ; Annuler rétablit les données enregistrées, une fermeture avec modifications demande explicitement de les abandonner. Titre, description, beatmaker, BPM, tonalité, tags, liens et règles de nom sont enregistrés ensemble ou refusés ensemble. Les dates, la chaîne source et la durée restent distinctes et consultables. Sur petite fenêtre, le contenu s’adapte et défile avec les actions toujours accessibles.
+
+Actualiser combine indexage et recalcul des beatmakers, sans écraser les corrections. Bibliothèque et Diagnostic sont des fenêtres centrées. La pochette du lecteur suit la prod active ; sa lecture et sa position ne dépendent ni de la disposition ni des filtres.

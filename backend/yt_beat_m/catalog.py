@@ -17,6 +17,8 @@ def beat_view(row) -> dict:
         "beatmaker_source": provenance(row).get("beatmaker")
         or ("legacy" if row["beatmaker"] else None),
         "duration_seconds": row["duration_seconds"],
+        "bpm": row["bpm"],
+        "musical_key": row["musical_key"],
         "favorite": bool(row["favorite"]),
         "artwork_url": f"/api/beats/{row['id']}/artwork" if row["artwork_path"] else None,
         "audio_url": f"/api/beats/{row['id']}/audio",

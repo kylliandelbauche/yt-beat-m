@@ -159,6 +159,13 @@ def create_app(
             result = scan_local_audio(library)
             return {**result, "library": library.summary()}
 
+    @app.post("/api/library/refresh")
+    def refresh_library():
+        with manager.active() as library:
+            scan = scan_local_audio(library)
+            producers = refresh_beatmakers(library)
+            return {**scan, "beatmakers": producers, "library": library.summary()}
+
     @app.get("/api/beats")
     def beats(
         limit: int = Query(48, ge=1, le=100),

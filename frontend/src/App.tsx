@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { LibraryPanel } from './LibraryPanel'
 import './PaperV1.css'
+import './Official.css'
+import { Modal } from './Modal'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
@@ -10,6 +12,7 @@ function App() {
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const [showDiagnostic, setShowDiagnostic] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -27,23 +30,17 @@ function App() {
     return () => controller.abort()
   }, [attempt])
 
-  const diagnosticPanel = <details className="diagnostic-toggle" open={Boolean(error || (diagnostic && !diagnostic.ready))}><summary>Diagnostic</summary>
-      <section className="diagnostic" aria-label="État du moteur local">
-        <div className="section-heading">
-          <div><h2>État du moteur</h2>
-            <p role="status">{error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
-          </div>
-          <button onClick={() => { setError(''); setDiagnostic(null); setAttempt((value) => value + 1) }}>Actualiser</button>
-        </div>
-        {diagnostic && <details open={!diagnostic.ready}>
-          <summary>Voir le diagnostic</summary>
-          <ul className="dependency-list">{diagnostic.dependencies.map((item) => <li key={item.name}>
-            <span>{item.name}</span>
-            <span className={item.available ? 'dependency-ok' : 'dependency-missing'}>{item.available ? item.version : item.hint}</span>
-          </li>)}</ul>
-        </details>}
+  const diagnosticPanel = <>
+    <button onClick={() => setShowDiagnostic(true)}>Diagnostic</button>
+    {showDiagnostic && <Modal label="Diagnostic" title={<h2>Diagnostic</h2>} closeLabel="Fermer la fenêtre Diagnostic" onClose={() => setShowDiagnostic(false)} className="diagnostic-modal">
+      <section className="modal-content diagnostic" aria-label="État du moteur local">
+        <h3>{diagnostic?.ready ? 'Prêt à importer' : 'État du moteur'}</h3>
+        <p role="status">{error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
+        {diagnostic && <ul className="dependency-list">{diagnostic.dependencies.map((item) => <li key={item.name}><span>{item.name}</span><span className={item.available ? 'dependency-ok' : 'dependency-missing'}>{item.available ? item.version : item.hint}</span></li>)}</ul>}
+        <button onClick={() => { setError(''); setDiagnostic(null); setAttempt((value) => value + 1) }}>Vérifier à nouveau</button>
       </section>
-  </details>
+    </Modal>}
+  </>
 
   return (
     <main className="workspace">

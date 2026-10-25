@@ -6,7 +6,9 @@ import './BeatGallery.css'
 import { ImportPanel } from './ImportPanel'
 import { BeatDetailsPanel } from './BeatDetailsPanel'
 import { ScrollingTitle } from './ScrollingTitle'
-import { duration } from './beat'
+import { duration, musicalKeyLabel } from './beat'
+import { Artwork } from './Artwork'
+import { Icon } from './Modal'
 import type { Beat } from './beat'
 import { ActiveFilters, CatalogFilters } from './CatalogFilters'
 import { emptyFilters, emptyOptions, filterQuery } from './filterState'
@@ -15,16 +17,9 @@ type BeatPage = { beats: Beat[]; total: number }
 type Selection = { beat: Beat; play: boolean }
 type Scan = { added: number; skipped: number; errors: { name: string; message: string }[]; library: { beat_count: number } }
 
-function Artwork({ beat }: { beat: Beat }) {
-  const [failed, setFailed] = useState(false)
-  return <div className="beat-artwork">
-    {beat.artwork_url && !failed
-      ? <img src={beat.artwork_url} alt={`Pochette de ${beat.title}`} loading="lazy" onError={() => setFailed(true)} />
-      : <><span className="cover-note" aria-hidden="true">♫</span><span className="cover-label">AUDIO LOCAL</span></>}
-  </div>
-}
-
 export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onIndexed: (count: number) => void; heading: ReactNode; tools: ReactNode; libraryName: string }) {
+  const [layout, setLayout] = useState<'covers' | 'horizontal'>(() => { try { return localStorage.getItem('beat-m-layout') === 'horizontal' ? 'horizontal' : 'covers' } catch { return 'covers' } })
+  useEffect(() => { try { localStorage.setItem('beat-m-layout', layout) } catch { /* The layout remains usable when storage is unavailable. */ } }, [layout])
   const [page, setPage] = useState<BeatPage | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [error, setError] = useState('')
@@ -87,9 +82,9 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     setError('')
     setNotice('')
     try {
-      const result = await api<Scan>('/api/library/scan', { method: 'POST' })
+      const result = await api<Scan & { beatmakers: { updated: number; preserved: number } }>('/api/library/refresh', { method: 'POST' })
       await refreshImported()
-      setNotice(`${result.added} ajouté(s) · ${result.skipped} déjà présent(s).${result.errors.length ? ` ${result.errors.length} fichier(s) illisible(s) : ${result.errors.map((item) => item.name).join(', ')}.` : ''}`)
+      setNotice(`${result.added} ajouté(s) · ${result.skipped} déjà présent(s) · ${result.beatmakers.updated} beatmaker(s) actualisé(s) · ${result.beatmakers.preserved} correction(s) conservée(s).${result.errors.length ? ` ${result.errors.length} fichier(s) illisible(s) : ${result.errors.map((item) => item.name).join(', ')}.` : ''}`)
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Indexage impossible.')
     } finally { setBusy(false) }
@@ -107,19 +102,6 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     } finally { setBusy(false) }
   }
 
-  async function refreshBeatmakers() {
-    setBusy(true)
-    setError('')
-    setNotice('')
-    try {
-      const result = await api<{ updated: number; preserved: number; unresolved: number }>('/api/library/beatmakers/refresh', { method: 'POST' })
-      await refreshImported()
-      setNotice(`${result.updated} beatmaker(s) actualisé(s) · ${result.preserved} correction(s) conservée(s) · ${result.unresolved} prod(s) à préciser.`)
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Actualisation des beatmakers impossible.')
-    } finally { setBusy(false) }
-  }
-
   async function toggleFavorite(beat: Beat) {
     setFavoriteBusy((current) => new Set(current).add(beat.id))
     try {
@@ -132,6 +114,8 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     } finally { setFavoriteBusy((current) => { const next = new Set(current); next.delete(beat.id); return next }) }
   }
 
+  const activeBeat = page?.beats.find((beat) => beat.id === selection?.beat.id) || selection?.beat
+
   function filtersChanged() { setLoading(true); setError('') }
 
   return <div className="beat-collection">
@@ -142,7 +126,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       <CatalogFilters value={filters} options={options} onChange={(next) => { filtersChanged(); setFilters(next) }} />
       <button aria-pressed={favoritesOnly} onClick={() => { filtersChanged(); setFavoritesOnly((value) => !value) }} aria-label="♥ Favoris uniquement">♡ Favoris</button>
       <label className="catalog-sort"><span className="sr-only">Trier les prods</span><select value={sort} onChange={(e) => { filtersChanged(); setSort(e.target.value) }}><option value="added_desc">Ajout · récentes</option><option value="added_asc">Ajout · anciennes</option><option value="published_desc">Publication · récentes</option><option value="published_asc">Publication · anciennes</option></select></label>
-      <span className="view-indicator" aria-label="Vue grandes pochettes">▦</span>
+      <div className="layout-selector" role="group" aria-label="Disposition de la bibliothèque"><button className="icon-button" aria-label="Grandes pochettes" aria-pressed={layout === 'covers'} onClick={() => setLayout('covers')}><Icon name="grid" /></button><button className="icon-button" aria-label="Cartes horizontales" aria-pressed={layout === 'horizontal'} onClick={() => setLayout('horizontal')}><Icon name="rows" /></button></div>
       {hasFilters && <button onClick={() => { filtersChanged(); setQuery(''); setFavoritesOnly(false); setFilters(emptyFilters) }}>Effacer les filtres</button>}
     </div>
     <ActiveFilters filters={filters} onChange={(next) => { filtersChanged(); setFilters(next) }} />
@@ -157,23 +141,34 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       <h3>{hasFilters ? 'Aucune prod ne correspond à ces filtres.' : 'Une place pour tes premières prods.'}</h3>
       <p>{hasFilters ? 'Essaie une autre recherche ou efface les filtres.' : 'Colle un lien YouTube ou dépose un MP3 dans le dossier audio.'}</p>
     </div>}
-    {!loading && <div className="beat-grid">{page?.beats.map((beat) => <article className={`beat-card${selection?.beat.id === beat.id ? ' selected' : ''}`} key={beat.id}>
+    {!loading && <div className={`beat-grid ${layout === 'horizontal' ? 'horizontal-grid' : 'covers-grid'}`}>{page?.beats.map((beat) => <article className={`beat-card${selection?.beat.id === beat.id ? ' selected' : ''}`} key={beat.id}>
       <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}>{beat.favorite ? '♥' : '♡'}</button>
+      {layout === 'horizontal' ? <>
+        <button className="horizontal-cover" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}><Artwork beat={beat} /><span className="cover-play" aria-hidden="true">▶</span></button>
+        <button className="horizontal-details" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
+          <span className="horizontal-title" title={beat.title}>{beat.title}</span>
+          <span className="horizontal-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || beat.channel || 'Fichier local'}</span>
+          <span className="horizontal-music">{beat.bpm ?? '—'} <span aria-hidden="true">|</span> {musicalKeyLabel(beat.musical_key)}</span>
+          <span className="horizontal-footer"><span>{duration(beat.duration_seconds)}</span><span>Détails ↗</span></span>
+        </button>
+      </> : <>
       <button className="beat-select" aria-label={`Écouter ${beat.title}`} onClick={() => { setError(''); setSelection({ beat, play: true }) }}>
         <Artwork beat={beat} />
         <span className="beat-card-info"><ScrollingTitle title={beat.title} /><span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || (beat.channel || 'Fichier local')}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span></span>
         <span className="listen-label">▶ Écouter</span>
       </button>
       <button className="beat-details-button" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>Détails ↗</button>
+      </>}
+
     </article>)}</div>}
     {!loading && page && page.beats.length < page.total && <button disabled={busy} onClick={() => { void more() }}>Afficher plus de prods</button>}
     <div className="collection-toolbar">
       <p>● Bibliothèque locale · {libraryName}</p>
-      <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}>{busy ? 'Un instant…' : 'Actualiser les fichiers'}</button><button disabled={busy} onClick={() => { void refreshBeatmakers() }}>Actualiser les beatmakers</button>{tools}</div>
+      <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}><Icon name="refresh" />{busy ? 'Actualisation…' : 'Actualiser'}</button>{tools}</div>
     </div>
     {details && <BeatDetailsPanel key={details} identity={details} onClose={() => setDetails(null)} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
-    {selection && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
-      <div className="player-description"><span className="player-note" aria-hidden="true">♫</span><div><p>{selection.beat.title}</p><span>{selection.beat.beatmaker || 'Audio local'} · {duration(selection.beat.duration_seconds)}</span></div></div>
+    {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
+      <div className="player-description"><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></div>
       <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onError={() => setError('Fichier audio indisponible ou illisible. Vérifie le disque.')} />
     </aside>, document.body)}
   </div>
