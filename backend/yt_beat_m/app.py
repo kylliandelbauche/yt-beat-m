@@ -20,6 +20,7 @@ from yt_beat_m.beatmakers import (
 )
 from yt_beat_m.catalog import CatalogFilters, beat_details, filter_options, list_beats, set_favorite
 from yt_beat_m.diagnostics import get_diagnostics
+from yt_beat_m.directory_picker import DirectoryPicker
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
@@ -54,6 +55,7 @@ def create_app(
     frontend: Path | None = None,
     preferences: Path | None = None,
 ) -> FastAPI:
+    directory_picker = DirectoryPicker()
     manager = LibraryManager(
         preferences
         if preferences is not None
@@ -137,6 +139,11 @@ def create_app(
     def select_library(selection: LibrarySelection):
         summary = manager.select(selection.path, create=selection.create, name=selection.name)
         return {"library": summary, "error": None}
+
+    @app.post("/api/library/pick-folder")
+    def pick_library_folder():
+        # No library lock: audio and import polling keep working during the native dialog.
+        return {"path": directory_picker.choose()}
 
     @app.post("/api/library/close")
     def close_library():

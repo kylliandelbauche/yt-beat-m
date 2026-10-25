@@ -81,3 +81,7 @@ L’import affiche directement son suivi, sans historique dépliant. Seul le té
 La fiche de référence 900 × 652 px comporte deux colonnes et une description de 280 px qui défile indépendamment. Le crayon devient Save menthe dans le même emplacement 36 × 36 px ; Annuler rétablit les données enregistrées, une fermeture avec modifications demande explicitement de les abandonner. Titre, description, beatmaker, BPM, tonalité, tags, liens et règles de nom sont enregistrés ensemble ou refusés ensemble. Les dates, la chaîne source et la durée restent distinctes et consultables. Sur petite fenêtre, le contenu s’adapte et défile avec les actions toujours accessibles.
 
 Actualiser combine indexage et recalcul des beatmakers, sans écraser les corrections. Bibliothèque et Diagnostic sont des fenêtres centrées. La pochette du lecteur suit la prod active ; sa lecture et sa position ne dépendent ni de la disposition ni des filtres.
+
+## Choix natif du dossier (#35)
+
+Dans Bibliothèque, « Ouvrir un dossier » ouvre le sélecteur natif Mac/Windows. Le dossier choisi remplit le formulaire ; « Ouvrir la bibliothèque » valide ensuite le dossier contenant library.json. En mode création, « Choisir un dossier » permet de sélectionner un dossier vide avant création explicite. Annuler ne change ni le chemin ni la bibliothèque ouverte. La saisie manuelle reste disponible si le sélecteur ne peut pas s’ouvrir.

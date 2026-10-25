@@ -30,9 +30,11 @@ La dernière bibliothèque est rouverte au lancement si elle reste accessible. U
 
 Une sauvegarde cohérente du catalogue est créée dans `backups` avant une migration. Le journal SQLite est en mode DELETE, avec synchronisation FULL. Les bibliothèques sur partage réseau et les liens symboliques internes ne sont pas pris en charge. Le transfert sur le disque physique de l'utilisateur reste à valider dans l'issue #8 ; la CI ne constitue pas cette recette matérielle.
 
+Dans **Bibliothèque → Ouvrir un dossier**, choisir le dossier avec le sélecteur Mac/Windows, puis cliquer sur **Ouvrir la bibliothèque**. En création, utiliser **Choisir un dossier** pour sélectionner un dossier vide. La saisie d’un chemin reste possible ; annuler le sélecteur conserve le dossier précédent.
+
 ## Importer une vidéo YouTube
 
-Ouvrir une bibliothèque, coller une URL YouTube dans **Une nouvelle prod ?**, puis cliquer sur **Importer la prod**. Une vidéo par import : les liens courts et classiques sont acceptés ; un paramètre de playlist dans un lien vidéo n'importe que cette vidéo. L'import de playlists complètes reste hors de cette version.
+Ouvrir une bibliothèque, coller une URL YouTube dans le champ d’import, puis cliquer sur **Importer la prod**. Une vidéo par import : les liens courts et classiques sont acceptés ; un paramètre de playlist dans un lien vidéo n'importe que cette vidéo. L'import de playlists complètes reste hors de cette version.
 
 Le traitement continue en arrière-plan : attente, lecture des informations, téléchargement, conversion, vérification, puis disponibilité dans la grille. Le pourcentage affiché vient du téléchargeur ; aucun pourcentage de conversion n'est inventé. Le MP3 et une éventuelle pochette JPEG sont locaux, avec titre, chaîne, publication, description et métadonnées musicales explicites quand disponibles. La chaîne n'est pas automatiquement traitée comme beatmaker.
 
