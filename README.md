@@ -2,7 +2,7 @@
 
 Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par sa pochette ou ses tags, l'écouter et afficher son MP3 dans le gestionnaire de fichiers.
 
-**Statut : import YouTube, catalogue portable, fiches détaillées et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3, de rechercher et de gérer ses favoris. L'édition des métadonnées et les filtres musicaux avancés restent à venir (#6).
+**Statut : import YouTube, catalogue portable, fiches détaillées et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3, de rechercher et de gérer ses favoris. L’édition des métadonnées et les filtres musicaux avancés sont disponibles (#6).
 
 ## Installer et lancer
 
@@ -22,7 +22,7 @@ En développement, utiliser deux terminaux : `uv run yt-beat-m serve --dev --no-
 
 ## Ouvrir une bibliothèque
 
-Dans l'interface, coller le chemin absolu du dossier et choisir **Ouvrir** pour une bibliothèque existante, ou **Créer** pour un dossier nouveau/vide. Le parent du dossier doit exister ; aucun média existant n'est scanné ou modifié. Un dossier non vide n'est pas écrasé.
+Dans **Bibliothèque**, cliquer sur **Ouvrir un dossier** pour afficher le sélecteur Mac/Windows, puis sur **Ouvrir la bibliothèque** pour valider une bibliothèque existante. Pour créer, passer en mode **Créer une bibliothèque**, sélectionner un dossier vide avec **Choisir un dossier** et valider avec **Créer la bibliothèque**. La saisie manuelle d’un chemin reste possible. Le parent du dossier doit exister ; aucun média existant n’est scanné ou modifié. Un dossier non vide n’est pas écrasé.
 
 Le dossier contient `library.json`, `catalog.sqlite3` et les sous-dossiers `audio`, `artwork`, `staging`, `backups`. Le catalogue utilise des chemins relatifs ; seule la préférence locale de sélection contient le chemin absolu. Cette préférence se trouve dans le dossier de configuration utilisateur déterminé par platformdirs (`yt-beat-m/preferences.json`). Elle conserve aussi l'identifiant de la bibliothèque pour détecter un remplacement inattendu du dossier.
 
@@ -30,9 +30,11 @@ La dernière bibliothèque est rouverte au lancement si elle reste accessible. U
 
 Une sauvegarde cohérente du catalogue est créée dans `backups` avant une migration. Le journal SQLite est en mode DELETE, avec synchronisation FULL. Les bibliothèques sur partage réseau et les liens symboliques internes ne sont pas pris en charge. Le transfert sur le disque physique de l'utilisateur reste à valider dans l'issue #8 ; la CI ne constitue pas cette recette matérielle.
 
+Annuler le sélecteur conserve le chemin précédent et la bibliothèque ouverte.
+
 ## Importer une vidéo YouTube
 
-Ouvrir une bibliothèque, coller une URL YouTube dans **Une nouvelle prod ?**, puis cliquer sur **Importer la prod**. Une vidéo par import : les liens courts et classiques sont acceptés ; un paramètre de playlist dans un lien vidéo n'importe que cette vidéo. L'import de playlists complètes reste hors de cette version.
+Ouvrir une bibliothèque, coller une URL YouTube dans le champ d’import, puis cliquer sur **Importer la prod**. Une vidéo par import : les liens courts et classiques sont acceptés ; un paramètre de playlist dans un lien vidéo n'importe que cette vidéo. L'import de playlists complètes reste hors de cette version.
 
 Le traitement continue en arrière-plan : attente, lecture des informations, téléchargement, conversion, vérification, puis disponibilité dans la grille. Le pourcentage affiché vient du téléchargeur ; aucun pourcentage de conversion n'est inventé. Le MP3 et une éventuelle pochette JPEG sont locaux, avec titre, chaîne, publication, description et métadonnées musicales explicites quand disponibles. La chaîne n'est pas automatiquement traitée comme beatmaker.
 

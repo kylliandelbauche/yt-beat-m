@@ -31,6 +31,14 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'Impossible d’ouvrir ce dossier.') }
     finally { setBusy(false) }
   }
+  async function chooseFolder(nextMode: 'open' | 'create') {
+    setMode(nextMode); setBusy(true); setError('')
+    try {
+      const selected = await api<{ path: string | null }>('/api/library/pick-folder', { method: 'POST' })
+      if (selected.path !== null) setPath(selected.path)
+    } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'Sélecteur de dossiers indisponible. Tu peux saisir le chemin.') }
+    finally { setBusy(false) }
+  }
   async function close() {
     setBusy(true); setError('')
     try { setStatus(await api<LibraryStatus>('/api/library/close', { method: 'POST' })); setOpened(false) }
@@ -39,8 +47,9 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   }
   const library = status?.library
   const form = <form className="library-form" onSubmit={(event) => { void select(event) }}>
-    <div className="mode-selector" aria-label="Action sur la bibliothèque"><button type="button" aria-pressed={mode === 'open'} onClick={() => setMode('open')} disabled={busy}>Ouvrir un dossier</button><button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')} disabled={busy}>Créer une bibliothèque</button></div>
-    <label>Dossier de bibliothèque<input value={path} onChange={(event) => setPath(event.target.value)} placeholder="Colle le chemin complet du dossier" required disabled={busy} autoComplete="off" spellCheck={false} /></label>
+    <div className="mode-selector" aria-label="Action sur la bibliothèque"><button type="button" aria-pressed={mode === 'open'} onClick={() => { void chooseFolder('open') }} disabled={busy}>Ouvrir un dossier</button><button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')} disabled={busy}>Créer une bibliothèque</button></div>
+    <label>Dossier de bibliothèque<input value={path} onChange={(event) => setPath(event.target.value)} placeholder="Choisis un dossier ou saisis son chemin" required disabled={busy} autoComplete="off" spellCheck={false} /></label>
+    {mode === 'create' && <button type="button" disabled={busy} onClick={() => { void chooseFolder('create') }}>Choisir un dossier</button>}
     {mode === 'create' && <label>Nom de la bibliothèque<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} disabled={busy} /></label>}
     <p className="form-hint">{mode === 'create' ? 'Choisis un nouveau dossier ou un dossier vide. Il contiendra tes MP3, pochettes et annotations.' : 'Choisis le dossier contenant library.json. Il peut se trouver sur ton disque externe.'}</p>
     <button type="submit" className="primary" disabled={busy}>{busy ? 'Un instant…' : mode === 'create' ? 'Créer la bibliothèque' : 'Ouvrir la bibliothèque'}</button>

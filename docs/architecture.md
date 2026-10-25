@@ -129,3 +129,9 @@ Documentation primaire consultée le 24 octobre 2026 ; les compatibilités doive
 - [SQLite : garanties et limites des commits](https://www.sqlite.org/atomiccommit.html)
 - [yt-dlp : dépendances, métadonnées et post-traitement](https://github.com/yt-dlp/yt-dlp)
 - [yt-dlp : runtime JavaScript et composants EJS](https://github.com/yt-dlp/yt-dlp/wiki/ejs)
+
+## Sélecteur natif de dossier (#35)
+
+`POST /api/library/pick-folder` est protégé par origine et jeton de session et n’accepte ni commande ni script fourni par le navigateur. Le moteur lance un script fixe avec arguments séparés (`osascript` et dialogue macOS ; PowerShell en STA et FolderBrowserDialog sur Windows), sans `shell=True` ni interpolation d’entrée utilisateur. Le choix retourne un chemin ou null à l’annulation, sans ouvrir ni créer une bibliothèque. Le gestionnaire existant valide ensuite l’ouverture/création explicite.
+
+Une seule fenêtre native peut être ouverte par moteur ; le sélecteur ne détient pas le verrou de bibliothèque, afin de laisser les lectures et imports répondre. Le délai de cinq minutes et les erreurs natives rendent un message récupérable et libèrent le verrou du sélecteur. Les OS non pris en charge ou moteurs sans session graphique conservent la saisie manuelle. Le chemin choisi reste local à l’interface et aux préférences machine ; aucun changement du catalogue portable.
