@@ -40,7 +40,7 @@ Le traitement continue en arrière-plan : attente, lecture des informations, té
 
 Les limites initiales sont 30 minutes par vidéo, 100 Mo à la récupération et un délai de téléchargement de 10 minutes. Les vidéos privées, directs en cours et cookies de navigateur ne sont pas pris en charge. Node, FFmpeg et ffprobe sont requis. Les composants EJS sont fournis par les dépendances verrouillées de yt-dlp.
 
-Une même vidéo ne peut être en cours qu'une fois et n'est pas réimportée si elle est déjà au catalogue. Après erreur ou arrêt, utiliser **Réessayer**. Avant fermeture de la bibliothèque, le moteur arrête l'import et ses sous-processus. La reprise nettoie uniquement les fichiers générés qu'elle peut identifier par nom, empreinte et absence de référence au catalogue ; les originaux et les prods prêtes sont conservés.
+Une même vidéo ne peut être en cours qu'une fois et n'est pas réimportée si elle est déjà au catalogue. La fiche s’ouvre automatiquement quand la prod est prête. Après erreur ou arrêt, utiliser **Réessayer**. Avant fermeture de la bibliothèque, le moteur arrête l'import et ses sous-processus. La reprise nettoie uniquement les fichiers générés qu'elle peut identifier par nom, empreinte et absence de référence au catalogue ; les originaux et les prods prêtes sont conservés.
 
 ### Mettre à jour le téléchargeur
 
@@ -62,11 +62,9 @@ Rechercher un titre, un beatmaker ou une chaîne, sans distinction de casse ni d
 
 Les nouveaux imports proposent un nom depuis un crédit explicite du titre ou de la description (`Produced by`, `Prod.`, `(prod.oson)`, etc.). À défaut, le nom de la chaîne sert de proposition indiquée comme telle ; la chaîne source reste conservée séparément. Des crédits contradictoires restent à préciser. Les collaborations explicites sont conservées ensemble.
 
-Dans **Détails → icône crayon**, modifier le nom et, si souhaité, cocher **Mémoriser pour les prochains imports de cette chaîne**. La règle utilise l'identifiant YouTube de chaîne lorsqu'il est disponible ; pour un import ancien sans identifiant, elle utilise le nom affiché, avec cette limite indiquée dans la fiche. Une ancienne règle par nom reste un repli si aucune règle par identifiant ne correspond ; sa portée aux chaînes homonymes est indiquée. Un nouveau crédit différent ou une collaboration n'est pas remplacé par la règle. La recherche textuelle retrouve le nom retenu ; les filtres structurés par beatmaker, BPM, tonalité, styles et ambiances sont disponibles.
+Dans **Détails → icône crayon**, corriger le titre, le beatmaker, le BPM, la tonalité, la description ou l’URL **Page de vente**, puis enregistrer avec Save. Annuler rétablit les données enregistrées. Les styles, ambiances, règles et valeurs sources déjà présents sont conservés dans le catalogue, sans panneau annexe dans la fiche. Les filtres correspondants de la grille restent utilisables.
 
-**Actualiser** indexe les nouveaux MP3 et recalcule les propositions des prods déjà présentes à partir des descriptions enregistrées, sans Internet ni téléchargement audio. Les corrections manuelles, même un nom volontairement vidé, et les autres annotations sont conservées. **Supprimer la règle de chaîne** retire sa mémorisation pour les prochains imports ; utiliser ensuite l'actualisation pour recalculer les anciennes propositions. **Revenir à la proposition** abandonne explicitement la correction de cette seule prod. Ces options figurent dans « Annotations et origine » pendant l’édition et s’appliquent au clic sur Save ; Annuler conserve les données enregistrées.
-
-La migration vers le schéma 2 crée une sauvegarde du catalogue existant avant d'ajouter les identifiants et les règles. Les règles voyagent avec le dossier de bibliothèque ; une ancienne version du moteur ne peut pas ouvrir ce nouveau schéma.
+**Actualiser** indexe les nouveaux MP3 et actualise les propositions de beatmaker sans écraser les corrections manuelles, même un nom volontairement vidé. Les règles de chaîne déjà enregistrées continuent à s’appliquer sans masquer les collaborations ou crédits différents.
 
 ## Vérifier
 

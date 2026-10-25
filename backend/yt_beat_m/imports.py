@@ -217,7 +217,7 @@ class ImportWorker:
                     "--newline",
                     "--progress",
                     "--progress-delta",
-                    "0.5",
+                    "0.2",
                     "--progress-template",
                     "download:BEAT_PROGRESS:%(progress._percent_str)s",
                     "--print",

@@ -342,3 +342,69 @@ def test_new_import_keeps_channel_id_and_uses_remembered_producer(worker, monkey
         assert row["channel"] == "Renamed channel"
         assert row["channel_id"] == "UC-stable-producer"
         assert json.loads(row["field_provenance"])["beatmaker"] == "channel_alias"
+
+
+def test_real_ytdlp_reports_intermediate_percentages_through_process_runner(tmp_path):
+    """Exercise the installed downloader locally, without contacting YouTube."""
+    import re
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    payload = b"test-audio" * 65536
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            for offset in range(0, len(payload), 32768):
+                self.wfile.write(payload[offset : offset + 32768])
+                self.wfile.flush()
+                time.sleep(0.04)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    values = []
+
+    def observe(line):
+        match = re.search(r"BEAT_PROGRESS:\s*(\d+(?:\.\d+)?)%", line)
+        if match:
+            values.append(float(match[1]))
+
+    try:
+        ProcessRunner(threading.Event()).run(
+            [
+                sys.executable,
+                "-m",
+                "yt_dlp",
+                "--ignore-config",
+                "--no-plugin-dirs",
+                "--no-colors",
+                "--no-simulate",
+                "--newline",
+                "--progress",
+                "--progress-delta",
+                "0.2",
+                "--progress-template",
+                "download:BEAT_PROGRESS:%(progress._percent_str)s",
+                "--print",
+                "post_process:BEAT_STAGE:converting",
+                "-o",
+                str(tmp_path / "download.mp3"),
+                f"http://127.0.0.1:{server.server_port}/audio.mp3",
+            ],
+            on_line=observe,
+            timeout=20,
+        )
+        assert len({v for v in values if 0 < v < 100}) >= 2
+        assert values[-1] == 100
+        assert values == sorted(values)
+        assert (tmp_path / "download.mp3").read_bytes() == payload
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)

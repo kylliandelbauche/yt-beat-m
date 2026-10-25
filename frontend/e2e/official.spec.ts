@@ -99,24 +99,59 @@ test('progression mesurée, phases indéterminées, erreur puis relance sans his
   await expect(page.getByText('Une nouvelle prod ?', { exact: true })).toHaveCount(0)
   await page.getByRole('textbox', { name: 'Lien YouTube de la prod' }).fill('https://youtu.be/PROGRESS001')
   await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
-  const progress = page.getByRole('progressbar', { name: 'Progression de l’import' })
+  const progress = page.locator('.import-progress-track')
   await expect(progress).toBeVisible()
-  await expect(progress).not.toHaveAttribute('value')
+  await expect(progress).not.toHaveAttribute('aria-valuenow')
+  for (const percent of [8, 32, 64]) {
+    job = { ...base, stage: 'downloading', progress: percent }
+    await expect(progress).toHaveAttribute('aria-valuenow', String(percent))
+    await expect(progress.locator('.import-progress-fill')).toHaveCSS('background-color', 'rgb(199, 238, 217)')
+    await expect.poll(async () => { const track = (await progress.boundingBox())!; const fill = (await progress.locator('.import-progress-fill').boundingBox())!; return Math.round(100 * fill.width / (track.width - 2)) }).toBe(percent)
+  }
   job = { ...base, stage: 'downloading', progress: 64 }
-  await expect(progress).toHaveAttribute('value', '64')
+  await expect(progress).toHaveAttribute('aria-valuenow', '64')
   await expect(page.getByRole('status').filter({ hasText: 'Téléchargement · 64 %' })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('import-progress.png') })
   job = { ...base, stage: 'converting', progress: 100 }
   await expect(page.getByRole('status').filter({ hasText: 'Conversion MP3' })).toBeVisible()
-  await expect(progress).not.toHaveAttribute('value')
+  await expect(progress).not.toHaveAttribute('aria-valuenow')
   job = { ...base, stage: 'failed', state: 'failed', error_message: 'Réseau indisponible pendant le téléchargement.' }
   await expect(page.getByRole('alert')).toContainText('Réseau indisponible')
   await expect(progress).toHaveCount(0)
   await page.getByRole('button', { name: 'Réessayer', exact: true }).click()
   await expect(page.getByRole('alert')).toHaveCount(0)
   job = { ...base, stage: 'completed', state: 'completed', beat_id: '00000000-0000-0000-0000-000000000001', progress: 100 }
-  await expect(progress).toHaveAttribute('value', '100')
+  await expect(progress).toHaveAttribute('aria-valuenow', '100')
   await expect(page.getByRole('status').filter({ hasText: 'Prête à écouter · 100 %' })).toBeVisible()
-  await page.getByRole('button', { name: 'Voir la prod', exact: true }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Voir la prod', exact: true })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(progress).toHaveAttribute('aria-valuenow', '100')
+})
+
+
+test('une fin d’import attend la fermeture d’un brouillon ouvert et ne rejoue pas les anciennes réussites', async ({ page }) => {
+  let ready = false
+  let completedPolls = 0
+  const old = { id: 'old', state: 'completed', stage: 'completed', progress: 100, beat_id: '00000000-0000-0000-0000-000000000001' }
+  await page.route('**/api/imports', (route) => {
+    if (ready) completedPolls += 1
+    return route.fulfill({ json: { jobs: [old, { id: 'new', state: ready ? 'completed' : 'running', stage: ready ? 'completed' : 'downloading', progress: ready ? 100 : 20, beat_id: ready ? old.beat_id : null }] } })
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Détails de Drill minuit', exact: true }).click()
+  await page.getByRole('button', { name: 'Modifier la prod', exact: true }).click()
+  await page.getByLabel('BPM', { exact: true }).fill('149')
+  ready = true
+  await expect.poll(() => completedPolls, { timeout: 10000 }).toBeGreaterThan(1)
+  await expect(page.getByRole('dialog').getByRole('textbox', { name: 'Titre de la prod', exact: true })).toHaveValue('Drill minuit')
+  await expect(page.getByLabel('BPM', { exact: true })).toHaveValue('149')
+  await page.getByRole('button', { name: 'Annuler les modifications', exact: true }).click()
+  await page.getByRole('button', { name: 'Fermer la fiche', exact: true }).click()
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'R&B Mélancolique', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  const before = completedPolls
+  await expect.poll(() => completedPolls, { timeout: 10000 }).toBeGreaterThan(before)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
