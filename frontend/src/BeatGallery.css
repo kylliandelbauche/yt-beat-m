@@ -85,6 +85,8 @@
 .workspace { padding-bottom: 140px; }
 .local-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 64px); max-width: 1184px; padding: 18px 22px; display: flex; align-items: center; gap: 24px; z-index: 10; background: #202a30eb; border-color: #bddece33; }
 .player-description { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
+.player-description.player-details { padding: 0; border: 0; border-radius: 8px; color: inherit; background: transparent; text-align: left; }
+.player-details:hover p { text-decoration: underline; text-underline-offset: 3px; }
 .player-description div { min-width: 0; }
 .player-description p { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .player-description span:not(.player-note) { display: block; font-size: 11px; color: #bdcbbb; margin-top: 5px; }
