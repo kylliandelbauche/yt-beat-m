@@ -102,3 +102,7 @@ Le suivi de temps et tokens demandé par l'utilisateur est conservé dans un com
 Le MVP vise une vidéo par import. Les playlists, l'enrichissement depuis les marketplaces, l'analyse audio par IA et le suivi des morceaux sont prévus après le MVP.
 
 Les fichiers personnels et les bibliothèques audio restent hors du dépôt Git.
+
+## Référence visuelle
+
+L’écran principal suit [Paper — Beat m, V1 Grandes pochettes](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-1-0) : import en haut, grille directe et outils Bibliothèque/Diagnostic repliés. Les filtres musicaux grisés attendent #6 ; la recherche et les favoris restent actifs. La vue V2 n’est pas intégrée.

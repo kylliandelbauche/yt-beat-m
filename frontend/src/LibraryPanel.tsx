@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { api } from './api'
 import { BeatGallery } from './BeatGallery'
 
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
 
-export function LibraryPanel() {
+export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   const [status, setStatus] = useState<LibraryStatus | null>(null)
   const [path, setPath] = useState('')
   const [name, setName] = useState('Mes prods')
@@ -66,18 +66,23 @@ export function LibraryPanel() {
     <button type="submit" className="primary" disabled={busy}>{busy ? 'Un instant…' : mode === 'create' ? 'Créer la bibliothèque' : 'Ouvrir la bibliothèque'}</button>
   </form>
 
-  return <section className="glass library-placeholder" aria-labelledby="library-heading">
+  const heading = <>
     <div className="section-heading">
-      <div><p className="eyebrow">TON ESPACE</p><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2></div>
+      <div><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2></div>
       <span className="phase">{library ? `${library.beat_count} prod${library.beat_count > 1 ? 's' : ''}` : 'Dossier portable'}</span>
     </div>
+  </>
+  const tools = <>
+    <details className="library-switch"><summary>Bibliothèque</summary><p className="library-path">{library?.root}</p>{form}<button className="close-library" disabled={busy} onClick={() => { void close() }}>Fermer la bibliothèque</button></details>
+    {diagnostic}
+  </>
+
+  return <section className="library-placeholder" aria-labelledby="library-heading">
+    {!library && heading}
     {(error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
     {!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}
     {library ? <>
-      <BeatGallery key={library.id} onIndexed={handleIndexed} />
-      <p className="library-path">{library.root}</p>
-      <details className="library-switch"><summary>Changer de bibliothèque</summary>{form}</details>
-      <button className="close-library" disabled={busy} onClick={() => { void close() }}>Fermer la bibliothèque</button>
-    </> : form}
+      <BeatGallery key={library.id} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library.name} />
+    </> : <>{form}{diagnostic}</>}
   </section>
 }

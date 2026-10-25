@@ -96,3 +96,23 @@ test('catalogue et lecture après rechargement avec les requêtes Internet bloqu
   await expect(page.locator('audio')).toHaveJSProperty('paused', false)
   expect(external).toEqual([])
 })
+
+for (const ready of [true, false]) {
+  test(`présentation Paper : outils accessibles, moteur ${ready ? 'prêt' : 'à configurer'}`, async ({ page }, testInfo) => {
+    await page.route('**/api/diagnostics', (route) => route.fulfill({ json: { ready, dependencies: [] } }))
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true })).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('paper-v1-desktop.png'), fullPage: true })
+    await page.setViewportSize({ width: 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await page.getByText('Bibliothèque', { exact: true }).click()
+    await expect(page.getByRole('textbox', { name: 'Dossier de bibliothèque' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fermer la bibliothèque', exact: true })).toBeVisible()
+    const diagnostic = page.locator('.diagnostic-toggle')
+    if (ready) await expect(diagnostic).not.toHaveAttribute('open')
+    else await expect(diagnostic).toHaveAttribute('open', '')
+    if (ready) await diagnostic.getByText('Diagnostic', { exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'État du moteur', exact: true })).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath('paper-v1-mobile.png'), fullPage: true })
+  })
+}
