@@ -97,8 +97,8 @@ Une zone réservée sous le champ URL contient une barre menthe personnalisée. 
 À la demande de l’utilisateur, la fiche ne montre plus Annotations et origine, styles/ambiances, règles de chaîne et textes annexes. Le lien principal de vente se corrige directement dans un champ de 42 px à la place du bouton, selon Paper. Les tags, la provenance, les règles et les liens secondaires déjà enregistrés restent au catalogue ; la sauvegarde des champs visibles ne les efface pas. Les filtres Style/Ambiance de la grille restent actifs. Ces choix remplacent les anciens contrôles décrits dans les livraisons #6/#33.
 
 
-## Noms des MP3 importés (#43)
+## Noms des MP3 importés (#43, #47)
 
-Les prochains téléchargements produisent un fichier nommé `Beatmaker - Titre - 130 BPM - F# minor.mp3`, avec les métadonnées disponibles au moment de l’import. Le beatmaker suit les crédits et règles mémorisées du catalogue. Les valeurs absentes deviennent « Beatmaker inconnu », « BPM inconnu » ou « Tonalité inconnue ». Les caractères incompatibles sont nettoyés et les noms très longs raccourcis par champ, en conservant les quatre emplacements.
+Les prochains téléchargements produisent un fichier nommé `Beatmaker_Titre_130BPM_F#-minor.mp3`, avec les métadonnées disponibles au moment de l’import. Le beatmaker suit les crédits et règles mémorisées du catalogue. Les valeurs absentes deviennent « Beatmaker-inconnu », « BPM-inconnu » ou « Tonalité-inconnue ». Les blocs sont séparés par des underscores `_` ; tous leurs espaces deviennent des tirets `-` et le nombre est collé à BPM. Aucun espace dans le nom final. Les caractères incompatibles sont nettoyés et les noms très longs raccourcis par champ, en conservant les quatre emplacements.
 
 Le nom du fichier reste lisible, sans identifiant ajouté ; un sous-dossier propre à l’import évite les collisions entre deux prods au même nom. Les fichiers déjà présents et les MP3 déposés manuellement gardent leur nom. Une correction ultérieure dans la fiche ne renomme pas le fichier dans cette tranche.
