@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from yt_beat_m.audio_filename import audio_filename
 from yt_beat_m.beatmakers import propose
 from yt_beat_m.import_process import ImportInterrupted, ProcessRunner
 from yt_beat_m.import_source import source_metadata, youtube_source
@@ -122,7 +123,16 @@ class ImportWorker:
                 with self.library.catalog() as catalog:
                     for output in outputs:
                         relative = output["destination"]
-                        if relative not in {f"audio/{job_id}.mp3", f"artwork/{job_id}.jpg"}:
+                        named_audio = (
+                            isinstance(relative, str)
+                            and relative.startswith(f"audio/{job_id}/")
+                            and relative.count("/") == 2
+                            and relative.endswith(".mp3")
+                        )
+                        if not named_audio and relative not in {
+                            f"audio/{job_id}.mp3",
+                            f"artwork/{job_id}.jpg",
+                        }:
                             raise ValueError
                         path = self.library.safe_path(relative)
                         referenced = catalog.execute(
@@ -135,6 +145,11 @@ class ImportWorker:
                 pass  # Never delete a final file using an invalid ownership marker.
         if staging.is_dir():
             shutil.rmtree(staging)
+        # Remove only an empty per-import folder; preserve any referenced or replaced media.
+        try:
+            self.library.safe_path(f"audio/{job_id}").rmdir()
+        except OSError:
+            pass
 
     def _recover(self):
         with self.library.catalog() as catalog:
@@ -261,7 +276,6 @@ class ImportWorker:
             outputs = [
                 {
                     "source": "audio.mp3",
-                    "destination": f"audio/{job_id}.mp3",
                     "sha256": digest(audio),
                 }
             ]
@@ -273,10 +287,6 @@ class ImportWorker:
                         "sha256": digest(thumbnail),
                     }
                 )
-            marker = self.library.safe_path(f"staging/{job_id}/publish.json")
-            temporary = self.library.safe_path(f"staging/{job_id}/publish.tmp")
-            temporary.write_text(json.dumps(outputs), encoding="utf-8")
-            temporary.replace(marker)
             self._publish(job, metadata, duration, outputs)
         except ImportInterrupted:
             self._cleanup(job_id)
@@ -302,6 +312,21 @@ class ImportWorker:
         job_id = job["id"]
         # Keep a simultaneous local scan from claiming files before their catalogue row exists.
         with self.library.catalog() as catalog:
+            beatmaker, beatmaker_source = propose(catalog, metadata)
+            audio_path = f"audio/{job_id}/{audio_filename(beatmaker, metadata)}"
+            outputs[0]["destination"] = audio_path
+            # A private folder keeps identical readable names separate. Check all existing
+            # targets before writing an ownership marker that could authorize cleanup.
+            for output in outputs:
+                if self.library.safe_path(output["destination"]).exists():
+                    raise LibraryError(
+                        "Un fichier cible existe déjà ; aucun fichier n’a été écrasé."
+                    )
+            self.library.safe_path(f"audio/{job_id}").mkdir(exist_ok=False)
+            marker = self.library.safe_path(f"staging/{job_id}/publish.json")
+            temporary = self.library.safe_path(f"staging/{job_id}/publish.tmp")
+            temporary.write_text(json.dumps(outputs), encoding="utf-8")
+            temporary.replace(marker)
             for output in outputs:
                 source = self.library.safe_path(f"staging/{job_id}/{output['source']}")
                 destination = self.library.safe_path(output["destination"])
@@ -310,7 +335,6 @@ class ImportWorker:
                         "Un fichier cible existe déjà ; aucun fichier n’a été écrasé."
                     )
                 source.replace(destination)
-            beatmaker, beatmaker_source = propose(catalog, metadata)
             catalog.execute(
                 "INSERT INTO beats(id, youtube_id, source_url, title, channel, channel_id, "
                 "beatmaker, "
@@ -330,7 +354,7 @@ class ImportWorker:
                     now(),
                     metadata["bpm"],
                     metadata["musical_key"],
-                    f"audio/{job_id}.mp3",
+                    audio_path,
                     f"artwork/{job_id}.jpg" if len(outputs) == 2 else None,
                     metadata["description"],
                     json.dumps(

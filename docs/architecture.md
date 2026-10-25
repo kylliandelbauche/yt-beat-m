@@ -29,13 +29,13 @@ Ce choix évite un hébergement distant pour les fichiers personnels. Il demande
 MaBibliotheque/
   library.json                 # identifiant et version du format
   catalog.sqlite3              # catalogue, tags, favoris, tâches
-  audio/<uuid>.mp3
+  audio/<uuid>/<Beatmaker - Titre - BPM - Tonalité>.mp3
   artwork/<uuid>.jpg
   staging/<job-uuid>/           # fichiers temporaires non publiés
   backups/                     # sauvegardes avant migration
 ```
 
-Tous les chemins persistés dans le catalogue sont relatifs, utilisent `/` et ne contiennent ni lettre de lecteur Windows ni point de montage Mac. Ils sont résolus sous la racine configurée. Les noms physiques fondés sur UUID évitent caractères interdits Windows, titres trop longs et collisions. Le titre affiché reste indépendant du nom physique.
+Tous les chemins persistés dans le catalogue sont relatifs, utilisent `/` et ne contiennent ni lettre de lecteur Windows ni point de montage Mac. Ils sont résolus sous la racine configurée. Les nouveaux imports (#43) utilisent un nom lisible dans un sous-dossier UUID, avec nettoyage et longueur bornée pour Mac/Windows. Le dossier empêche les collisions entre noms identiques ; le titre affiché reste indépendant du nom physique. Les anciens chemins `audio/<uuid>.mp3` restent valides sans migration ni renommage.
 
 Exception pour les MP3 déposés manuellement (#15) : l'indexage explicite conserve le nom et l'emplacement de l'original dans `audio`, avec un chemin relatif et une identité UUID au catalogue. Il ne réécrit pas le fichier. La durée et le titre ID3 sont lus avec Mutagen ; le nom du fichier sert de titre de repli. Les pochettes JPEG/PNG intégrées sont extraites dans `artwork` sous un nom UUID. Les chemins sortants et liens symboliques sont refusés. Les tests utilisent un son synthétique, jamais les fichiers personnels.
 
@@ -156,3 +156,12 @@ La zone de progression conserve 24 px, au repos comme pendant l’import ; la ma
 `POST /api/beats/{UUID}/reveal` exige l’origine locale et le jeton de session. Le moteur résout le chemin relatif enregistré avec `media_path`/`safe_path`, vérifie le fichier et bloque les sorties de bibliothèque et liens symboliques. Aucun chemin fourni par le navigateur n’est utilisé. Le verrou de sélection de bibliothèque reste détenu pendant la résolution et l’appel natif. Fichier absent, disque déconnecté et erreur système donnent un message récupérable sans déplacer la fiche. Aucune migration.
 
 macOS utilise `/usr/bin/open -R` avec arguments séparés et délai de dix secondes. Windows appelle les API Unicode `SHParseDisplayName` puis `SHOpenFolderAndSelectItems` avec un item et cidl=0 : l’Explorateur ouvre le dossier parent et sélectionne le MP3. COM est initialisé dans le thread de requête puis libéré, ainsi que la mémoire de l’item, même en erreur. Cette voie évite les ambiguïtés de guillemets et virgules d’une ligne de commande Explorer ; aucune exécution shell. Référence : [Microsoft — SHOpenFolderAndSelectItems](https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shopenfolderandselectitems). La recette Windows avec interface graphique et disque physique reste dans #8.
+
+
+## Nommage lisible à la publication (#43)
+
+Le worker calcule le beatmaker et le nom final dans la même transaction que la publication, après vérification du MP3 ; une règle mémorisée concurrente ne peut pas désynchroniser le nom et le catalogue. `audio_filename` produit quatre champs séparés par « - », puis `.mp3`. La normalisation NFC conserve les accents ; les caractères interdits Windows et contrôles sont nettoyés, les noms réservés neutralisés et chaque champ borné. La taille totale reste sous 180 octets même en Unicode décomposé, sans tronquer la fin musicale au profit d’un long titre. Le chemin complet dépend toujours de la racine choisie et des limites du système de fichiers.
+
+La publication conserve un chemin relatif dans le schéma 2 existant. Le dossier UUID est créé exclusivement, après contrôle de tous les fichiers cibles et avant le marqueur de publication ; un emplacement préexistant n’est jamais revendiqué. Le marqueur est écrit avant les déplacements pour permettre la reprise en cas d’arrêt. Le nettoyage accepte les anciens fichiers UUID et le nouveau nom uniquement sous le dossier de cette tâche ; empreinte SHA-256 et absence de référence au catalogue restent obligatoires. Un fichier remplacé, étranger ou référencé est conservé. Seuls les dossiers devenus vides sont retirés. Le scan de MP3 manuels reste limité au premier niveau de `audio` ; les fichiers importés dans les sous-dossiers sont déjà catalogués par le worker.
+
+Pas de renommage des fichiers existants ou après édition des métadonnées. Lecture Range et localisation résolvent le chemin relatif enregistré, sans dépendre de son nom ni de la racine du disque. Référence des contraintes : [Microsoft — Naming Files, Paths, and Namespaces](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
