@@ -87,3 +87,11 @@ Actualiser combine indexage et recalcul des beatmakers, sans écraser les correc
 ## Choix natif du dossier (#35)
 
 Dans Bibliothèque, « Ouvrir un dossier » ouvre le sélecteur natif Mac/Windows. Le dossier choisi remplit le formulaire ; « Ouvrir la bibliothèque » valide ensuite le dossier contenant library.json. En mode création, « Choisir un dossier » permet de sélectionner un dossier vide avant création explicite. Annuler ne change ni le chemin ni la bibliothèque ouverte. La saisie manuelle reste disponible si le sélecteur ne peut pas s’ouvrir.
+
+## Import et fiche épurés (#39)
+
+Une nouvelle prod prête ouvre automatiquement sa fiche une seule fois ; les anciennes réussites au chargement ne rouvrent rien. Si une autre fiche est ouverte, la nouvelle attend sa fermeture pour préserver un éventuel brouillon. Le bouton « Voir la prod » et les confirmations de mise en file sont supprimés.
+
+Une zone réservée sous le champ URL contient une barre menthe personnalisée. Son remplissage suit les pourcentages réels du téléchargement ; lecture des informations, conversion et vérification sont distinctes et indéterminées lorsqu’aucun taux fiable n’existe. Aucun taux global fictif. Une erreur conserve sa relance.
+
+À la demande de l’utilisateur, la fiche ne montre plus Annotations et origine, styles/ambiances, règles de chaîne et textes annexes. Le lien principal de vente se corrige directement dans un champ de 42 px à la place du bouton, selon Paper. Les tags, la provenance, les règles et les liens secondaires déjà enregistrés restent au catalogue ; la sauvegarde des champs visibles ne les efface pas. Les filtres Style/Ambiance de la grille restent actifs. Ces choix remplacent les anciens contrôles décrits dans les livraisons #6/#33.

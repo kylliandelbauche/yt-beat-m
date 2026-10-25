@@ -31,6 +31,18 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
   const [options, setOptions] = useState<FilterOptions>(emptyOptions)
   const [sort, setSort] = useState('added_desc')
   const [details, setDetails] = useState<string | null>(null)
+  const detailsRef = useRef<string | null>(null)
+  useEffect(() => { detailsRef.current = details }, [details])
+  const pendingDetails = useRef<string[]>([])
+  const showImported = useCallback((identity: string) => {
+    if (detailsRef.current && detailsRef.current !== identity) {
+      if (!pendingDetails.current.includes(identity)) pendingDetails.current.push(identity)
+    } else { detailsRef.current = identity; setDetails(identity) }
+  }, [])
+  function closeDetails() {
+    const next = pendingDetails.current.shift() || null
+    detailsRef.current = next; setDetails(next)
+  }
   const [loading, setLoading] = useState(true)
   const [reload, setReload] = useState(0)
   const [favoriteBusy, setFavoriteBusy] = useState(new Set<string>())
@@ -119,7 +131,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
   function filtersChanged() { setLoading(true); setError('') }
 
   return <div className="beat-collection">
-    <ImportPanel onImported={refreshImported} onShowBeat={setDetails} />
+    <ImportPanel onImported={refreshImported} onShowBeat={showImported} />
     {heading}
     <div className="catalog-filters">
       <label><span className="sr-only">Rechercher une prod</span><input type="search" value={query} placeholder="⌕  Titre…" onChange={(event) => { filtersChanged(); setQuery(event.target.value) }} /></label>
@@ -166,7 +178,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       <p>● Bibliothèque locale · {libraryName}</p>
       <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}><Icon name="refresh" />{busy ? 'Actualisation…' : 'Actualiser'}</button>{tools}</div>
     </div>
-    {details && <BeatDetailsPanel key={details} identity={details} onClose={() => setDetails(null)} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
+    {details && <BeatDetailsPanel key={details} identity={details} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
     {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <div className="player-description"><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></div>
       <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onError={() => setError('Fichier audio indisponible ou illisible. Vérifie le disque.')} />
