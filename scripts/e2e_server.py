@@ -23,11 +23,14 @@ def simulated_download(self, args, on_line=None, *, timeout=600):
         return json.dumps(
             {
                 "id": identity,
-                "title": "Prod importée de test",
+                "title": ("Prod beatmaker " + identity[-1])
+                if identity.startswith("CREATOR")
+                else "Prod importée de test",
                 "duration": 30,
                 "channel": "Chaîne de recette",
+                "channel_id": "UC-e2e-producer",
                 "upload_date": "20261023",
-                "description": "140 BPM",
+                "description": "Produced by Raw" if identity.startswith("CREATOR") else "140 BPM",
             }
         )
     if args[0] == "ffprobe":

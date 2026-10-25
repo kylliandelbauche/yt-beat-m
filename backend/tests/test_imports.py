@@ -133,7 +133,7 @@ def test_success_and_source_deduplication(worker):
     assert worker.library.summary()["beat_count"] == 1
     with worker.library.catalog() as catalog:
         row = catalog.execute("SELECT * FROM beats").fetchone()
-        assert row["beatmaker"] is None and row["channel"] == "Source channel"
+        assert row["beatmaker"] == "Source channel" and row["channel"] == "Source channel"
         assert row["bpm"] == 140 and row["published_on"] == "2025-03-12"
         assert worker.library.safe_path(row["audio_path"]).is_file()
         assert catalog.execute("SELECT COUNT(*) FROM source_links").fetchone()[0] == 1
@@ -321,3 +321,24 @@ def test_api_remains_responsive_and_worker_stops_before_library_close(tmp_path, 
         assert client.get("/api/beats").json()["total"] == 1
     reopened = Library.open(root)
     reopened.close()
+
+
+def test_new_import_keeps_channel_id_and_uses_remembered_producer(worker, monkeypatch):
+    from yt_beat_m.beatmakers import correct_beatmaker
+
+    original = metadata()
+    info = {**original, "channel_id": "UC-stable-producer", "description": "Produced by Raw"}
+    monkeypatch.setattr(sys.modules[__name__], "metadata", lambda: info)
+    first = worker.enqueue(URL)["job"]
+    worker.perform(first)
+    assert worker.jobs()[0]["state"] == "completed"
+    correct_beatmaker(worker.library, first["id"], "Canonical", True)
+    info = {**info, "id": "lmnopqrstuv", "channel": "Renamed channel"}
+    second = worker.enqueue("https://youtu.be/lmnopqrstuv")["job"]
+    worker.perform(second)
+    with worker.library.catalog() as catalog:
+        row = catalog.execute("SELECT * FROM beats WHERE id=?", (second["id"],)).fetchone()
+        assert row["beatmaker"] == "Canonical"
+        assert row["channel"] == "Renamed channel"
+        assert row["channel_id"] == "UC-stable-producer"
+        assert json.loads(row["field_provenance"])["beatmaker"] == "channel_alias"

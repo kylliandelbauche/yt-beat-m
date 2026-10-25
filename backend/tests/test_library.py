@@ -157,9 +157,11 @@ def test_failed_migration_rolls_back_and_preserves_backup(tmp_path, monkeypatch)
     library = Library.create(tmp_path / "library")
     add_fixture(library)
     library.close()
-    migration = tmp_path / "002_bad.sql"
+    version = max(storage.MIGRATIONS)
+    next_version = version + 1
+    migration = tmp_path / "next_bad.sql"
     migration.write_text("CREATE TABLE should_rollback(id INTEGER);\nTHIS IS INVALID SQL;\n")
-    monkeypatch.setattr(storage, "MIGRATIONS", {**storage.MIGRATIONS, 2: migration})
+    monkeypatch.setattr(storage, "MIGRATIONS", {**storage.MIGRATIONS, next_version: migration})
     with pytest.raises(LibraryError, match="migrer"):
         Library.open(library.root)
     backup_files = list((library.root / "backups").glob("*.sqlite3"))
@@ -167,7 +169,7 @@ def test_failed_migration_rolls_back_and_preserves_backup(tmp_path, monkeypatch)
     for path in [library.root / "catalog.sqlite3", backup_files[0]]:
         with sqlite3.connect(path) as connection:
             assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-            assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+            assert connection.execute("PRAGMA user_version").fetchone()[0] == version
             assert connection.execute("SELECT COUNT(*) FROM beats").fetchone()[0] == 1
             assert (
                 connection.execute(
@@ -181,18 +183,19 @@ def test_successful_migration_keeps_data_and_records_version(tmp_path, monkeypat
     library = Library.create(tmp_path / "library")
     add_fixture(library)
     library.close()
-    migration = tmp_path / "002_notes.sql"
+    version = max(storage.MIGRATIONS)
+    next_version = version + 1
+    migration = tmp_path / "next_notes.sql"
     migration.write_text("ALTER TABLE beats ADD COLUMN notes TEXT;\n")
-    monkeypatch.setattr(storage, "MIGRATIONS", {**storage.MIGRATIONS, 2: migration})
+    monkeypatch.setattr(storage, "MIGRATIONS", {**storage.MIGRATIONS, next_version: migration})
     reopened = Library.open(library.root)
     try:
         assert reopened.summary()["beat_count"] == 1
-        assert reopened.summary()["schema_version"] == 2
+        assert reopened.summary()["schema_version"] == next_version
         with reopened.catalog() as catalog:
-            assert [row[0] for row in catalog.execute("SELECT version FROM schema_migrations")] == [
-                1,
-                2,
-            ]
+            assert [
+                row[0] for row in catalog.execute("SELECT version FROM schema_migrations")
+            ] == list(range(1, next_version + 1))
             assert catalog.execute("SELECT favorite, notes FROM beats").fetchone()[:] == (1, None)
         assert len(list((library.root / "backups").glob("*.sqlite3"))) == 1
     finally:

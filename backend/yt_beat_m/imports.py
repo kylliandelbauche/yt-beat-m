@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from yt_beat_m.beatmakers import propose
 from yt_beat_m.import_process import ImportInterrupted, ProcessRunner
 from yt_beat_m.import_source import source_metadata, youtube_source
 from yt_beat_m.library import Library, LibraryError
@@ -309,17 +310,21 @@ class ImportWorker:
                         "Un fichier cible existe déjà ; aucun fichier n’a été écrasé."
                     )
                 source.replace(destination)
+            beatmaker, beatmaker_source = propose(catalog, metadata)
             catalog.execute(
-                "INSERT INTO beats(id, youtube_id, source_url, title, channel, "
+                "INSERT INTO beats(id, youtube_id, source_url, title, channel, channel_id, "
+                "beatmaker, "
                 "duration_seconds, published_on, added_at, bpm, musical_key, "
                 "audio_path, artwork_path, description, field_provenance) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     job_id,
                     job["youtube_id"],
                     job["source_url"],
                     metadata["title"],
                     metadata["channel"],
+                    metadata["channel_id"],
+                    beatmaker,
                     duration,
                     metadata["published_on"],
                     now(),
@@ -331,6 +336,7 @@ class ImportWorker:
                     json.dumps(
                         {
                             "title": "youtube",
+                            "beatmaker": beatmaker_source,
                             "bpm": "explicit_text" if metadata["bpm"] else None,
                             "musical_key": "explicit_text" if metadata["musical_key"] else None,
                         }

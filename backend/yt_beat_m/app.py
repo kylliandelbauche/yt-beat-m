@@ -11,6 +11,12 @@ from fastapi.staticfiles import StaticFiles
 from platformdirs import user_config_path
 from pydantic import BaseModel, Field
 
+from yt_beat_m.beatmakers import (
+    correct_beatmaker,
+    forget_channel_alias,
+    refresh_beatmakers,
+    reset_beatmaker,
+)
 from yt_beat_m.catalog import beat_details, list_beats, set_favorite
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.library import LibraryBusyError, LibraryError
@@ -32,6 +38,11 @@ class YouTubeImport(BaseModel):
 
 class FavoriteUpdate(BaseModel):
     favorite: bool
+
+
+class BeatmakerUpdate(BaseModel):
+    beatmaker: str | None = Field(default=None, max_length=200)
+    remember_channel: bool = False
 
 
 def create_app(
@@ -155,6 +166,34 @@ def create_app(
     ):
         with manager.active() as library:
             return list_beats(library, limit, offset, q, favorites)
+
+    @app.post("/api/library/beatmakers/refresh")
+    def refresh_producers():
+        with manager.active() as library:
+            return refresh_beatmakers(library)
+
+    @app.patch("/api/beats/{identity}/beatmaker")
+    def update_producer(identity: UUID, payload: BeatmakerUpdate):
+        with manager.active() as library:
+            if not correct_beatmaker(
+                library, str(identity), payload.beatmaker, payload.remember_channel
+            ):
+                raise HTTPException(404, "Prod introuvable.")
+            return beat_details(library, str(identity))
+
+    @app.delete("/api/beats/{identity}/beatmaker")
+    def reset_producer(identity: UUID):
+        with manager.active() as library:
+            if not reset_beatmaker(library, str(identity)):
+                raise HTTPException(404, "Prod introuvable.")
+            return beat_details(library, str(identity))
+
+    @app.delete("/api/beats/{identity}/channel-alias")
+    def forget_producer_alias(identity: UUID):
+        with manager.active() as library:
+            if not forget_channel_alias(library, str(identity)):
+                raise HTTPException(404, "Prod introuvable.")
+            return beat_details(library, str(identity))
 
     @app.get("/api/beats/{identity}")
     def beat_detail(identity: UUID):

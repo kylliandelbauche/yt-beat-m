@@ -56,6 +56,16 @@ Rechercher un titre, un beatmaker ou une chaîne, sans distinction de casse ni d
 
 **Détails** ouvre une pop-up centrée et adaptée à la fenêtre avec durée, BPM, tonalité, dates de publication et d'ajout, chaîne, beatmaker et liens de la description. Les valeurs absentes restent indiquées comme non renseignées. La description s'affiche comme texte, sans exécuter de HTML. Le contenu défile à l’intérieur tandis que le bouton de fermeture reste accessible. Un clic sur le fond autour de la pop-up ou Échap ferme la fiche et rend le focus à son bouton. Rechercher, filtrer ou consulter une fiche laisse la piste en cours continuer.
 
+## Nom du beatmaker
+
+Les nouveaux imports proposent un nom depuis un crédit explicite du titre ou de la description (`Produced by`, `Prod.`, `(prod.oson)`, etc.). À défaut, le nom de la chaîne sert de proposition indiquée comme telle ; la chaîne source reste conservée séparément. Des crédits contradictoires restent à préciser. Les collaborations explicites sont conservées ensemble.
+
+Dans **Détails → Corriger le beatmaker**, modifier le nom et, si souhaité, cocher **Mémoriser pour les prochains imports de cette chaîne**. La règle utilise l'identifiant YouTube de chaîne lorsqu'il est disponible ; pour un import ancien sans identifiant, elle utilise le nom affiché, avec cette limite indiquée dans la fiche. Une ancienne règle par nom reste un repli si aucune règle par identifiant ne correspond ; sa portée aux chaînes homonymes est indiquée. Un nouveau crédit différent ou une collaboration n'est pas remplacé par la règle. La recherche textuelle retrouve le nom retenu ; le filtre musical dédié reste dans #6.
+
+**Actualiser les beatmakers** recalcule les propositions des prods déjà présentes à partir des descriptions enregistrées, sans Internet ni téléchargement audio. Les corrections manuelles, même un nom volontairement vidé, et les autres annotations sont conservées. **Supprimer la règle de chaîne** retire sa mémorisation pour les prochains imports ; utiliser ensuite l'actualisation pour recalculer les anciennes propositions. **Revenir à la proposition** abandonne explicitement la correction de cette seule prod.
+
+La migration vers le schéma 2 crée une sauvegarde du catalogue existant avant d'ajouter les identifiants et les règles. Les règles voyagent avec le dossier de bibliothèque ; une ancienne version du moteur ne peut pas ouvrir ce nouveau schéma.
+
 ## Vérifier
 
 ```sh

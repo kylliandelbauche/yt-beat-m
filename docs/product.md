@@ -46,7 +46,7 @@ Ces choix réduisent la première livraison ; ils ne sont pas présentés comme 
 
 ## Métadonnées honnêtes
 
-La chaîne YouTube est une source, pas nécessairement le beatmaker. Conserver ces deux champs séparément. Un éventuel beatmaker proposé depuis le titre doit rester modifiable.
+La chaîne YouTube est une source, pas nécessairement le beatmaker. Conserver ces deux champs séparément. Un crédit explicite cohérent du titre ou de la description propose le beatmaker ; à défaut, la chaîne fournit une proposition identifiée comme telle. Le nom reste modifiable. Les règles de nom mémorisées par chaîne ne masquent pas les crédits différents ni les collaborations explicites (#22).
 
 Lire uniquement les motifs explicites du titre ou de la description pour proposer BPM et tonalité. Conserver la provenance des valeurs extraites. Laisser vide si ambigu ; ne pas déduire un BPM de n'importe quel nombre ni inventer un style. Les corrections manuelles priment sur une nouvelle extraction.
 
