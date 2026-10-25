@@ -38,7 +38,7 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
     const timer = setTimeout(() => setNotice(''), 4000)
     return () => clearTimeout(timer)
   }, [notice])
-  function update<T extends keyof Draft>(field: T, value: Draft[T]) { setDraft((current) => current ? { ...current, [field]: value } : current) }
+  function update<T extends keyof Draft>(field: T, value: Draft[T]) { setError(''); setDraft((current) => current ? { ...current, [field]: value } : current) }
   function close() {
     if (busy) return
     if (editing && beat && draft && JSON.stringify(draft) !== JSON.stringify(draftFor(beat))) setConfirmDiscard(true)
