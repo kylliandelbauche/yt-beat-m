@@ -10,7 +10,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const response = await fetch(path, { ...options, headers })
   if (!response.ok) {
     const error = await response.json().catch(() => null) as { detail?: unknown } | null
-    throw new Error(typeof error?.detail === 'string' ? error.detail : 'Cette opération a échoué. Vérifie le dossier et réessaie.')
+    const detail = Array.isArray(error?.detail) ? error.detail.map((item: { loc?: string[]; msg?: string }) => `${item.loc?.slice(1).join('.') || 'Champ'} : ${item.msg || 'valeur invalide'}`).join(' · ') : error?.detail
+    throw new Error(typeof detail === 'string' ? detail : 'Cette opération a échoué. Vérifie le dossier et réessaie.')
   }
   return response.json() as Promise<T>
 }

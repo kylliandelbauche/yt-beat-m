@@ -53,3 +53,42 @@ body { background-color: var(--paper-bg); color: var(--paper-text); }
   .collection-tools { justify-content: flex-start; gap: 16px; width: 100%; }
   .local-player { width: calc(100% - 24px); }
 }
+/* Local metadata editing and structured catalogue filters (#6). */
+.catalog-filters > label:first-child { flex: 1 1 200px; }
+.catalog-filters .catalog-sort { min-width: 0; }
+.catalog-sort select, .filter-menu > summary { border: 1px solid var(--paper-border); border-radius: 20px; background: #ffffff07; color: var(--paper-text); font: inherit; font-size: 12px; padding: 10px 14px; min-height: 38px; }
+.filter-menu { position: relative; }
+.filter-menu > summary { cursor: pointer; white-space: nowrap; list-style: none; }
+.filter-menu[open] { z-index: 5; }
+.filter-menu[open] > summary { border-color: var(--paper-mint); }
+.filter-popover { position: absolute; top: calc(100% + 8px); left: 0; width: 300px; max-width: calc(100vw - 40px); padding: 16px; background: #1b2230; box-shadow: 0 12px 40px #0008; border: 1px solid var(--paper-border); border-radius: 18px; }
+.filter-popover form { margin-bottom: 12px; }
+.filter-popover label, .metadata-editor label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; min-width: 0; }
+.catalog-filters .filter-popover label { min-width: 0; }
+.catalog-filters .filter-option { display: flex; flex-direction: row; align-items: center; gap: 8px; min-height: 32px; margin: 0; cursor: pointer; overflow-wrap: anywhere; }
+.catalog-filters .filter-option input { width: 16px; height: 16px; flex: 0 0 16px; padding: 0; margin: 0; accent-color: var(--paper-mint); }
+.filter-search { margin: 10px 0; }
+.filter-choices { max-height: 220px; overflow-y: auto; }
+.filter-popover select, .filter-popover input, .metadata-editor input { width: 100%; box-sizing: border-box; min-width: 0; background: #080c1466; border: 1px solid var(--paper-border); border-radius: 10px; color: var(--paper-text); padding: 10px; font: inherit; }
+.catalog-filters .filter-popover input { border-radius: 10px; }
+.key-composer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.key-composer button { grid-column: 1 / -1; }
+.active-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.active-filters button, .text-filter-chip { padding: 6px 10px; border-radius: 14px; font-size: 12px; color: var(--paper-mint); margin-bottom: 8px; overflow-wrap: anywhere; }
+.catalog-count { color: #aeb9cb; font-size: 12px; margin: 0 0 14px; }
+.edit-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.metadata-editor form { display: grid; gap: 12px; }
+.metadata-editor fieldset { min-width: 0; border: 1px solid var(--paper-border); border-radius: 12px; padding: 12px; }
+.metadata-editor legend { font-size: 13px; padding: 0 6px; }
+.edit-link { display: grid; gap: 8px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--paper-border); }
+.edit-link > button { justify-self: start; }
+.edit-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.metadata-origins { margin-top: 12px; }
+.metadata-origins summary { cursor: pointer; color: #aeb9cb; font-size: 12px; }
+.metadata-origins pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
+@media (max-width: 650px) { .filter-popover { position: fixed; left: 20px; top: auto; margin-top: 8px; max-height: 55vh; overflow-y: auto; } .catalog-filters .catalog-sort { flex-basis: auto; } }
+.filter-menu:not([open]) > .filter-popover { display: none; }
+.catalog-filters .catalog-sort { flex: 0 1 180px; }
+.catalog-sort select { width: 100%; min-width: 0; }
+select:focus-visible { outline: 2px solid var(--paper-mint); outline-offset: 3px; }
+@media (max-width: 650px) { .filter-popover { top: 160px; margin-top: 0; max-height: calc(100dvh - 200px); } }

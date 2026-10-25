@@ -20,6 +20,7 @@ export type BeatDetails = Beat & {
   can_remember_channel: boolean
   channel_id_known: boolean
   channel_alias: { beatmaker: string; uses_channel_id: boolean } | null
+  metadata_provenance: Record<string, unknown>
   styles: string[]
   moods: string[]
   links: { url: string; label: string | null }[]

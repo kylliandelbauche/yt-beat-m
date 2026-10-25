@@ -65,3 +65,9 @@ Import : champ URL, validation, état explicite, erreur récupérable et lien ve
 Le MVP est terminé lorsque le parcours complet est démontré avec une vraie vidéo choisie pour la recette, que l'écoute fonctionne hors ligne après import et qu'un transfert Mac/Windows conserve les fichiers et les annotations. La recette Windows réelle reste nécessaire même si les tests automatisés passent sur Windows.
 
 Cette phase de cadrage ne fixe ni date de livraison ni qualité d'extraction garantie pour toutes les vidéos.
+
+## Édition et filtres livrés (#6)
+
+Dans la fiche, « Modifier les informations » permet de renseigner ou vider BPM, tonalité, styles, ambiances et liens d’achat. Les corrections restent locales et prioritaires ; les valeurs d’origine sont consultables séparément. Les tags se saisissent avec des virgules. Une page marchande peut être ouverte pour recopier ses informations ; son analyse automatique reste dans #10.
+
+La grille combine BPM, tonalité, beatmaker, chaîne, style, ambiance, favoris et recherche textuelle. Les filtres musicaux proposent les données non renseignées ; les sélections actives se retirent individuellement ou ensemble. Les tris distinguent ajout et publication YouTube. L’écoute continue pendant ces opérations.

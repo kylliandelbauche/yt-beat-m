@@ -4,6 +4,7 @@ import { api } from './api'
 import { duration, externalLink } from './beat'
 import type { Beat, BeatDetails } from './beat'
 import { BeatmakerEditor } from './BeatmakerEditor'
+import { MetadataEditor } from './MetadataEditor'
 
 function dateLabel(value: string | null, dateOnly = false) {
   if (!value) return 'Non renseignée'
@@ -92,11 +93,12 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
           <div><dt>Ajout à la bibliothèque</dt><dd>{dateLabel(beat.added_at)}</dd></div>
         </dl>
         <BeatmakerEditor beat={beat} onSaved={(value) => { setBeat(value); onChanged() }} />
+        <MetadataEditor beat={beat} onSaved={(value) => { setBeat(value); onChanged() }} />
         <section className="details-section"><h3>Styles et ambiances</h3>
           {beat.styles.length || beat.moods.length ? <div className="tag-list">{beat.styles.map((tag) => <span key={`style:${tag}`}>{tag}</span>)}{beat.moods.map((tag) => <span key={`mood:${tag}`}>{tag}</span>)}</div> : <p>Pas encore renseignés.</p>}
         </section>
         {source && <a className="source-link" href={source} target="_blank" rel="noreferrer">Voir la vidéo YouTube ↗</a>}
-        {beat.links.some((link) => externalLink(link.url)) && <section className="details-section"><h3>Liens de la description</h3><ul className="source-links">{beat.links.map((link) => externalLink(link.url) ? <li key={link.url}><a href={externalLink(link.url)!} target="_blank" rel="noreferrer">{link.label || new URL(link.url).hostname} ↗</a></li> : null)}</ul></section>}
+        {beat.links.some((link) => externalLink(link.url)) && <section className="details-section"><h3>Liens d’achat</h3><ul className="source-links">{beat.links.map((link) => externalLink(link.url) ? <li key={link.url}><a href={externalLink(link.url)!} target="_blank" rel="noreferrer">{link.label || new URL(link.url).hostname} ↗</a></li> : null)}</ul></section>}
         {beat.description && <section className="details-section"><h3>Description d’origine</h3><p className="source-description">{beat.description}</p></section>}
       </>}
     </div>

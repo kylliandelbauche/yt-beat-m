@@ -3,6 +3,7 @@
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -17,11 +18,12 @@ from yt_beat_m.beatmakers import (
     refresh_beatmakers,
     reset_beatmaker,
 )
-from yt_beat_m.catalog import beat_details, list_beats, set_favorite
+from yt_beat_m.catalog import CatalogFilters, beat_details, filter_options, list_beats, set_favorite
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
+from yt_beat_m.metadata import MetadataUpdate, correct_metadata
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -163,9 +165,57 @@ def create_app(
         offset: int = Query(0, ge=0),
         q: str = Query("", max_length=300),
         favorites: bool = False,
+        bpm_min: float | None = None,
+        bpm_max: float | None = None,
+        bpm_missing: bool = False,
+        key_missing: bool = False,
+        maker_missing: bool = False,
+        channel_missing: bool = False,
+        style_missing: bool = False,
+        mood_missing: bool = False,
+        keys: Annotated[list[str] | None, Query()] = None,
+        makers: Annotated[list[str] | None, Query()] = None,
+        channels: Annotated[list[str] | None, Query()] = None,
+        styles: Annotated[list[str] | None, Query()] = None,
+        moods: Annotated[list[str] | None, Query()] = None,
+        sort: str = "added_desc",
     ):
         with manager.active() as library:
-            return list_beats(library, limit, offset, q, favorites)
+            return list_beats(
+                library,
+                limit,
+                offset,
+                q,
+                favorites,
+                CatalogFilters(
+                    bpm_min=bpm_min,
+                    bpm_max=bpm_max,
+                    bpm_missing=bpm_missing,
+                    key_missing=key_missing,
+                    maker_missing=maker_missing,
+                    channel_missing=channel_missing,
+                    style_missing=style_missing,
+                    mood_missing=mood_missing,
+                    keys=keys or [],
+                    makers=makers or [],
+                    channels=channels or [],
+                    styles=styles or [],
+                    moods=moods or [],
+                    sort=sort,
+                ),
+            )
+
+    @app.get("/api/catalog/filters")
+    def catalogue_options():
+        with manager.active() as library:
+            return filter_options(library)
+
+    @app.patch("/api/beats/{identity}/metadata")
+    def update_metadata(identity: UUID, payload: MetadataUpdate):
+        with manager.active() as library:
+            if not correct_metadata(library, str(identity), payload):
+                raise HTTPException(404, "Prod introuvable.")
+            return beat_details(library, str(identity))
 
     @app.post("/api/library/beatmakers/refresh")
     def refresh_producers():
