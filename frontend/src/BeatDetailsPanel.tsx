@@ -15,13 +15,14 @@ function dateLabel(value: string | null, dateOnly = false) {
   return Number.isNaN(date.valueOf()) ? 'Non renseignée' : new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date)
 }
 
-export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: { identity: string; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
+export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; playing: boolean; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
   const form = useRef<HTMLFormElement>(null)
   const [beat, setBeat] = useState<BeatDetails | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [revealing, setRevealing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [notice, setNotice] = useState('')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
@@ -70,6 +71,12 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Favori non enregistré.') }
     finally { setBusy(false) }
   }
+  async function reveal() {
+    setRevealing(true); setError('')
+    try { await api(`/api/beats/${identity}/reveal`, { method: 'POST' }) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible d’afficher le fichier. Réessaie.') }
+    finally { setRevealing(false) }
+  }
   const source = externalLink(beat?.source_url || null)
   const saleLink = externalLink(beat?.links[0]?.url || null)
   return <Modal label={beat?.title || 'Détails de la prod'} title={<div className="detail-mode-title"><p className="eyebrow">{editing ? 'MODIFICATION DES INFORMATIONS' : 'DÉTAILS DE LA PROD'}</p>{editing && <button type="button" disabled={busy} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button>}</div>} closeLabel="Fermer la fiche" onClose={close} className={`beat-details${editing ? ' is-editing' : ''}`} actions={<>
@@ -85,13 +92,14 @@ export function BeatDetailsPanel({ identity, onClose, onFavorite, onChanged }: {
     {!beat && error && <button onClick={() => { setError(''); setAttempt((n) => n + 1) }}>Réessayer</button>}
     {beat && draft && <form ref={form} id="beat-edit-form" className="details-content details-columns" onSubmit={(event) => { void save(event) }}>
       <div className="detail-left">
-        <Artwork beat={beat} className="detail-artwork" />
+        <div className="detail-cover"><Artwork beat={beat} className="detail-artwork" /><button type="button" className="detail-play cover-play" aria-label={`${playing ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => onTogglePlayback(beat)}><Icon name={playing ? 'pause' : 'play'} filled /></button></div>
         <dl className="detail-music">
           <div><dt>Durée</dt><dd>{duration(beat.duration_seconds)}</dd></div>
           <div><dt>{editing ? <label htmlFor="detail-bpm">BPM</label> : 'BPM'}</dt><dd>{editing ? <input id="detail-bpm" type="number" step="any" min="0.01" max="1000" disabled={busy} value={draft.bpm} onChange={(e) => update('bpm', e.target.value)} /> : beat.bpm ?? '—'}</dd></div>
           <div><dt>{editing ? <label htmlFor="detail-key">Tonalité</label> : 'Tonalité'}</dt><dd>{editing ? <input id="detail-key" disabled={busy} maxLength={80} value={draft.musical_key} placeholder="F mineur" onChange={(e) => update('musical_key', e.target.value)} /> : <span title={beat.musical_key || undefined}>{musicalKeyLabel(beat.musical_key)}</span>}</dd></div>
         </dl>
         <div className="detail-links">
+          <button type="button" className="reveal-file" disabled={revealing} aria-busy={revealing} onClick={() => { void reveal() }}>Afficher le fichier ↗</button>
           {editing ? <label className="sale-link-input">Page de vente<input type="url" disabled={busy} maxLength={2048} placeholder="https://…" value={draft.sale_url} onChange={(e) => update('sale_url', e.target.value)} /></label> : saleLink ? <a className="sale-link" href={saleLink} target="_blank" rel="noreferrer">Page de vente ↗</a> : <span className="sale-link-empty">Aucune page de vente</span>}
           {source && <a className="youtube-link" href={source} target="_blank" rel="noreferrer">Voir sur YouTube ↗</a>}
         </div>
