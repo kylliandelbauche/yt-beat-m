@@ -136,6 +136,9 @@ def test_success_and_source_deduplication(worker):
         assert row["beatmaker"] == "Source channel" and row["channel"] == "Source channel"
         assert row["bpm"] == 140 and row["published_on"] == "2025-03-12"
         assert worker.library.safe_path(row["audio_path"]).is_file()
+        assert row["audio_path"] == (
+            f"audio/{job['id']}/Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+        )
         assert catalog.execute("SELECT COUNT(*) FROM source_links").fetchone()[0] == 1
     assert not worker._staging(job["id"]).exists()
     assert "--no-plugin-dirs" in worker.runner.calls[0]
@@ -163,7 +166,7 @@ def test_publication_error_cleans_owned_files_and_allows_retry(worker, monkeypat
     job = worker.enqueue(URL)["job"]
     worker.perform(job)
     assert worker.jobs()[0]["state"] == "failed"
-    assert not worker.library.safe_path(f"audio/{job['id']}.mp3").exists()
+    assert list(worker.library.safe_path("audio").iterdir()) == []
     monkeypatch.setattr(worker.library, "catalog", original)
     retry = worker.enqueue(URL)["job"]
     assert retry["id"] != job["id"]
@@ -186,11 +189,15 @@ def test_recovery_only_removes_unreferenced_owned_outputs(worker):
     assert not final.exists()
     ready = recovered.enqueue(URL)["job"]
     recovered.perform(ready)
-    final = worker.library.safe_path(f"audio/{ready['id']}.mp3")
+    with worker.library.catalog() as catalog:
+        relative = catalog.execute(
+            "SELECT audio_path FROM beats WHERE id=?", (ready["id"],)
+        ).fetchone()[0]
+    final = worker.library.safe_path(relative)
     staging = recovered._staging(ready["id"])
     staging.mkdir()
     (staging / "publish.json").write_text(
-        json.dumps([{"destination": f"audio/{ready['id']}.mp3", "sha256": digest(final)}])
+        json.dumps([{"destination": relative, "sha256": digest(final)}])
     )
     ImportWorker(worker.library, runner=FakeRunner())
     assert final.is_file() and worker.library.summary()["beat_count"] == 1
@@ -339,6 +346,7 @@ def test_new_import_keeps_channel_id_and_uses_remembered_producer(worker, monkey
     with worker.library.catalog() as catalog:
         row = catalog.execute("SELECT * FROM beats WHERE id=?", (second["id"],)).fetchone()
         assert row["beatmaker"] == "Canonical"
+        assert Path(row["audio_path"]).name.startswith("Canonical - ")
         assert row["channel"] == "Renamed channel"
         assert row["channel_id"] == "UC-stable-producer"
         assert json.loads(row["field_provenance"])["beatmaker"] == "channel_alias"
@@ -408,3 +416,138 @@ def test_real_ytdlp_reports_intermediate_percentages_through_process_runner(tmp_
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_same_readable_name_isolated_and_scan_does_not_duplicate_imports(worker, monkeypatch):
+    from yt_beat_m.local_audio import scan_local_audio
+
+    info = metadata()
+    monkeypatch.setattr(sys.modules[__name__], "metadata", lambda: info)
+    first = worker.enqueue(URL)["job"]
+    worker.perform(first)
+    info = {**info, "id": "lmnopqrstuv"}
+    second = worker.enqueue("https://youtu.be/lmnopqrstuv")["job"]
+    worker.perform(second)
+    with worker.library.catalog() as catalog:
+        paths = [row[0] for row in catalog.execute("SELECT audio_path FROM beats")]
+    assert len(paths) == len(set(paths)) == 2
+    assert Path(paths[0]).name == Path(paths[1]).name
+    assert all(worker.library.safe_path(path).is_file() for path in paths)
+    assert scan_local_audio(worker.library)["added"] == 0
+    assert worker.library.summary()["beat_count"] == 2
+    assert worker.enqueue(URL)["beat_id"] == first["id"]
+
+
+@pytest.mark.parametrize("replaced", [False, True])
+def test_recovery_of_named_output_preserves_replacements(worker, replaced):
+    job = worker.enqueue(URL)["job"]
+    staging = worker._staging(job["id"])
+    staging.mkdir()
+    folder = worker.library.safe_path(f"audio/{job['id']}")
+    folder.mkdir()
+    final = folder / "Ozone - L'été - 130 BPM - E minor.mp3"
+    final.write_bytes(b"interrupted output")
+    checksum = digest(final)
+    if replaced:
+        final.write_bytes(b"replacement to keep")
+    (staging / "publish.json").write_text(
+        json.dumps(
+            [{"destination": final.relative_to(worker.library.root).as_posix(), "sha256": checksum}]
+        )
+    )
+    ImportWorker(worker.library, runner=FakeRunner())
+    assert final.exists() == replaced
+    assert folder.exists() == replaced
+    if replaced:
+        assert final.read_bytes() == b"replacement to keep"
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "audio/Original.mp3",
+        "audio/00000000-0000-0000-0000-000000000001/Other.mp3",
+    ],
+)
+def test_cleanup_marker_cannot_delete_another_import_or_manual_file(worker, relative):
+    job = worker.enqueue(URL)["job"]
+    staging = worker._staging(job["id"])
+    staging.mkdir()
+    manual = worker.library.safe_path(relative)
+    manual.parent.mkdir(exist_ok=True)
+    manual.write_bytes(b"personal")
+    (staging / "publish.json").write_text(
+        json.dumps([{"destination": relative, "sha256": digest(manual)}])
+    )
+    ImportWorker(worker.library, runner=FakeRunner())
+    assert manual.read_bytes() == b"personal"
+
+
+def test_preexisting_target_folder_is_never_claimed_or_deleted(worker):
+    job = worker.enqueue(URL)["job"]
+    folder = worker.library.safe_path(f"audio/{job['id']}")
+    folder.mkdir()
+    final = folder / "Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+    original = base64.b64decode((Path(__file__).parent / "fixtures/tone.mp3.base64").read_text())
+    final.write_bytes(original)
+    worker.perform(job)
+    assert worker.jobs()[0]["state"] == "failed"
+    assert final.read_bytes() == original
+    assert worker.library.summary()["beat_count"] == 0
+
+
+def test_readable_import_playback_reveal_and_portability(tmp_path, monkeypatch):
+    fake = FakeRunner()
+    monkeypatch.setattr(imports.shutil, "which", lambda name: name)
+    monkeypatch.setattr(
+        ProcessRunner, "run", lambda self, *args, **kwargs: fake.run(*args, **kwargs)
+    )
+    revealed = []
+    monkeypatch.setattr("yt_beat_m.app.reveal_file", revealed.append)
+    root = tmp_path / "Démo"
+    with TestClient(
+        create_app(frontend=tmp_path, preferences=tmp_path / "prefs.json"),
+        base_url="http://127.0.0.1:8765",
+    ) as client:
+        headers = {
+            "Origin": "http://127.0.0.1:8765",
+            "X-Session-Token": client.get("/api/session").json()["token"],
+        }
+        assert (
+            client.post(
+                "/api/library", headers=headers, json={"path": str(root), "create": True}
+            ).status_code
+            == 200
+        )
+        queued = client.post("/api/imports", headers=headers, json={"url": URL}).json()
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            job = client.get("/api/imports").json()["jobs"][0]
+            if job["state"] == "completed":
+                break
+            time.sleep(0.02)
+        assert job["state"] == "completed"
+        identity = queued["job"]["id"]
+        beat = client.get(f"/api/beats/{identity}").json()
+        response = client.get(beat["audio_url"], headers={"Range": "bytes=10-29"})
+        assert response.status_code == 206 and len(response.content) == 20
+        assert client.post(f"/api/beats/{identity}/reveal", headers=headers).status_code == 200
+        original = revealed[0]
+        assert original.name == "Source channel - Test beat — 140 BPM - 140 BPM - F# minor.mp3"
+        assert client.post("/api/library/close", headers=headers).status_code == 200
+        moved = tmp_path / "Été"
+        root.rename(moved)
+        assert (
+            client.post("/api/library", headers=headers, json={"path": str(moved)}).status_code
+            == 200
+        )
+        assert (
+            client.post("/api/imports", headers=headers, json={"url": URL}).json()["beat_id"]
+            == identity
+        )
+        assert (
+            client.get(beat["audio_url"], headers={"Range": "bytes=10-29"}).content
+            == response.content
+        )
+        assert client.post(f"/api/beats/{identity}/reveal", headers=headers).status_code == 200
+        assert revealed[1] == moved / original.relative_to(root)
