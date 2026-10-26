@@ -112,3 +112,7 @@ La finition inspirée d’Impeccable conserve la direction Paper. Les cartes res
 ## Typographie UI UX Pro Max (#51)
 
 Le duo Poppins/Open Sans issu du profil Modern Professional du skill UI UX Pro Max renforce la séparation entre titres et texte de travail. Les polices sont incluses localement avec leurs licences pour conserver l’usage hors ligne. Le système conserve la palette Paper, les conteneurs fixes et la lecture ; le titre de fiche utilise le même style en lecture et en édition. Un chargement lent garde le repli système pour cette navigation. Les choix et vérifications sont détaillés dans [la revue typographique](design-review-51.md).
+
+## Titres sur une ligne dans toutes les vues (#53)
+
+Les titres restent sur une ligne dans les grandes pochettes, les cartes horizontales, le lecteur et la fiche. La référence Paper du 26/10 fournit les espacements et l’emplacement de titre de fiche de 52 px, identique en lecture et édition ; le champ d’édition est un texte sur une ligne. Les titres longs restent complets dans les données et accessibles : fondu à droite, défilement au survol ou au focus sans déplacement des autres éléments, désactivé en mouvement réduit. Les colonnes et actions de la fiche gardent leur géométrie pendant l’édition et la sauvegarde. Voir [les mesures Paper](design/53-paper-titles.md).

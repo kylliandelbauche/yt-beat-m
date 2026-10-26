@@ -4,6 +4,7 @@ import { duration, externalLink, musicalKeyLabel } from './beat'
 import type { Beat, BeatDetails } from './beat'
 import { Artwork } from './Artwork'
 import { Icon, Modal } from './Modal'
+import { ScrollingTitle } from './ScrollingTitle'
 
 type Draft = { title: string; beatmaker: string; bpm: string; musical_key: string; description: string; sale_url: string }
 function draftFor(beat: BeatDetails): Draft {
@@ -105,7 +106,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
         </div>
       </div>
       <div className="detail-right">
-        {editing ? <label className="detail-title-input"><span className="sr-only">Titre de la prod</span><textarea required maxLength={500} disabled={busy} value={draft.title} onChange={(e) => update('title', e.target.value)} /></label> : <h2 id="beat-details-title" title={beat.title}>{beat.title}</h2>}
+        {editing ? <label className="detail-title-input"><span className="sr-only">Titre de la prod</span><input type="text" required maxLength={500} disabled={busy} value={draft.title} onChange={(e) => update('title', e.target.value)} /></label> : <h2 id="beat-details-title" tabIndex={0}><ScrollingTitle className="detail-title-text" title={beat.title} /></h2>}
         <dl className="detail-identity">
           <div><dt>{editing ? <label htmlFor="detail-maker">Beatmaker</label> : 'Beatmaker'}</dt><dd>{editing ? <input id="detail-maker" aria-label="Nom du beatmaker" maxLength={200} disabled={busy} value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} /> : beat.beatmaker || 'Non renseigné'}</dd></div>
           <div><dt>Chaîne YouTube</dt><dd title={beat.channel || undefined}>{beat.channel || 'Non renseignée'}</dd></div>
