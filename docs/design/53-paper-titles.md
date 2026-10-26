@@ -21,3 +21,5 @@ Les tests navigateur couvrent titres courts et très longs, cartes alignées dan
 Les autres propositions Paper (surfaces, ombres et transitions de la fiche) ne font pas partie de cette issue.
 
 Contrôles locaux : lint et build frontend réussis, 46 tests navigateur réussis. Captures de validation avec catalogue synthétique : [fiche ordinateur](53-detail-desktop.png), [cartes horizontales sur petite fenêtre](53-horizontal-mobile.png). La comparaison visuelle a porté sur le titre, ses espacements et la stabilité des colonnes ; elle ne prétend pas valider toutes les propositions de finition du board.
+
+La CI Windows a révélé une attente manquante dans l’ancien test Play/Pause : l’état `paused = false` peut précéder l’arrivée de la durée de la nouvelle piste. Le test attend désormais des métadonnées chargées et une durée finie avant de simuler la fin de lecture, sans modifier les assertions du lecteur ni introduire de délai arbitraire.

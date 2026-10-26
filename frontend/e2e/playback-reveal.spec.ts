@@ -74,6 +74,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 650 
     await expect(audio).toHaveJSProperty('paused', false)
     await expect(audio).not.toHaveAttribute('data-identity', 'same-player')
     await expect(page.getByRole('button', { name: /^Mettre en pause/ })).toHaveCount(1)
+    // play() can clear paused before the new track's metadata has arrived.
+    await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => Number.isFinite(el.duration) && el.duration > 0.1 && el.readyState >= HTMLMediaElement.HAVE_METADATA)).toBe(true)
     await audio.evaluate((el: HTMLAudioElement) => { el.currentTime = el.duration - 0.1 })
     await expect(audio).toHaveJSProperty('ended', true)
     await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toBeVisible()
