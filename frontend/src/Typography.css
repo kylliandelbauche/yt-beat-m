@@ -1,0 +1,40 @@
+/* UI UX Pro Max — pairing #2, adapted to the existing Paper UI (#51). */
+@font-face {
+  font-family: 'Beat m Text';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: optional;
+  src: url('/fonts/open-sans-latin-variable.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Beat m Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: optional;
+  src: url('/fonts/poppins-latin-600.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root {
+  --font-text: 'Beat m Text', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'Beat m Display', var(--font-text);
+  --type-label: 12px;
+  --type-body: 13px;
+  --type-card: 15px;
+  font-family: var(--font-text);
+}
+button, input, select, textarea { font-family: var(--font-text); }
+.brand, .section-heading h2, .modal-title h2, .empty-state h3 { font-family: var(--font-heading); font-weight: 600; letter-spacing: -.025em; }
+.beat-title { font-family: var(--font-heading); font-size: var(--type-card); font-weight: 600; line-height: 1.5; }
+.horizontal-title { font-family: var(--font-heading); font-size: 13px; font-weight: 600; line-height: 18px; }
+.beat-details .detail-right h2, .beat-details .detail-title-input textarea { font-family: var(--font-heading); font-size: 26px; font-weight: 600; line-height: 34px; letter-spacing: -.025em; }
+.player-description p { font-weight: 600; line-height: 18px; }
+.beat-maker, .horizontal-maker { font-size: var(--type-label); line-height: 16px; }
+.detail-music dt, .detail-identity dt, .detail-dates dt { font-size: 11px; }
+.description-scroll, .detail-description textarea { font-size: var(--type-body); line-height: 22px; }
+.detail-identity dd { font-weight: 500; }
+.detail-music dd { font-weight: 600; }
+.catalog-count, .beat-duration, .horizontal-music, .horizontal-footer, .detail-music dd { font-variant-numeric: lining-nums tabular-nums; }
+@media (max-width: 760px) {
+  .beat-details .detail-right h2, .beat-details .detail-title-input textarea { font-size: 22px; line-height: 29px; }
+}
