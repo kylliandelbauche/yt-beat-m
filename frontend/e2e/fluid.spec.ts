@@ -5,7 +5,11 @@ const detailsName = 'Détails de R&B Mélancolique'
 
 test('surfaces Paper et 22 textes stables après ouverture en mouvement normal', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
+  const session = await page.context().newCDPSession(page)
+  // The runner OS may request opaque surfaces; test the standard variant explicitly.
+  await session.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }, { name: 'prefers-reduced-transparency', value: 'no-preference' }] })
   await page.goto('/')
+  expect(await page.evaluate(() => matchMedia('(prefers-reduced-transparency: reduce)').matches)).toBe(false)
   await page.getByRole('button', { name: detailsName, exact: true }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toHaveAttribute('data-state', 'open')
@@ -14,7 +18,6 @@ test('surfaces Paper et 22 textes stables après ouverture en mouvement normal',
   await expect(dialog).toHaveCSS('background-image', 'none')
   await expect(dialog).toHaveCSS('box-shadow', /0px 24px 80px/)
   await expect(dialog.locator('.description-scroll')).toHaveCSS('background-color', 'rgb(34, 42, 54)')
-  const session = await page.context().newCDPSession(page)
   const before = await fields(page, session)
   await dialog.getByRole('button', { name: 'Modifier la prod', exact: true }).click()
   expect(await fields(page, session)).toEqual(before)

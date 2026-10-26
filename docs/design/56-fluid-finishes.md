@@ -34,3 +34,5 @@ Les tests fonctionnels courants utilisent le mouvement réduit pour comparer la 
 Les tests attendent la disparition effective du dialogue avant d’agir sur la page arrière ; aucun délai arbitraire n’est ajouté. Les mesures des champs et textes de #55 et les contrôles des clics de #59 restent dans la suite. Les autres états du dashboard et les compteurs sont suivis dans #57 ; la recette matérielle Mac/Windows générale reste dans #8.
 
 Lint/build frontend et 58 tests navigateur locaux réussis. Captures synthétiques relues : [surface de fiche](56-detail-surface.png), [cartes horizontales et lecteur](56-horizontal-states.png). Les dimensions, alignements et contrastes restent cohérents avec les exports Paper ; les nouveaux effets n’ajoutent aucun espace dans les champs ou cartes.
+
+Les variantes standard et transparence réduite sont émulées explicitement dans les tests de surface, pour ne pas dépendre des préférences d’accessibilité du runner. Le contrôle d’erreur audio porte ici sur l’icône et l’état de lecture ; l’emplacement des messages et les états globaux du dashboard restent dans #57.
