@@ -7,6 +7,7 @@ import './Refinements.css'
 import './Typography.css'
 import './BeatDetails.css'
 import './CoverCards.css'
+import './Fluid.css'
 import { Icon, Modal } from './Modal'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }

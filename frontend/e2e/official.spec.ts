@@ -34,6 +34,7 @@ test('cartes horizontales compactes, actions séparées et lecteur conservé ent
   await expect(page.getByRole('dialog')).toBeVisible()
   await expect(audio).toHaveJSProperty('paused', true)
   await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
   await play.focus(); await page.keyboard.press('Enter')
   await expect(audio).toHaveJSProperty('paused', false)
   await page.getByRole('button', { name: 'Grandes pochettes', exact: true }).click()
