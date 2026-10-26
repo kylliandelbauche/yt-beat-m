@@ -120,3 +120,7 @@ Les titres restent sur une ligne dans les grandes pochettes, les cartes horizont
 ## Stabilité des champs et des textes (#55)
 
 La fiche conserve les mêmes champs natifs en consultation readonly et en édition. Leurs polices, interlignes, paddings et bordures réservées sont communs ; titre, valeurs, libellés et lignes de description gardent leur cadrage. Le titre conserve son défilement horizontal, la description son scroll vertical ; le passage de mode ne prend pas le focus. Libellé et URL de vente restent aux mêmes emplacements. L’erreur de sauvegarde est superposée dans l’en-tête, avec brouillon conservé et relance ; les erreurs de saisie sont expliquées et associées aux champs. Les mesures et limites sont décrites dans [la vérification de fiche](design/55-stable-fields.md).
+
+## Grandes pochettes compactes (#59, lot de #56)
+
+La référence Paper officielle du 26/10 remplace la grande carte de 416 px par une carte de 365 px à largeur 265 px. Toute l’image commande Play/Pause, hors favori ; toute la zone inférieure ouvre la fiche sans effet sur l’audio. Cette zone unique contient titre monoligne, nom/durée puis BPM | tonalité et indication Détails. Les anciennes rangées Écouter et Détails séparées disparaissent. La hauteur vient du contenu, sans remplissage artificiel. Le favori reste une action sœur indépendante. Les mesures et tests sont dans [la revue des cartes](design/59-compact-covers.md).

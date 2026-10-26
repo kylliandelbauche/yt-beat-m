@@ -33,7 +33,7 @@ test('cartes alignées malgré les titres longs, pochettes et données manquante
       const bounds = card.getBoundingClientRect()
       return {
         height: bounds.height,
-        offsets: ['.beat-artwork', '.beat-title', '.beat-subtitle', '.listen-label', '.beat-details-button'].map((selector) => card.querySelector(selector)!.getBoundingClientRect().top - bounds.top),
+        offsets: ['.beat-artwork', '.beat-title', '.beat-subtitle', '.beat-card-footer', '.beat-details-button'].map((selector) => card.querySelector(selector)!.getBoundingClientRect().top - bounds.top),
         fits: card.scrollWidth <= card.clientWidth,
       }
     }))
@@ -48,7 +48,7 @@ test('cartes alignées malgré les titres longs, pochettes et données manquante
 test('seul le titre trop long défile au survol ou au clavier et s’adapte au redimensionnement', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.goto('/')
-  const listen = page.getByRole('button', { name: `Écouter ${longTitle}`, exact: true })
+  const listen = page.getByRole('button', { name: `Détails de ${longTitle}`, exact: true })
   const text = listen.locator('.scroll-title-text')
   await expect(listen).toBeVisible()
   await expect(listen.locator('.beat-title')).toHaveAttribute('title', longTitle)
@@ -69,7 +69,7 @@ test('seul le titre trop long défile au survol ou au clavier et s’adapte au r
   await page.mouse.move(0, 0)
   await listen.focus()
   await expect.poll(() => text.evaluate((element) => element.getAnimations().filter((animation) => animation.playState === 'running').length)).toBe(1)
-  const short = page.getByRole('button', { name: 'Écouter Court', exact: true })
+  const short = page.getByRole('button', { name: 'Détails de Court', exact: true })
   await short.focus()
   expect(await short.locator('.scroll-title-text').evaluate((element) => element.getAnimations().length)).toBe(0)
   const frame = listen.locator('.beat-title')
@@ -90,7 +90,7 @@ test('seul le titre trop long défile au survol ou au clavier et s’adapte au r
 test('réduction des animations respectée et titre complet disponible au clavier', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
-  const listen = page.getByRole('button', { name: `Écouter ${longTitle}`, exact: true })
+  const listen = page.getByRole('button', { name: `Détails de ${longTitle}`, exact: true })
   await listen.focus()
   await listen.hover()
   await expect(listen.locator('.beat-title')).toHaveAttribute('title', longTitle)
