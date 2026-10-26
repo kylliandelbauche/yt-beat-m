@@ -101,6 +101,8 @@ test('cartes de 265 × 365 issues du contenu, géométrie fixe au survol, focus 
   await expect(first.locator('.cover-play')).toHaveCSS('opacity', '1')
   expect(await geometry()).toEqual(before)
   await first.locator('.beat-select').click()
+  await expect(page.locator('audio')).toHaveJSProperty('paused', true)
+  await expect(first.locator('.cover-play svg')).toHaveAttribute('data-icon', 'play')
   expect(await geometry()).toEqual(before)
   await page.screenshot({ path: testInfo.outputPath('compact-covers.png') })
 })
