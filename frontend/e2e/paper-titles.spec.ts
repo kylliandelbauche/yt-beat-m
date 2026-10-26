@@ -37,7 +37,7 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 900, height: 700 
       await expect(titles).toHaveCount(2)
       const geometry = await page.locator('.beat-card').evaluateAll((cards, isHorizontal) => cards.map((card) => {
         const r = card.getBoundingClientRect()
-        const selectors = isHorizontal ? ['.horizontal-title', '.horizontal-maker', '.horizontal-music', '.horizontal-footer'] : ['.beat-title', '.beat-subtitle', '.listen-label', '.beat-details-button']
+        const selectors = isHorizontal ? ['.horizontal-title', '.horizontal-maker', '.horizontal-music', '.horizontal-footer'] : ['.beat-title', '.beat-subtitle', '.beat-card-footer', '.beat-details-button']
         const title = card.querySelector<HTMLElement>(selectors[0])!
         const text = title.querySelector('.scroll-title-text')!.getBoundingClientRect()
         return { height: r.height, width: r.width, titleHeight: title.clientHeight, textHeight: text.height, lineHeight: Number.parseFloat(getComputedStyle(title).lineHeight), offsets: selectors.map((s) => card.querySelector(s)!.getBoundingClientRect().top - r.top) }

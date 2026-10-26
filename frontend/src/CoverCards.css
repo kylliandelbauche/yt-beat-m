@@ -1,0 +1,19 @@
+/* Paper Officiel, compact covers — 265 × 365 from content, no filler (#59). */
+.covers-grid .beat-select { position: relative; flex: 0 0 auto; border-radius: 0; }
+.covers-grid .beat-favorite { z-index: 3; }
+.covers-grid .beat-select::after { content: ''; position: absolute; inset: 0; background: #080b1430; opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.covers-grid .beat-select:is(:hover, :focus-visible)::after { opacity: 1; }
+.covers-grid .beat-select .cover-play { z-index: 2; }
+.covers-grid .beat-card-info { display: flex; flex-direction: column; flex: 0 0 auto; gap: 8px; width: 100%; min-width: 0; padding: 14px 18px; border: 0; border-radius: 0; background: transparent; text-align: left; transition: background-color 120ms; }
+.covers-grid .beat-card-info:hover { background: #ffffff07; }
+.covers-grid .beat-card-info:focus-visible { outline: 2px solid var(--paper-mint); outline-offset: -3px; }
+.covers-grid .beat-title { height: 23px; flex: 0 0 23px; }
+.covers-grid .beat-subtitle { height: 17px; flex: 0 0 17px; margin: 0; }
+.beat-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 16px; flex: 0 0 16px; min-width: 0; font-family: var(--font-text); font-size: 11px; line-height: 15px; }
+.beat-music { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; color: #c7dfd4; font-variant-numeric: lining-nums tabular-nums; }
+.beat-bpm { flex: 0 0 auto; }
+.music-separator { width: 1px; height: 10px; flex: 0 0 1px; background: #ffffff30; font-size: 0; }
+.beat-musical-key { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.details-hint { flex: 0 0 auto; color: var(--text-secondary); }
+.beat-card-info:is(:hover, :focus-visible) .details-hint { color: var(--paper-mint); }
+@media (prefers-reduced-motion: reduce) { .covers-grid .beat-card-info, .covers-grid .beat-select::after { transition: none; } }
