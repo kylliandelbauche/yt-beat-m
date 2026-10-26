@@ -170,3 +170,7 @@ Pas de renommage des fichiers existants ou après édition des métadonnées. Le
 ## Polices locales et rôles typographiques (#51)
 
 `Typography.css` déclare deux familles locales : Open Sans variable 400–700 pour le texte et Poppins 600 pour les titres. Les WOFF2 et leurs licences se trouvent dans `frontend/public/fonts`, puis dans le build servi sur la même origine. Deux liens preload permettent de démarrer leur chargement avant le rendu React ; font-display optional et des replis système préservent la lisibilité et évitent une substitution tardive si le chargement est lent. Aucun endpoint ni domaine externe n’est ajouté au moteur ou à sa CSP. Les données, médias, migrations et préférences restent inchangés.
+
+## Champs persistants de la fiche (#55)
+
+La consultation et l’édition partagent des inputs/textarea natifs persistants avec readonly ; le texte complet reste dans les valeurs contrôlées React et ne devient jamais du HTML injecté. Le champ titre utilise un défilement local de consultation interruptible au survol/focus, arrêté pendant l’édition et désactivé en mouvement réduit. Les positions de consultation sont conservées ; aucun autofocus ne recadre les champs. Les valeurs françaises de tonalité utilisent la normalisation existante du moteur et une valeur inchangée n’est pas patchée. Aucune modification d’API, migration ou persistance supplémentaire. Les tests navigateur inspectent les boîtes du contenu et les rectangles du texte réellement rendu, y compris les éditeurs natifs Chromium, dans les états de lecture, sauvegarde et erreur.

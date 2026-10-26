@@ -1,0 +1,54 @@
+/* Paper Officiel — identical field and text metrics in every detail state (#55). */
+.beat-details .detail-music > div { height: 72px; padding: 8px 0; border: 1px solid transparent; border-top-color: #ffffff1a; }
+.beat-details .detail-music dt { margin-bottom: 8px; }
+.beat-details .detail-music dd { height: 28px; overflow: visible; }
+.beat-details .detail-music .detail-value { display: block; box-sizing: border-box; width: 100%; height: 28px; margin: 0; padding: 0 3px; border: 1px solid transparent; border-radius: 6px; background: transparent; font-family: var(--font-text); font-size: 18px; font-weight: 600; line-height: 26px; font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+.beat-details .detail-music input.detail-value { appearance: textfield; }
+.beat-details input[type="number"]::-webkit-inner-spin-button, .beat-details input[type="number"]::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.beat-details .detail-identity > div { padding: 8px 12px; }
+.beat-details .detail-identity dt { margin-bottom: 6px; }
+.beat-details .detail-identity dd { height: 22px; }
+.beat-details .detail-identity .identity-value { display: block; box-sizing: border-box; width: 100%; height: 22px; margin: 0; padding: 0 2px; border: 1px solid transparent; border-radius: 4px; background: transparent; font-family: var(--font-text); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; overflow: hidden; }
+.beat-details .detail-identity .source-identity { background: transparent; border-color: transparent; }
+.beat-details.is-editing :is(input.detail-value, input.identity-value) { background: var(--control-surface); border-color: var(--control-border); }
+.beat-details .detail-dates > div { padding: 6px 12px; border: 1px solid transparent; }
+.beat-details .detail-dates dt { margin-bottom: 4px; }
+.beat-details .description-scroll, .beat-details .detail-description textarea { display: block; width: 100%; height: 280px; min-height: 280px; margin: 0; padding: 14px; border: 1px solid var(--control-border); border-radius: 12px; font-family: var(--font-text); font-size: 13px; font-weight: 400; line-height: 22px; letter-spacing: normal; white-space: pre-wrap; overflow-wrap: anywhere; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--control-border) transparent; color: var(--text-secondary); background: #222a36; }
+.beat-details.is-editing .detail-description textarea { background: #101722; }
+.beat-details .detail-links { gap: 18px; }
+.beat-details .detail-links .sale-field { position: relative; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 0; box-sizing: border-box; height: 42px; min-height: 42px; margin: 0; padding: 6px 10px; border: 1px solid transparent; border-radius: 10px; text-decoration: none; text-align: left; font-family: var(--font-text); font-weight: 400; }
+.beat-details .sale-field input { display: block; width: calc(100% - 24px); min-width: 0; height: 16px; flex: 0 0 16px; padding: 0; border: 0; border-radius: 0; font-family: var(--font-text); font-size: 11px; font-weight: 400; line-height: 16px; letter-spacing: normal; white-space: nowrap; overflow: hidden; text-overflow: clip; background: transparent; }
+.beat-details .sale-link .sale-arrow { color: var(--control-ink); }
+.beat-details .sale-field.sale-link-input { background: var(--control-surface); border-color: var(--control-border); }
+.beat-details .sale-field.sale-link-input input { color: #edf0f5; }
+.beat-details .sale-field .sale-arrow { position: absolute; right: 12px; top: 14px; font-size: 14px; line-height: 14px; }
+.beat-details .youtube-link { display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 32px; padding: 8px; line-height: 16px; }
+.beat-details input[aria-invalid="true"], .beat-details textarea[aria-invalid="true"] { border-color: #f4b4be; }
+.beat-details .detail-feedback.has-error { top: 28px; bottom: auto; left: 28px; right: auto; width: min(650px, calc(100% - 210px)); height: 36px; max-height: 36px; padding: 0 12px; border-color: #f4b4be88; background: #30232c; border-radius: 10px; overflow: hidden; }
+.beat-details .detail-error { height: 100%; align-items: center; gap: 10px; }
+.beat-details .detail-error p { margin: 0; white-space: nowrap; overflow-x: auto; scrollbar-width: none; font-size: 12px; line-height: 18px; color: #f4b4be; }
+.beat-details .detail-error .retry-save { flex: 0 0 auto; border: 0; background: transparent; padding: 0; font-size: 12px; font-weight: 600; height: 28px; }
+@media (max-width: 760px) {
+  .beat-details .detail-music .detail-value { font-size: 13px; }
+  .beat-details .detail-feedback.has-error { top: auto; bottom: 20px; left: 20px; right: 20px; width: auto; height: auto; min-height: 36px; max-height: min(160px, 35dvh); padding: 12px; overflow-y: auto; }
+  .beat-details .detail-error p { white-space: normal; }
+}
+.beat-details:has(.detail-feedback.has-error) .detail-mode-title > button { visibility: hidden; }
+.beat-details .detail-error .cancel-save-error { flex: 0 0 auto; height: 28px; padding: 0; border: 0; background: transparent; font-size: 12px; }
+.beat-details #beat-details-title { padding: 0; border: 0; }
+.beat-details .detail-title-input { display: block; width: 100%; height: 52px; }
+.beat-details:not(.is-editing) .detail-title-input input { background: transparent; border-color: transparent; }
+.beat-details .detail-title-input input { display: block; white-space: nowrap; }
+.beat-details .detail-title-input input[readonly] { cursor: text; }
+.beat-details .detail-music label { font-size: 11px; line-height: 14px; }
+.beat-details .sale-field > .sale-label { display: block; height: 12px; flex: 0 0 12px; font-size: 9px; line-height: 12px; }
+.beat-details .sale-link-container { color: var(--control-ink); background: var(--paper-mint); }
+.beat-details .sale-link-container .sale-label, .beat-details .sale-link-container input { color: inherit; }
+.beat-details .sale-field .sale-target { position: absolute; inset: 0; display: block; min-height: 0; height: 100%; padding: 0; border: 0; background: transparent; }
+.beat-details:not(.is-editing) .detail-title-input input:not(:focus-visible) { mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent); }
+.beat-details #beat-details-title:focus-visible { outline: 2px solid var(--paper-mint); outline-offset: 3px; }
+.beat-details .cancel-detail[aria-hidden="true"] { visibility: hidden; }
+.beat-details.is-editing :is(input, textarea)[aria-invalid="true"] { border-color: #f4b4be; }
+.beat-details .detail-error p { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.beat-details .detail-error > svg { flex: 0 0 16px; color: #f4b4be; }
+.beat-details .discard-feedback { z-index: 3; }

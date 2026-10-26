@@ -21,7 +21,8 @@ test('corriger un beatmaker dans la fiche épurée et conserver la correction ap
     await expect(dialog.getByLabel('Styles', { exact: true })).toHaveCount(0)
     await dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true }).fill('Studio Nova')
     await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
-    await expect(dialog.locator('dl').getByText('Studio Nova', { exact: true })).toBeVisible()
+    await expect(dialog.getByRole('status')).toHaveText('Informations enregistrées.')
+    await expect(dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true })).toHaveValue('Studio Nova')
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Écouter Prod beatmaker 1', exact: true }).click()
     const audio = page.locator('audio')
@@ -32,7 +33,7 @@ test('corriger un beatmaker dans la fiche épurée et conserver la correction ap
     await page.reload()
     await page.getByRole('searchbox', { name: 'Rechercher une prod' }).fill('studio nova')
     await page.getByRole('button', { name: 'Détails de Prod beatmaker 1', exact: true }).click()
-    await expect(dialog.locator('dl').getByText('Studio Nova', { exact: true })).toBeVisible()
+    await expect(dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true })).toHaveValue('Studio Nova')
   } finally {
     expect((await page.request.post('/api/library', { headers, data: { path: original.root } })).ok()).toBe(true)
     await rm(root, { recursive: true, force: true })

@@ -60,8 +60,8 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 900, height: 700 
     const heading = dialog.getByRole('heading', { name: longTitle, exact: true })
     await expect(heading).toBeVisible()
     await heading.focus()
-    await expect(heading.locator('.scroll-title')).toHaveAttribute('title', longTitle)
-    await expect(heading.locator('.scroll-title')).toHaveCSS('white-space', 'nowrap')
+    await expect(heading.locator('#detail-title')).toHaveAttribute('title', longTitle)
+    await expect(heading.locator('#detail-title')).toHaveCSS('white-space', 'nowrap')
     const readTitle = (await heading.boundingBox())!
     expect(readTitle.height).toBe(52)
     const layout = () => dialog.locator('.detail-right').evaluate((el) => {
