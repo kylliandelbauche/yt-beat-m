@@ -4,6 +4,7 @@ import { LibraryPanel } from './LibraryPanel'
 import './PaperV1.css'
 import './Official.css'
 import './Refinements.css'
+import './Typography.css'
 import { Icon, Modal } from './Modal'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }

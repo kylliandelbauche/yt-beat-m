@@ -107,3 +107,8 @@ Le nom du fichier reste lisible, sans identifiant ajouté ; un sous-dossier prop
 ## Finition de la bibliothèque (#49)
 
 La finition inspirée d’Impeccable conserve la direction Paper. Les cartes restent visibles pendant la mise à jour des filtres, avec un état de recherche annoncé, pour conserver le défilement. Les filtres réservent la même place au chevron et au compteur actif ; la recherche devient pleine largeur sur petite fenêtre et les contrôles principaux ont des cibles de 44 px. Le bouton d’import reste menthe et lisible dans ses états interactifs. Les icônes SVG partagées et les couleurs sémantiques renforcent la cohérence, avec lecture et focus préservés. Le bilan et les captures comparables sont dans [la revue UI/UX](design-review-49.md).
+
+
+## Typographie UI UX Pro Max (#51)
+
+Le duo Poppins/Open Sans issu du profil Modern Professional du skill UI UX Pro Max renforce la séparation entre titres et texte de travail. Les polices sont incluses localement avec leurs licences pour conserver l’usage hors ligne. Le système conserve la palette Paper, les conteneurs fixes et la lecture ; le titre de fiche utilise le même style en lecture et en édition. Un chargement lent garde le repli système pour cette navigation. Les choix et vérifications sont détaillés dans [la revue typographique](design-review-51.md).
