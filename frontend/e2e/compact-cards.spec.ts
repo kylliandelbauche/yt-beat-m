@@ -10,8 +10,14 @@ test('tout le bloc inférieur ouvre les détails sans effet audio, image et favo
   const audio = page.locator('audio')
   await expect(audio).toHaveJSProperty('paused', false)
   const src = await audio.getAttribute('src')
-  await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 7; el.playbackRate = .25; el.dataset.identity = 'other-track' })
-  await expect(audio).toHaveJSProperty('seeking', false)
+  await audio.evaluate(async (el: HTMLAudioElement) => {
+    // Properties update before queued media events; flush setup before counting clicks.
+    const paused = new Promise<void>((resolve) => el.addEventListener('pause', () => resolve(), { once: true }))
+    el.pause(); await paused
+    const seeked = new Promise<void>((resolve) => el.addEventListener('seeked', () => resolve(), { once: true }))
+    el.currentTime = 7; await seeked
+    el.playbackRate = .25; el.dataset.identity = 'other-track'
+  })
   await audio.evaluate((el) => {
     for (const name of ['play', 'pause', 'emptied', 'seeking']) { el.dataset[name] = '0'; el.addEventListener(name, () => { el.dataset[name] = String(Number(el.dataset[name]) + 1) }) }
   })
