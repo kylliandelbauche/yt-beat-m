@@ -27,3 +27,5 @@ Scénarios : ordinateur et petite fenêtre (sans refonte de cette dernière), m�
 Les tests existants de persistance gardent leurs garanties : les assertions sur des textes HTML sont adaptées à des valeurs readonly, avec attente explicite de la confirmation de sauvegarde avant fermeture.
 
 Captures de recette avec contenu synthétique, déjà défilé : [consultation](55-read-desktop.png), [édition](55-edit-desktop.png), [échec de sauvegarde](55-error-desktop.png). Leur comparaison visuelle confirme les mesures des champs et des textes ; elle ne valide pas les autres finitions de #56.
+
+Le cas du curseur placé en fin de titre est testé séparément : Chromium peut remettre le viewport natif à zéro au blur. Le dernier décalage utilisateur est conservé et réappliqué au changement de mode ; les scrolls automatiques de perte de focus ne remplacent pas cette position. Annuler puis revenir en édition conserve également ce décalage.
