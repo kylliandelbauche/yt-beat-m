@@ -156,27 +156,27 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
     <ImportPanel onImported={refreshImported} onShowBeat={showImported} />
     {heading}
     <div className="catalog-filters">
-      <label><span className="sr-only">Rechercher une prod</span><input type="search" value={query} placeholder="⌕  Titre…" onChange={(event) => { filtersChanged(); setQuery(event.target.value) }} /></label>
+      <label className="catalog-search"><span className="sr-only">Rechercher une prod</span><Icon name="search" /><input type="search" value={query} placeholder="Titre…" onChange={(event) => { filtersChanged(); setQuery(event.target.value) }} /></label>
       <CatalogFilters value={filters} options={options} onChange={(next) => { filtersChanged(); setFilters(next) }} />
-      <button aria-pressed={favoritesOnly} onClick={() => { filtersChanged(); setFavoritesOnly((value) => !value) }} aria-label="♥ Favoris uniquement">♡ Favoris</button>
-      <label className="catalog-sort"><span className="sr-only">Trier les prods</span><select value={sort} onChange={(e) => { filtersChanged(); setSort(e.target.value) }}><option value="added_desc">Ajout · récentes</option><option value="added_asc">Ajout · anciennes</option><option value="published_desc">Publication · récentes</option><option value="published_asc">Publication · anciennes</option></select></label>
-      <div className="layout-selector" role="group" aria-label="Disposition de la bibliothèque"><button className="icon-button" aria-label="Grandes pochettes" aria-pressed={layout === 'covers'} onClick={() => setLayout('covers')}><Icon name="grid" /></button><button className="icon-button" aria-label="Cartes horizontales" aria-pressed={layout === 'horizontal'} onClick={() => setLayout('horizontal')}><Icon name="rows" /></button></div>
+      <button className="catalog-favorites" aria-pressed={favoritesOnly} onClick={() => { filtersChanged(); setFavoritesOnly((value) => !value) }} aria-label="Favoris uniquement"><Icon name="heart" filled={favoritesOnly} />Favoris</button>
+      <div className="catalog-order"><label className="catalog-sort"><span className="sr-only">Trier les prods</span><select value={sort} onChange={(e) => { filtersChanged(); setSort(e.target.value) }}><option value="added_desc">Ajout · récentes</option><option value="added_asc">Ajout · anciennes</option><option value="published_desc">Publication · récentes</option><option value="published_asc">Publication · anciennes</option></select></label>
+      <div className="layout-selector" role="group" aria-label="Disposition de la bibliothèque"><button className="icon-button" aria-label="Grandes pochettes" aria-pressed={layout === 'covers'} onClick={() => setLayout('covers')}><Icon name="grid" /></button><button className="icon-button" aria-label="Cartes horizontales" aria-pressed={layout === 'horizontal'} onClick={() => setLayout('horizontal')}><Icon name="rows" /></button></div></div>
       {hasFilters && <button onClick={() => { filtersChanged(); setQuery(''); setFavoritesOnly(false); setFilters(emptyFilters) }}>Effacer les filtres</button>}
     </div>
     <ActiveFilters filters={filters} onChange={(next) => { filtersChanged(); setFilters(next) }} />
     {query && <button className="text-filter-chip" onClick={() => { filtersChanged(); setQuery('') }}>Recherche : {query} ×</button>}
-    {!loading && page && <p className="catalog-count" role="status">{page.total} prod{page.total > 1 ? 's' : ''}{sort.startsWith('published') ? ' · publications inconnues à la fin' : ''}</p>}
+    {page && <p className="catalog-count" role="status">{loading ? 'Recherche…' : `${page.total} prod${page.total > 1 ? 's' : ''}${sort.startsWith('published') ? ' · publications inconnues à la fin' : ''}`}</p>}
     {error && <p className="library-error" role="alert">{error}</p>}
     {notice && <p className="scan-notice" role="status">{notice}</p>}
-    {loading && <div className="loading-grid" role="status" aria-label="Chargement des prods"><span /><span /><span /></div>}
+    {loading && !page && <div className="loading-grid" role="status" aria-label="Chargement des prods"><span /><span /><span /></div>}
     {!loading && !page && error && <button onClick={() => { setError(''); setLoading(true); setReload((value) => value + 1) }}>Réessayer</button>}
     {!loading && page?.total === 0 && <div className="empty-state">
       <span className="empty-mark" aria-hidden="true">♫</span>
       <h3>{hasFilters ? 'Aucune prod ne correspond à ces filtres.' : 'Une place pour tes premières prods.'}</h3>
       <p>{hasFilters ? 'Essaie une autre recherche ou efface les filtres.' : 'Colle un lien YouTube ou dépose un MP3 dans le dossier audio.'}</p>
     </div>}
-    {!loading && <div className={`beat-grid ${layout === 'horizontal' ? 'horizontal-grid' : 'covers-grid'}`}>{page?.beats.map((beat) => <article className={`beat-card${selection?.beat.id === beat.id ? ' selected' : ''}`} key={beat.id}>
-      <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}>{beat.favorite ? '♥' : '♡'}</button>
+    {page && <div aria-busy={loading} className={`beat-grid ${layout === 'horizontal' ? 'horizontal-grid' : 'covers-grid'}`}>{page?.beats.map((beat) => <article className={`beat-card${selection?.beat.id === beat.id ? ' selected' : ''}`} key={beat.id}>
+      <button className="beat-favorite" disabled={favoriteBusy.has(beat.id)} aria-pressed={beat.favorite} aria-label={`${beat.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} ${beat.title}`} onClick={() => { void toggleFavorite(beat).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Favori non enregistré.')) }}><Icon name="heart" filled={beat.favorite} /></button>
       {layout === 'horizontal' ? <>
         <button className="horizontal-cover" aria-label={`${playingId === beat.id ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => togglePlayback(beat)}><Artwork beat={beat} /><span className={`cover-play${playingId === beat.id ? ' is-playing' : ''}`} aria-hidden="true"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled /></span></button>
         <button className="horizontal-details" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
@@ -195,7 +195,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       </>}
 
     </article>)}</div>}
-    {!loading && page && page.beats.length < page.total && <button disabled={busy} onClick={() => { void more() }}>Afficher plus de prods</button>}
+    {page && page.beats.length < page.total && <button disabled={busy || loading} onClick={() => { void more() }}>Afficher plus de prods</button>}
     <div className="collection-toolbar">
       <p>● Bibliothèque locale · {libraryName}</p>
       <div className="collection-tools"><button disabled={busy} onClick={() => { void scan() }}><Icon name="refresh" />{busy ? 'Actualisation…' : 'Actualiser'}</button>{tools}</div>

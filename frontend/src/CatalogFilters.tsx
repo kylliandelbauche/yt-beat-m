@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
 
 import { bpmError } from './filterState'
+import { Icon } from './Modal'
 import type { Filters, FilterOptions } from './filterState'
 function normalized(v: string) { return v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase() }
+function FilterSummary({ label, count }: { label: string; count: number }) {
+  return <summary data-active={count > 0}><span>{label}</span><span className="filter-indicator" aria-hidden="true"><Icon name="chevron" /><span className="filter-count">{count > 9 ? '9+' : count}</span></span>{count > 0 && <span className="sr-only">, {count} filtre{count > 1 ? 's' : ''} actif{count > 1 ? 's' : ''}</span>}</summary>
+}
 function Choices({ label, choices, selected, missing, onValues, onMissing, children }: { label: string; choices: string[]; selected: string[]; missing: boolean; onValues: (values: string[]) => void; onMissing: (value: boolean) => void; children?: React.ReactNode }) {
   const [search, setSearch] = useState('')
   const options = [...new Set([...choices, ...selected])].filter((v) => normalized(v).includes(normalized(search)))
-  return <details className="filter-menu" name="catalog-filter"><summary>{label}{selected.length + Number(missing) > 0 ? ` · ${selected.length + Number(missing)}` : ''} ⌄</summary><div className="filter-popover">
+  return <details className="filter-menu" name="catalog-filter"><FilterSummary label={label} count={selected.length + Number(missing)} /><div className="filter-popover">
     {children}
     <label className="filter-option"><input type="checkbox" checked={missing} onChange={(e) => onMissing(e.target.checked)} />Non renseigné</label>
     <label className="filter-search">Chercher dans {label.toLowerCase()}<input type="search" value={search} onChange={(e) => setSearch(e.target.value)} /></label>
@@ -27,7 +31,7 @@ export function CatalogFilters({ value, options, onChange }: { value: Filters; o
   const [mode, setMode] = useState('minor')
   const categories = [['keys', 'key_missing', 'Tonalité'], ['makers', 'maker_missing', 'Beatmaker'], ['channels', 'channel_missing', 'Chaîne YouTube'], ['styles', 'style_missing', 'Style'], ['moods', 'mood_missing', 'Ambiance']] as const
   return <>
-    <details className="filter-menu" name="catalog-filter"><summary>BPM{value.bpm_min || value.bpm_max || value.bpm_missing ? ' · actif' : ''} ⌄</summary><div className="filter-popover">
+    <details className="filter-menu" name="catalog-filter"><FilterSummary label="BPM" count={Number(Boolean(value.bpm_min || value.bpm_max)) + Number(value.bpm_missing)} /><div className="filter-popover">
       <form key={`${value.bpm_min}/${value.bpm_max}`} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); const min = String(data.get("min") || ""); const max = String(data.get("max") || ""); const problem = bpmError(min, max); setError(problem); if (!problem) onChange({ ...value, bpm_min: min, bpm_max: max }) }}>
         <p className="form-hint">Bornes incluses. Pour une valeur exacte, utilise deux bornes identiques.</p>
         <div className="edit-columns"><label>BPM minimum<input type="number" step="any" name="min" defaultValue={value.bpm_min} /></label><label>BPM maximum<input type="number" step="any" name="max" defaultValue={value.bpm_max} /></label></div>
