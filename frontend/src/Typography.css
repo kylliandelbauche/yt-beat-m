@@ -25,9 +25,9 @@
 }
 button, input, select, textarea { font-family: var(--font-text); }
 .brand, .section-heading h2, .modal-title h2, .empty-state h3 { font-family: var(--font-heading); font-weight: 600; letter-spacing: -.025em; }
-.beat-title { font-family: var(--font-heading); font-size: var(--type-card); font-weight: 600; line-height: 1.5; }
-.horizontal-title { font-family: var(--font-heading); font-size: 13px; font-weight: 600; line-height: 18px; }
-.beat-details .detail-right h2, .beat-details .detail-title-input textarea { font-family: var(--font-heading); font-size: 26px; font-weight: 600; line-height: 34px; letter-spacing: -.025em; }
+.beat-title { font-family: var(--font-heading); font-size: var(--type-card); font-weight: 600; line-height: 1.5; letter-spacing: -.025em; }
+.horizontal-title { font-family: var(--font-heading); font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.025em; }
+.beat-details .detail-right h2, .beat-details .detail-title-input input { font-family: var(--font-heading); font-size: 26px; font-weight: 600; line-height: 34px; letter-spacing: -.025em; }
 .player-description p { font-weight: 600; line-height: 18px; }
 .beat-maker, .horizontal-maker { font-size: var(--type-label); line-height: 16px; }
 .detail-music dt, .detail-identity dt, .detail-dates dt { font-size: 11px; }
@@ -36,5 +36,5 @@ button, input, select, textarea { font-family: var(--font-text); }
 .detail-music dd { font-weight: 600; }
 .catalog-count, .beat-duration, .horizontal-music, .horizontal-footer, .detail-music dd { font-variant-numeric: lining-nums tabular-nums; }
 @media (max-width: 760px) {
-  .beat-details .detail-right h2, .beat-details .detail-title-input textarea { font-size: 22px; line-height: 29px; }
+  .beat-details .detail-right h2, .beat-details .detail-title-input input { font-size: 22px; line-height: 29px; }
 }

@@ -66,18 +66,19 @@
 .cover-label { position: absolute; bottom: 20px; left: 20px; font-size: 9px; letter-spacing: 3px; color: #d0e6de; }
 .beat-card-info { display: block; padding: 18px 18px 12px; }
 .beat-title { display: block; height: 1.5em; overflow: hidden; white-space: nowrap; font-size: 15px; font-weight: 500; line-height: 1.5; }
+.scroll-title { display: block; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }
 .scroll-title-text { display: inline-block; vertical-align: top; }
-.scroll-title.overflows { mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent); }
-.beat-select:is(:hover, :focus-visible) .scroll-title.overflows { mask-image: none; }
-.beat-select:is(:hover, :focus-visible) .scroll-title.overflows .scroll-title-text { animation: title-scroll var(--title-duration) linear .8s infinite alternate; }
+.scroll-title.overflows { mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent); }
+:is(.beat-select, .horizontal-details, #beat-details-title):is(:hover, :focus-visible) .scroll-title.overflows { mask-image: none; }
+:is(.beat-select, .horizontal-details, #beat-details-title):is(:hover, :focus-visible) .scroll-title.overflows .scroll-title-text { animation: title-scroll var(--title-duration) linear .8s infinite alternate; }
 @keyframes title-scroll {
   0% { transform: translateX(0); }
   90%, 100% { transform: translateX(calc(-1 * var(--title-overflow))); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .beat-select:is(:hover, :focus-visible) .scroll-title.overflows .scroll-title-text { animation: none; }
+  :is(.beat-select, .horizontal-details, #beat-details-title):is(:hover, :focus-visible) .scroll-title.overflows .scroll-title-text { animation: none; }
 }
-.beat-subtitle { display: flex; justify-content: space-between; gap: 12px; height: 1.5em; line-height: 1.5; font-size: 11px; margin-top: 8px; color: #b4c0d3; }
+.beat-subtitle { display: flex; justify-content: space-between; gap: 12px; height: 17px; line-height: 1.5; font-size: 11px; margin-top: 8px; color: #b4c0d3; }
 .beat-maker { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .beat-duration { flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .listen-label { display: block; padding: 0 18px 18px; color: #c2e4d0; font-size: 11px; }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 
-export function ScrollingTitle({ title }: { title: string }) {
+export function ScrollingTitle({ title, className = 'beat-title' }: { title: string; className?: string }) {
   const viewport = useRef<HTMLSpanElement>(null)
   const text = useRef<HTMLSpanElement>(null)
   const [overflow, setOverflow] = useState(0)
@@ -22,7 +22,7 @@ export function ScrollingTitle({ title }: { title: string }) {
     '--title-overflow': `${overflow}px`,
     '--title-duration': `${Math.max(4, overflow / 40 + 1)}s`,
   } as CSSProperties
-  return <span ref={viewport} className={`beat-title scroll-title${overflow ? ' overflows' : ''}`} title={title} style={style}>
+  return <span ref={viewport} className={`${className} scroll-title${overflow ? ' overflows' : ''}`} title={title} style={style}>
     <span ref={text} className="scroll-title-text">{title}</span>
   </span>
 }

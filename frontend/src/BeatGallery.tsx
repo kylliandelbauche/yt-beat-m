@@ -180,7 +180,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName }: { onInde
       {layout === 'horizontal' ? <>
         <button className="horizontal-cover" aria-label={`${playingId === beat.id ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => togglePlayback(beat)}><Artwork beat={beat} /><span className={`cover-play${playingId === beat.id ? ' is-playing' : ''}`} aria-hidden="true"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled /></span></button>
         <button className="horizontal-details" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
-          <span className="horizontal-title" title={beat.title}>{beat.title}</span>
+          <ScrollingTitle className="horizontal-title" title={beat.title} />
           <span className="horizontal-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || beat.channel || 'Fichier local'}</span>
           <span className="horizontal-music">{beat.bpm ?? '—'} <span aria-hidden="true">|</span> {musicalKeyLabel(beat.musical_key)}</span>
           <span className="horizontal-footer"><span>{duration(beat.duration_seconds)}</span><span>Détails ↗</span></span>
