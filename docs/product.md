@@ -124,3 +124,7 @@ La fiche conserve les mêmes champs natifs en consultation readonly et en éditi
 ## Grandes pochettes compactes (#59, lot de #56)
 
 La référence Paper officielle du 26/10 remplace la grande carte de 416 px par une carte de 365 px à largeur 265 px. Toute l’image commande Play/Pause, hors favori ; toute la zone inférieure ouvre la fiche sans effet sur l’audio. Cette zone unique contient titre monoligne, nom/durée puis BPM | tonalité et indication Détails. Les anciennes rangées Écouter et Détails séparées disparaissent. La hauteur vient du contenu, sans remplissage artificiel. Le favori reste une action sœur indépendante. Les mesures et tests sont dans [la revue des cartes](design/59-compact-covers.md).
+
+## Finitions et transitions officielles (#56)
+
+Les fenêtres et le lecteur reprennent les surfaces, flous et ombres de Paper. Les cartes restent immobiles pendant leurs retours de survol et de lecture ; seule l’icône se contracte à la pression. Les fenêtres entrent en 180 ms et sortent en 140 ms avec fondu et déplacement de 8 px ; une fermeture peut interrompre l’entrée. Le dialogue natif, le verrouillage de page et le focus restent actifs jusqu’à la fin de la sortie. Un brouillon empêche de démarrer cette sortie avant accord. Les préférences de mouvement/transparence réduits sont respectées. Voir [les valeurs et vérifications](design/56-fluid-finishes.md).

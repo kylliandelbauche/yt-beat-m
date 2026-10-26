@@ -1,0 +1,31 @@
+/* Paper Officiel, surfaces and physical feedback (#56). Layout stays in its owners. */
+:root { --fluid-modal: #1b222ef7; --fluid-player: #1e272df5; }
+.app-modal, .beat-details.app-modal { background: var(--fluid-modal); backdrop-filter: blur(20px); box-shadow: 0 24px 80px #00000085; border-radius: 26px; }
+.library-modal, .diagnostic-modal { background: #1b222e; }
+.local-player { background: var(--fluid-player); backdrop-filter: blur(16px); box-shadow: 0 8px 32px #0000003d; }
+.beat-card { transition: border-color 120ms, background-color 120ms; }
+.beat-card:has(:is(.beat-select, .horizontal-cover):is(:hover, :focus-visible)) { border-color: #c7eed980; background: #c7eed90f; }
+.beat-grid .beat-card.is-playing { border-color: var(--paper-mint); background: #c7eed90f; }
+.horizontal-details { transition: background-color 120ms; }
+.horizontal-details:hover { background: #ffffff07; }
+.horizontal-details:focus-visible, .horizontal-cover:focus-visible { outline: 2px solid var(--paper-mint); outline-offset: -3px; }
+.horizontal-cover::after { content: ''; position: absolute; inset: 0; background: #080b1430; opacity: 0; pointer-events: none; transition: opacity 120ms; }
+.horizontal-cover:is(:hover, :focus-visible)::after { opacity: 1; }
+.cover-play { transition: opacity 120ms, background-color 120ms; }
+.horizontal-cover .cover-play { z-index: 2; }
+button svg { transition: transform 80ms, color 120ms; transform-origin: center; }
+button:active:not(:disabled) svg { transform: scale(.96); transition-duration: 0ms; }
+.modal-actions .icon-button, .detail-play, .beat-favorite { transition: background-color 120ms, border-color 120ms, color 120ms; }
+@media (prefers-reduced-motion: reduce) {
+  .beat-card, .horizontal-details, .horizontal-cover::after, .cover-play, button svg, .modal-actions .icon-button, .detail-play, .beat-favorite { transition: none; }
+  button:active:not(:disabled) svg { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-modal, .beat-details.app-modal { background: #1b222e; backdrop-filter: none; }
+  .local-player { background: #1e272d; backdrop-filter: none; }
+  .app-modal::backdrop { backdrop-filter: none; background: #080b14ed; }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .app-modal, .beat-details.app-modal { background: #1b222e; }
+  .local-player { background: #1e272d; }
+}

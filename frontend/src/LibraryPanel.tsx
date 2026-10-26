@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { api } from './api'
 import { BeatGallery } from './BeatGallery'
 import { Icon, Modal } from './Modal'
+import type { ModalClose } from './useModalLifecycle'
 
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
@@ -15,6 +16,14 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [opened, setOpened] = useState(false)
+  const closeModal = useRef<ModalClose | null>(null)
+  const afterClose = useRef<(() => void) | null>(null)
+  function finishClose() { setOpened(false); afterClose.current?.(); afterClose.current = null }
+  function commitSelection(selected: LibraryStatus) {
+    const apply = () => { setStatus(selected); setPath('') }
+    if (closeModal.current) { afterClose.current = apply; closeModal.current(true) }
+    else { apply(); setOpened(false) }
+  }
   const handleIndexed = useCallback((count: number) => {
     setStatus((current) => current?.library ? { ...current, library: { ...current.library, beat_count: count } } : current)
   }, [])
@@ -27,7 +36,7 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
     event.preventDefault(); setBusy(true); setError('')
     try {
       const selected = await api<LibraryStatus>('/api/library', { method: 'POST', body: JSON.stringify({ path, create: mode === 'create', name }) })
-      setStatus(selected); setPath(''); setOpened(false)
+      commitSelection(selected)
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'Impossible d’ouvrir ce dossier.') }
     finally { setBusy(false) }
   }
@@ -41,7 +50,7 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   }
   async function close() {
     setBusy(true); setError('')
-    try { setStatus(await api<LibraryStatus>('/api/library/close', { method: 'POST' })); setOpened(false) }
+    try { commitSelection(await api<LibraryStatus>('/api/library/close', { method: 'POST' })) }
     catch (cause: unknown) { setError(cause instanceof Error ? cause.message : 'Impossible de fermer la bibliothèque.') }
     finally { setBusy(false) }
   }
@@ -59,7 +68,7 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   return <section className="library-placeholder" aria-labelledby="library-heading">
     {library ? <BeatGallery key={library.id} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library.name} /> : <>{heading}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
     {!opened && (error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
-    {opened && <Modal label="Bibliothèque" title={<h2>Bibliothèque</h2>} closeLabel="Fermer la fenêtre Bibliothèque" onClose={() => { if (!busy) setOpened(false) }} className="library-modal">
+    {opened && <Modal label="Bibliothèque" title={<h2>Bibliothèque</h2>} closeLabel="Fermer la fenêtre Bibliothèque" onClose={finishClose} canClose={() => !busy} closeRef={closeModal} className="library-modal">
       <div className="modal-content"><div className="library-summary"><strong>{library?.name}</strong><span>{library?.beat_count} prods · ouverte</span><p className="library-path">{library?.root}</p></div>
       {error && <p className="library-error" role="alert">{error}</p>}{form}<button className="close-library" disabled={busy} onClick={() => { void close() }}>Fermer la bibliothèque</button></div>
     </Modal>}

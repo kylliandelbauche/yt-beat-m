@@ -24,6 +24,7 @@ test('corriger un beatmaker dans la fiche épurée et conserver la correction ap
     await expect(dialog.getByRole('status')).toHaveText('Informations enregistrées.')
     await expect(dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true })).toHaveValue('Studio Nova')
     await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
     await page.getByRole('button', { name: 'Écouter Prod beatmaker 1', exact: true }).click()
     const audio = page.locator('audio')
     await expect(audio).toHaveJSProperty('paused', false)

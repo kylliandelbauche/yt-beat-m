@@ -1,35 +1,25 @@
-import { useEffect, useRef } from 'react'
-import type { MouseEvent, PointerEvent, ReactNode } from 'react'
+import { useRef } from 'react'
+import type { MouseEvent, PointerEvent, ReactNode, Ref } from 'react'
+import { useModalLifecycle } from './useModalLifecycle'
+import type { ModalClose } from './useModalLifecycle'
 
-export function Modal({ label, title, closeLabel, onClose, actions, className = '', children }: {
+export function Modal({ label, title, closeLabel, onClose, canClose, closeRef, actions, className = '', children }: {
   label: string; title: ReactNode; closeLabel: string; onClose: () => void
+  canClose?: () => boolean; closeRef?: Ref<ModalClose>
   actions?: ReactNode; className?: string; children: ReactNode
 }) {
-  const dialog = useRef<HTMLDialogElement>(null)
   const pressedOutside = useRef(false)
-  useEffect(() => {
-    const panel = dialog.current
-    const previous = document.activeElement
-    const overflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    panel?.showModal()
-    return () => {
-      panel?.close()
-      document.body.style.overflow = overflow
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
-      else document.querySelector<HTMLInputElement>('input[type="search"]')?.focus()
-    }
-  }, [])
+  const { dialog, phase, requestClose } = useModalLifecycle(onClose, canClose, closeRef)
   function outside(event: MouseEvent<HTMLDialogElement> | PointerEvent<HTMLDialogElement>) {
     if (event.target !== event.currentTarget) return false
     const bounds = event.currentTarget.getBoundingClientRect()
     return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom
   }
-  return <dialog ref={dialog} aria-label={label} className={`app-modal ${className}`} onCancel={(event) => { event.preventDefault(); onClose() }}
+  return <dialog ref={dialog} data-state={phase} aria-label={label} className={`app-modal ${className}`} onCancel={(event) => { event.preventDefault(); requestClose() }}
     onPointerDown={(event) => { pressedOutside.current = event.isPrimary && event.button === 0 && outside(event) }}
     onPointerCancel={() => { pressedOutside.current = false }}
-    onClick={(event) => { const dismiss = pressedOutside.current && outside(event); pressedOutside.current = false; if (dismiss) onClose() }}>
-    <header className="modal-header"><div className="modal-title">{title}</div><div className="modal-actions">{actions}<button className="icon-button" autoFocus aria-label={closeLabel} onClick={onClose}><Icon name="close" /></button></div></header>
+    onClick={(event) => { const dismiss = pressedOutside.current && outside(event); pressedOutside.current = false; if (dismiss) requestClose() }}>
+    <header className="modal-header"><div className="modal-title">{title}</div><div className="modal-actions">{actions}<button className="icon-button modal-close" autoFocus aria-label={closeLabel} onClick={() => requestClose()}><Icon name="close" /></button></div></header>
     {children}
   </dialog>
 }

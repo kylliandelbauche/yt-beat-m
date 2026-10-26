@@ -5,6 +5,7 @@ import type { Beat, BeatDetails } from './beat'
 import { Artwork } from './Artwork'
 import { Icon, Modal } from './Modal'
 import { useTitleMarquee } from './useTitleMarquee'
+import type { ModalClose } from './useModalLifecycle'
 
 type Draft = { title: string; beatmaker: string; bpm: string; musical_key: string; description: string; sale_url: string }
 function draftFor(beat: BeatDetails): Draft {
@@ -18,6 +19,7 @@ function dateLabel(value: string | null, dateOnly = false) {
 
 export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; playing: boolean; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
   const form = useRef<HTMLFormElement>(null)
+  const closeModal = useRef<ModalClose | null>(null)
   const titleInput = useRef<HTMLInputElement>(null)
   const titlePosition = useRef(0)
   // Chromium may reset native input scroll on blur, before the mode button clicks.
@@ -76,10 +78,10 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
     return () => clearTimeout(timer)
   }, [notice])
   function update<T extends keyof Draft>(field: T, value: Draft[T]) { setError(''); setSaveError(false); setInvalid([]); setDraft((current) => current ? { ...current, [field]: value } : current) }
-  function close() {
-    if (busy) return
-    if (editing && beat && draft && JSON.stringify(draft) !== JSON.stringify(draftFor(beat))) setConfirmDiscard(true)
-    else onClose()
+  function canClose() {
+    if (busy) return false
+    if (editing && beat && draft && JSON.stringify(draft) !== JSON.stringify(draftFor(beat))) { setConfirmDiscard(true); return false }
+    return true
   }
   function focusEditor() { form.current?.closest('dialog')?.querySelector<HTMLButtonElement>('.edit-save')?.focus({ preventScroll: true }) }
   function cancel() { rememberView(); if (beat) setDraft(draftFor(beat)); setEditing(false); setConfirmDiscard(false); setError(''); setInvalid([]); setSaveError(false); focusEditor() }
@@ -132,7 +134,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
   }
   const source = externalLink(beat?.source_url || null)
   const saleLink = externalLink(beat?.links[0]?.url || null)
-  return <Modal label={beat?.title || 'Détails de la prod'} title={<div className="detail-mode-title"><p className="eyebrow">DÉTAILS DE LA PROD</p><button className="cancel-detail" type="button" disabled={!editing || busy} aria-hidden={!editing} tabIndex={editing ? 0 : -1} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button></div>} closeLabel="Fermer la fiche" onClose={close} className={`beat-details${editing ? ' is-editing' : ''}`} actions={<>
+  return <Modal label={beat?.title || 'Détails de la prod'} title={<div className="detail-mode-title"><p className="eyebrow">DÉTAILS DE LA PROD</p><button className="cancel-detail" type="button" disabled={!editing || busy} aria-hidden={!editing} tabIndex={editing ? 0 : -1} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button></div>} closeLabel="Fermer la fiche" onClose={onClose} canClose={canClose} closeRef={closeModal} className={`beat-details${editing ? ' is-editing' : ''}`} actions={<>
     <button className="icon-button details-favorite" disabled={busy || !beat} aria-label={beat?.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={beat?.favorite || false} onClick={() => { void favorite() }}><Icon name="heart" filled={beat?.favorite} /></button>
     <button className={`icon-button edit-save${editing ? ' saving-mode' : notice ? ' saved-mode' : ''}`} disabled={busy || !beat} aria-busy={busy && editing} type="button" aria-label={editing ? 'Enregistrer les modifications' : 'Modifier la prod'} title={editing ? 'Enregistrer les modifications' : notice ? 'Informations enregistrées. Modifier la prod' : 'Modifier la prod'} onClick={() => { if (editing) form.current?.requestSubmit(); else { rememberView(); if (beat) setDraft(draftFor(beat)); setEditing(true); setError(''); setNotice(''); setInvalid([]); setSaveError(false) } }}><Icon name={editing ? 'save' : notice ? 'check' : 'edit'} /></button>
   </>}>
@@ -140,7 +142,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
     {error && <div className="detail-feedback has-error">
       <div className="detail-error"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M12 6V13M12 16V18" stroke="currentColor" strokeWidth="1.6" /></svg><p id="detail-error-message" className="library-error" role="alert" tabIndex={0} title={error}>{error}</p>{editing && <button type="button" className="cancel-save-error" disabled={busy} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button>}{saveError && editing && <button type="button" className="retry-save" disabled={busy} onClick={() => form.current?.requestSubmit()}>Réessayer</button>}{beat && <button type="button" aria-label="Masquer le message d’erreur" onClick={() => { setError(''); setInvalid([]); focusEditor() }}>✕</button>}</div>
     </div>}
-    {confirmDiscard && <div className="detail-feedback discard-feedback"><div className="discard-prompt" role="alert"><p>Des modifications ne sont pas enregistrées.</p><button onClick={() => { setConfirmDiscard(false); focusEditor() }}>Continuer l’édition</button><button onClick={onClose}>Abandonner et fermer</button></div></div>}
+    {confirmDiscard && <div className="detail-feedback discard-feedback"><div className="discard-prompt" role="alert"><p>Des modifications ne sont pas enregistrées.</p><button onClick={() => { setConfirmDiscard(false); focusEditor() }}>Continuer l’édition</button><button onClick={() => closeModal.current?.(true)}>Abandonner et fermer</button></div></div>}
     {!beat && !error && <p className="form-hint" role="status">Chargement de la fiche…</p>}
     {!beat && error && <button onClick={() => { setError(''); setAttempt((n) => n + 1) }}>Réessayer</button>}
     {beat && draft && <form ref={form} id="beat-edit-form" className="details-content details-columns" noValidate onSubmit={(event) => { void save(event) }}>
@@ -158,7 +160,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
         </div>
       </div>
       <div className="detail-right">
-        <h2 id="beat-details-title" aria-label={beat.title} tabIndex={0}><label className="detail-title-input"><span className="sr-only">Titre de la prod</span><input ref={titleInput} id="detail-title" title={beat.title} type="text" required maxLength={500} readOnly={!editing || busy} aria-invalid={invalid.includes('detail-title')} aria-describedby={invalid.includes('detail-title') ? 'detail-error-message' : undefined} value={draft.title} onFocus={() => { titleBlurred.current = false }} onBlur={(event) => { if (event.currentTarget.scrollLeft) titlePosition.current = event.currentTarget.scrollLeft; titleBlurred.current = true }} onScroll={(event) => { if (!titleBlurred.current) titlePosition.current = event.currentTarget.scrollLeft }} onChange={(e) => update('title', e.target.value)} /></label></h2>
+        <h2 id="beat-details-title" aria-label={beat.title} tabIndex={0}><label className="detail-title-input"><span className="sr-only">Titre de la prod</span><input ref={titleInput} id="detail-title" title={beat.title} type="text" required maxLength={500} readOnly={!editing || busy} aria-invalid={invalid.includes('detail-title')} aria-describedby={invalid.includes('detail-title') ? 'detail-error-message' : undefined} value={draft.title} onFocus={() => { titleBlurred.current = false }} onBlur={(event) => { if (event.currentTarget.scrollLeft) titlePosition.current = event.currentTarget.scrollLeft; titleBlurred.current = true; const input = event.currentTarget; requestAnimationFrame(() => { if (input.isConnected && titleBlurred.current) input.scrollLeft = titlePosition.current }) }} onScroll={(event) => { if (!titleBlurred.current) titlePosition.current = event.currentTarget.scrollLeft }} onChange={(e) => update('title', e.target.value)} /></label></h2>
         <dl className="detail-identity">
           <div><dt><label htmlFor="detail-maker">Beatmaker</label></dt><dd><input className="identity-value" id="detail-maker" aria-label="Nom du beatmaker" aria-invalid={invalid.includes('detail-maker')} aria-describedby={invalid.includes('detail-maker') ? 'detail-error-message' : undefined} maxLength={200} readOnly={!editing || busy} placeholder="Non renseigné" value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} /></dd></div>
           <div className="source-identity"><dt>Chaîne YouTube</dt><dd title={beat.channel || undefined}><span className="identity-value">{beat.channel || 'Non renseignée'}</span></dd></div>

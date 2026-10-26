@@ -55,6 +55,7 @@ test('choisir le dossier vide de création et ouvrir une bibliothèque sans chem
     await dialog.getByRole('textbox', { name: 'Nom de la bibliothèque', exact: true }).fill('Ma bibliothèque choisie')
     await dialog.getByRole('button', { name: 'Créer la bibliothèque', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Ma bibliothèque choisie', exact: true })).toBeVisible()
+    await expect(page.getByRole('searchbox', { name: 'Rechercher une prod', exact: true })).toBeFocused()
     expect((await (await page.request.get('/api/library')).json()).library.root).toBe(await realpath(root))
   } finally {
     expect((await page.request.post('/api/library', { headers, data: { path: original.root } })).ok()).toBe(true)
