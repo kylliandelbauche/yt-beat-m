@@ -102,3 +102,8 @@ Une zone réservée sous le champ URL contient une barre menthe personnalisée. 
 Les prochains téléchargements produisent un fichier nommé `Beatmaker_Titre_130BPM_F#-minor.mp3`, avec les métadonnées disponibles au moment de l’import. Le beatmaker suit les crédits et règles mémorisées du catalogue. Les valeurs absentes deviennent « Beatmaker-inconnu », « BPM-inconnu » ou « Tonalité-inconnue ». Les blocs sont séparés par des underscores `_` ; tous leurs espaces deviennent des tirets `-` et le nombre est collé à BPM. Aucun espace dans le nom final. Les caractères incompatibles sont nettoyés et les noms très longs raccourcis par champ, en conservant les quatre emplacements.
 
 Le nom du fichier reste lisible, sans identifiant ajouté ; un sous-dossier propre à l’import évite les collisions entre deux prods au même nom. Les fichiers déjà présents et les MP3 déposés manuellement gardent leur nom. Une correction ultérieure dans la fiche ne renomme pas le fichier dans cette tranche.
+
+
+## Finition de la bibliothèque (#49)
+
+La finition inspirée d’Impeccable conserve la direction Paper. Les filtres réservent la même place au chevron et au compteur actif ; la recherche devient pleine largeur sur petite fenêtre et les contrôles principaux ont des cibles de 44 px. Le bouton d’import reste menthe et lisible dans ses états interactifs. Les icônes SVG partagées et les couleurs sémantiques renforcent la cohérence, avec lecture et focus préservés. Le bilan et les captures comparables sont dans [la revue UI/UX](design-review-49.md).

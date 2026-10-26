@@ -3,7 +3,8 @@ import './App.css'
 import { LibraryPanel } from './LibraryPanel'
 import './PaperV1.css'
 import './Official.css'
-import { Modal } from './Modal'
+import './Refinements.css'
+import { Icon, Modal } from './Modal'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
@@ -31,7 +32,7 @@ function App() {
   }, [attempt])
 
   const diagnosticPanel = <>
-    <button onClick={() => setShowDiagnostic(true)}>Diagnostic</button>
+    <button onClick={() => setShowDiagnostic(true)}><Icon name="diagnostic" />Diagnostic</button>
     {showDiagnostic && <Modal label="Diagnostic" title={<h2>Diagnostic</h2>} closeLabel="Fermer la fenêtre Diagnostic" onClose={() => setShowDiagnostic(false)} className="diagnostic-modal">
       <section className="modal-content diagnostic" aria-label="État du moteur local">
         <h3>{diagnostic?.ready ? 'Prêt à importer' : 'État du moteur'}</h3>

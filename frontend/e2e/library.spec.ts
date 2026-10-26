@@ -57,7 +57,7 @@ test('favori persistant, filtres combinés et état sans résultat', async ({ pa
   await expect(page.getByRole('button', { name: 'Retirer des favoris R&B Mélancolique', exact: true })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('button', { name: 'Retirer des favoris R&B Mélancolique', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '♥ Favoris uniquement', exact: true }).click()
+  await page.getByRole('button', { name: 'Favoris uniquement', exact: true }).click()
   await page.getByRole('searchbox', { name: 'Rechercher une prod' }).fill('melancolique')
   await expect(page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toHaveCount(0)

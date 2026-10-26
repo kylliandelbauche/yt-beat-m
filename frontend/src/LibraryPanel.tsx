@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { api } from './api'
 import { BeatGallery } from './BeatGallery'
-import { Modal } from './Modal'
+import { Icon, Modal } from './Modal'
 
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
@@ -55,7 +55,7 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
     <button type="submit" className="primary" disabled={busy}>{busy ? 'Un instant…' : mode === 'create' ? 'Créer la bibliothèque' : 'Ouvrir la bibliothèque'}</button>
   </form>
   const heading = <div className="section-heading"><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2><span className="phase">{library ? `${library.beat_count} prod${library.beat_count > 1 ? 's' : ''}` : 'Dossier portable'}</span></div>
-  const tools = <><button onClick={() => { setError(''); setOpened(true) }}>Bibliothèque</button>{diagnostic}</>
+  const tools = <><button onClick={() => { setError(''); setOpened(true) }}><Icon name="folder" />Bibliothèque</button>{diagnostic}</>
   return <section className="library-placeholder" aria-labelledby="library-heading">
     {library ? <BeatGallery key={library.id} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library.name} /> : <>{heading}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
     {!opened && (error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
