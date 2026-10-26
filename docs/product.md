@@ -116,3 +116,7 @@ Le duo Poppins/Open Sans issu du profil Modern Professional du skill UI UX Pro M
 ## Titres sur une ligne dans toutes les vues (#53)
 
 Les titres restent sur une ligne dans les grandes pochettes, les cartes horizontales, le lecteur et la fiche. La référence Paper du 26/10 fournit les espacements et l’emplacement de titre de fiche de 52 px, identique en lecture et édition ; le champ d’édition est un texte sur une ligne. Les titres longs restent complets dans les données et accessibles : fondu à droite, défilement au survol ou au focus sans déplacement des autres éléments, désactivé en mouvement réduit. Les colonnes et actions de la fiche gardent leur géométrie pendant l’édition et la sauvegarde. Voir [les mesures Paper](design/53-paper-titles.md).
+
+## Stabilité des champs et des textes (#55)
+
+La fiche conserve les mêmes champs natifs en consultation readonly et en édition. Leurs polices, interlignes, paddings et bordures réservées sont communs ; titre, valeurs, libellés et lignes de description gardent leur cadrage. Le titre conserve son défilement horizontal, la description son scroll vertical ; le passage de mode ne prend pas le focus. Libellé et URL de vente restent aux mêmes emplacements. L’erreur de sauvegarde est superposée dans l’en-tête, avec brouillon conservé et relance ; les erreurs de saisie sont expliquées et associées aux champs. Les mesures et limites sont décrites dans [la vérification de fiche](design/55-stable-fields.md).

@@ -77,7 +77,7 @@ test('crayon et Save stables, annulation, erreur et protection des modifications
   await page.screenshot({ path: testInfo.outputPath('detail-edit-error.png') })
   await dialog.getByRole('button', { name: 'Annuler les modifications', exact: true }).click()
   await expect(dialog.getByRole('button', { name: 'Modifier la prod', exact: true })).toBeVisible()
-  await expect(dialog.locator('.detail-music').getByText('140', { exact: true })).toBeVisible()
+  await expect(dialog.getByLabel('BPM', { exact: true })).toHaveValue('140')
   await dialog.getByRole('button', { name: 'Modifier la prod', exact: true }).click()
   await dialog.getByLabel('BPM', { exact: true }).fill('160')
   await page.keyboard.press('Escape')
