@@ -142,3 +142,11 @@ Le lien d’import reste visible, et erreur/reprise remplacent la progression da
 L’import reconnaît Key, Clé/Cle, Tonalité/Tonalite et Gamme, les notes françaises ou anglaises avec un mode explicite, et les formes compactes dans un bloc musical comme `144bpm 🎵 / Abm 🎹`. Des indications contradictoires restent inconnues ; les mots courants, liens et adresses ne deviennent pas des notes. Les corrections et filtres utilisent la même normalisation.
 
 Le bouton Actualiser complète aussi les tonalités manquantes depuis le titre et la description source conservés, sans téléchargement ni renommage du MP3. Une valeur déjà connue ou corrigée manuellement, même volontairement vidée, est préservée. Si la description a été réécrite, le texte source original conservé sert à cette extraction. Aucune analyse de marketplace ou de l’audio n’est ajoutée.
+
+## Auteur du crédit et collaborations (#31)
+
+Les crédits `prod by me`, `myself` ou `moi` ne confirment pas un nom d’artiste. Une règle de chaîne mémorisée peut résoudre l’auteur ; sinon, le nom de chaîne reste une proposition à vérifier. Les collaborateurs explicitement cités sont conservés : `prod by me x @m3nacebeats` sur prodlacco propose `prodlacco x @m3nacebeats`, sans inventer une graphie depuis Instagram, un copyright ou un email. Une correction utilisateur peut donner `Laco x @m3nacebeats`.
+
+Une règle corrigeant un auteur ne remplace pas toute une collaboration et ne réinjecte pas un ancien invité dans une nouvelle prod. Une règle portant sur un crédit collectif n’est pas assimilée automatiquement à une personne. Sans auteur identifiable, `À préciser` signale la partie manquante, tout en gardant les collaborateurs connus. Des crédits explicites contradictoires restent à corriger. `Compositeur : Jake B` est aussi reconnu comme crédit explicite.
+
+L’origine de la proposition se consulte au survol du champ Beatmaker et via sa description accessible, sans ajouter de ligne à la fiche. Actualiser recalcule les propositions automatiques depuis le texte source conservé ; les corrections manuelles, les anciennes valeurs sans provenance, les autres annotations et les fichiers restent préservés. Le regroupement en véritables profils beatmakers reste suivi dans #62.

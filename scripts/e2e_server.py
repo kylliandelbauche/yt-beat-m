@@ -20,6 +20,20 @@ AUDIO = base64.b64decode((ROOT / "backend/tests/fixtures/long-tone.mp3.base64").
 def simulated_download(self, args, on_line=None, *, timeout=600):
     if "--dump-single-json" in args:
         identity = parse_qs(urlsplit(args[-1]).query)["v"][0]
+        if identity.startswith("SELFCREDIT"):
+            return json.dumps(
+                {
+                    "id": identity,
+                    "title": "Prod crédit " + identity[-1],
+                    "duration": 30,
+                    "channel": "prodlacco",
+                    "channel_id": "UC-e2e-lacco",
+                    "description": "prod by me x @m3nacebeats"
+                    if identity.endswith("1")
+                    else "prod by moi x @Other",
+                    "upload_date": "20261023",
+                }
+            )
         return json.dumps(
             {
                 "id": identity,

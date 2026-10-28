@@ -2,7 +2,7 @@ export type Beat = {
   id: string
   title: string
   beatmaker: string | null
-  beatmaker_source: 'explicit_credit' | 'channel' | 'channel_alias' | 'ambiguous_credit' | 'manual' | 'legacy' | null
+  beatmaker_source: 'explicit_credit' | 'channel' | 'channel_alias' | 'ambiguous_credit' | 'channel_self_credit' | 'channel_alias_self_credit' | 'unresolved_self_credit' | 'manual' | 'legacy' | null
   channel: string | null
   bpm: number | null
   musical_key: string | null
@@ -44,4 +44,15 @@ export function musicalKeyLabel(value: string | null | undefined) {
   const match = value.match(/^([A-G])([#b]?)\s*(minor|min|m|major|maj)$/i)
   if (!match) return value
   return `${match[1].toUpperCase()}${match[2].toLowerCase()} ${['minor', 'min', 'm'].includes(match[3].toLowerCase()) ? 'minor' : 'major'}`
+}
+
+export function beatmakerSourceLabel(source: Beat['beatmaker_source']) {
+  if (source === 'channel_self_credit') return 'Auteur proposé depuis la chaîne YouTube ; les collaborateurs explicitement crédités sont conservés. À vérifier.'
+  if (source === 'channel_alias_self_credit') return 'Auteur résolu avec la règle de chaîne mémorisée ; les collaborateurs explicitement crédités sont conservés.'
+  if (source === 'unresolved_self_credit') return 'Auteur du crédit non identifié. Les collaborateurs connus sont conservés ; corrige le nom du beatmaker.'
+  if (source === 'channel') return 'Proposition depuis la chaîne YouTube ; le nom reste corrigeable.'
+  if (source === 'channel_alias') return 'Nom proposé avec la règle de chaîne mémorisée.'
+  if (source === 'explicit_credit') return 'Crédit explicite du titre ou de la description.'
+  if (source === 'ambiguous_credit') return 'Crédits contradictoires ; une correction est nécessaire.'
+  return source === 'manual' ? 'Nom corrigé manuellement.' : 'Nom du beatmaker à vérifier.'
 }

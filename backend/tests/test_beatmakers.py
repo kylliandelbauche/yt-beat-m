@@ -18,6 +18,7 @@ from yt_beat_m.beatmakers import (
 )
 from yt_beat_m.catalog import beat_details, list_beats
 from yt_beat_m.library import Library, LibraryError
+from yt_beat_m.metadata import MetadataUpdate, correct_metadata
 
 
 @pytest.fixture
@@ -295,3 +296,203 @@ def test_channel_name_correction_also_maps_a_later_matching_explicit_credit(libr
     correct_beatmaker(library, first, "Nova Studio", True)
     refresh_beatmakers(library)
     assert beat_details(library, next_beat)["beatmaker"] == "Nova Studio"
+
+
+@pytest.mark.parametrize("pronoun", ["me", "MYSELF", "moi", "moi-même", "moi‑même"])
+def test_self_references_are_not_confirmed_artist_names(library, pronoun):
+    assert producer_credit("Beat", f"prod by {pronoun}") == (pronoun, "self_credit")
+    with library.catalog() as connection:
+        assert propose(
+            connection,
+            {
+                "title": "Beat",
+                "description": f"prod by {pronoun}",
+                "channel": "prodlacco",
+            },
+        ) == ("prodlacco", "channel_self_credit")
+        assert propose(
+            connection,
+            {
+                "title": "Beat",
+                "description": f"prod by {pronoun}",
+                "channel": None,
+            },
+        ) == (None, "unresolved_self_credit")
+
+
+@pytest.mark.parametrize("separator", [" x ", " & ", " + ", " × ", " et ", " and "])
+def test_self_collaborations_keep_the_guest_and_do_not_infer_a_person_from_socials(
+    library, separator
+):
+    description = (
+        f"prod by me{separator}@m3nacebeats   💰 Download / Purchase: https://example.org\n"
+        "Instagram: prod.lacco\n© LACCO – All rights reserved\nContact: lacco@example.org"
+    )
+    with library.catalog() as connection:
+        assert propose(
+            connection,
+            {
+                "title": "Old money",
+                "description": description,
+                "channel": "prodlacco",
+            },
+        ) == ("prodlacco x @m3nacebeats", "channel_self_credit")
+        # A repost or collective channel remains an unconfirmed source, not proof
+        # that Instagram/copyright or the uploading channel is the composer.
+        assert propose(
+            connection,
+            {
+                "title": "Old money",
+                "description": description,
+                "channel": "Archives / collectif",
+            },
+        ) == ("Archives / collectif x @m3nacebeats", "channel_self_credit")
+        assert propose(
+            connection,
+            {
+                "title": "Old money",
+                "description": description,
+                "channel": None,
+            },
+        ) == ("À préciser x @m3nacebeats", "unresolved_self_credit")
+
+
+@pytest.mark.parametrize("label", ["Compositeur", "COMPOSITEURS", "Compositrice"])
+def test_explicit_french_composer_is_used_instead_of_channel_or_socials(library, label):
+    description = (
+        f"Crédit :\r\nNom de l’instrumentale : LA VIE EST BELLE\r\n{label}\u00a0: Jake B\r\n"
+    )
+    with library.catalog() as connection:
+        assert propose(
+            connection,
+            {
+                "title": "Melodic Hoodtrap Type Beat",
+                "description": description,
+                "channel": "Autre chaîne",
+            },
+        ) == ("Jake B", "explicit_credit")
+
+
+def test_handles_and_names_containing_pronoun_letters_are_not_rewritten(library):
+    for name in ["Meek", "MyselfBeats", "MoiRecords", "@me", "@myself", "ＮＯＶＡ"]:
+        assert producer_credit("Beat", f"Produced by {name}") == (name, "explicit_credit")
+    with library.catalog() as connection:
+        assert propose(
+            connection,
+            {
+                "title": "Beat (prod. Nova x @Guest)",
+                "description": "prod by me x @Guest",
+                "channel": "Reuploads",
+            },
+        ) == ("Nova x @Guest", "explicit_credit")
+        assert propose(
+            connection,
+            {
+                "title": "Beat (prod. Nova x Ryo)",
+                "description": "prod by me",
+                "channel": "Archives",
+            },
+        ) == (None, "ambiguous_credit")
+        assert propose(
+            connection,
+            {
+                "title": "Beat (prod. Nova)",
+                "description": "Compositeur: Jake B",
+                "channel": "Archives",
+            },
+        ) == (None, "ambiguous_credit")
+
+
+def test_known_channel_rule_resolves_only_the_owner_and_keeps_each_new_guest(library):
+    first = add_beat(library, title="Beat (prod. Raw)", channel_id="UC-known")
+    correct_beatmaker(library, first, "Laco", True)
+    guests = []
+    for guest in ["@m3nacebeats", "@Other"]:
+        identity = add_beat(
+            library, description=f"prod by moi x {guest}", channel="Renamed", channel_id="UC-known"
+        )
+        guests.append(identity)
+    refresh_beatmakers(library)
+    for identity, guest in zip(guests, ["@m3nacebeats", "@Other"], strict=True):
+        detail = beat_details(library, identity)
+        assert detail["beatmaker"] == f"Laco x {guest}"
+        assert detail["beatmaker_source"] == "channel_alias_self_credit"
+    assert refresh_beatmakers(library)["updated"] == 0
+
+
+def test_rule_correcting_a_self_collaboration_does_not_leak_its_guest(library):
+    first = add_beat(library, description="prod by me x @m3nacebeats", channel_id="UC-known")
+    correct_beatmaker(library, first, "Laco x @m3nacebeats", True)
+    next_beat = add_beat(library, description="prod by me x @Other", channel_id="UC-known")
+    refresh_beatmakers(library)
+    assert beat_details(library, first)["beatmaker"] == "Laco x @m3nacebeats"
+    assert beat_details(library, first)["beatmaker_source"] == "manual"
+    assert beat_details(library, next_beat)["beatmaker"] == "Laco x @Other"
+
+
+@pytest.mark.parametrize(
+    "explicit,expected,origin",
+    [
+        ("Raw", "Canonical x @Guest", "channel_alias_self_credit"),
+        ("Other producer", "Other producer x @Guest", "explicit_credit"),
+    ],
+)
+def test_named_self_credit_uses_matching_alias_without_overriding_a_different_artist(
+    library,
+    explicit,
+    expected,
+    origin,
+):
+    first = add_beat(library, title="Beat (prod. Raw)", channel_id="UC-known")
+    correct_beatmaker(library, first, "Canonical", True)
+    identity = add_beat(
+        library,
+        title=f"Beat (prod. {explicit} x @Guest)",
+        description="prod by me x @Guest",
+        channel_id="UC-known",
+    )
+    refresh_beatmakers(library)
+    detail = beat_details(library, identity)
+    assert detail["beatmaker"] == expected
+    assert detail["beatmaker_source"] == origin
+
+
+def test_a_whole_collective_alias_is_not_reused_as_a_single_author(library):
+    first = add_beat(library, title="Beat (prod. Raw x Guest)", channel_id="UC-collective")
+    correct_beatmaker(library, first, "Canonical collective", True)
+    next_beat = add_beat(library, description="prod by me x @Other", channel_id="UC-collective")
+    refresh_beatmakers(library)
+    assert beat_details(library, first)["beatmaker"] == "Canonical collective"
+    assert beat_details(library, next_beat)["beatmaker"] == "prod_oson x @Other"
+    assert beat_details(library, next_beat)["beatmaker_source"] == "channel_self_credit"
+
+
+def test_existing_self_credits_refresh_from_original_text_and_keep_manual_values_and_media(library):
+    automatic = add_beat(
+        library,
+        description="prod by me x @Guest",
+        channel="prodlacco",
+        beatmaker="me x @Guest",
+        source="explicit_credit",
+    )
+    manual = add_beat(library, description="prod by me x @Guest")
+    empty = add_beat(library, description="prod by moi")
+    correct_beatmaker(library, manual, "Mon crédit choisi", False)
+    correct_beatmaker(library, empty, None, False)
+    correct_metadata(library, automatic, MetadataUpdate(description="Description corrigée"))
+    with library.catalog() as connection:
+        before = {row["id"]: dict(row) for row in connection.execute("SELECT * FROM beats")}
+    result = refresh_beatmakers(library)
+    assert result == {"updated": 1, "preserved": 2, "unresolved": 0}
+    assert beat_details(library, automatic)["beatmaker"] == "prodlacco x @Guest"
+    assert beat_details(library, manual)["beatmaker"] == "Mon crédit choisi"
+    assert beat_details(library, empty)["beatmaker"] is None
+    with library.catalog() as connection:
+        for row in connection.execute("SELECT * FROM beats"):
+            for field in row.keys():
+                if field not in {"beatmaker", "field_provenance"}:
+                    assert row[field] == before[row["id"]][field]
+            assert (
+                library.safe_path(row["audio_path"]).read_bytes() == b"media to preserve unchanged"
+            )
+    assert beat_details(library, automatic)["metadata_provenance"]["description"] == "manual"
