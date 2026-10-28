@@ -50,7 +50,7 @@ export function CatalogFilters({ value, options, onChange }: { value: Filters; o
     {categories.map(([key, missing, label]) => <Choices key={key} label={label} choices={options[key]} selected={value[key]} missing={value[missing]} onValues={(next) => onChange({ ...value, [key]: next })} onMissing={(next) => onChange({ ...value, [missing]: next })} onClear={() => onChange({ ...value, [key]: [], [missing]: false })}>
       {key === 'keys' && <form className="key-composer" onSubmit={(e) => { e.preventDefault(); const key = `${note} ${mode}`; if (!value.keys.includes(key)) onChange({ ...value, keys: [...value.keys, key] }) }}>
         <label>Note<select value={note} onChange={(e) => setNote(e.target.value)}>{['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'].map((v) => <option key={v}>{v}</option>)}</select></label>
-        <label>Mode<select value={mode} onChange={(e) => setMode(e.target.value)}><option value="minor">Mineur</option><option value="major">Majeur</option></select></label><button type="submit">Ajouter cette tonalité</button>
+        <label>Mode<select value={mode} onChange={(e) => setMode(e.target.value)}><option value="minor">Minor</option><option value="major">Major</option></select></label><button type="submit">Ajouter cette tonalité</button>
       </form>}
     </Choices>)}
   </>

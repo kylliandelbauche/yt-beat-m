@@ -43,7 +43,5 @@ export function musicalKeyLabel(value: string | null | undefined) {
   if (!value) return '—'
   const match = value.match(/^([A-G])([#b]?)\s*(minor|min|m|major|maj)$/i)
   if (!match) return value
-  const notes: Record<string, string> = { C: 'Do', D: 'Ré', E: 'Mi', F: 'Fa', G: 'Sol', A: 'La', B: 'Si' }
-  const accidental = match[2] === '#' ? '♯' : match[2] === 'b' ? '♭' : ''
-  return `${notes[match[1].toUpperCase()]}${accidental} ${['minor', 'min', 'm'].includes(match[3].toLowerCase()) ? 'min' : 'maj'}`
+  return `${match[1].toUpperCase()}${match[2].toLowerCase()} ${['minor', 'min', 'm'].includes(match[3].toLowerCase()) ? 'minor' : 'major'}`
 }

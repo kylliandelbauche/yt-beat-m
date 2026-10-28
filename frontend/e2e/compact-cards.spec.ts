@@ -88,7 +88,7 @@ test('cartes de 265 × 365 issues du contenu, géométrie fixe au survol, focus 
     const image = (await card.locator('.beat-select').boundingBox())!, info = (await card.locator('.beat-card-info').boundingBox())!
     expect([image.width, image.height, info.width, info.height]).toEqual([263, 263, 263, 100])
   }
-  await expect(first.locator('.beat-music')).toHaveText('125|Sol♯ min')
+  await expect(first.locator('.beat-music')).toHaveText('125|G# minor')
   await expect(cards.last().locator('.beat-music')).toHaveText('—|—')
   await expect(page.locator('.listen-label')).toHaveCount(0)
   await first.locator('.beat-select').hover()

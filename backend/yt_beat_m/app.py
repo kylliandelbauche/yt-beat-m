@@ -21,6 +21,7 @@ from yt_beat_m.beatmakers import (
 from yt_beat_m.catalog import CatalogFilters, beat_details, filter_options, list_beats, set_favorite
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.directory_picker import DirectoryPicker
+from yt_beat_m.key_refresh import refresh_missing_keys
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
@@ -172,7 +173,13 @@ def create_app(
         with manager.active() as library:
             scan = scan_local_audio(library)
             producers = refresh_beatmakers(library)
-            return {**scan, "beatmakers": producers, "library": library.summary()}
+            keys = refresh_missing_keys(library)
+            return {
+                **scan,
+                "beatmakers": producers,
+                "musical_keys": keys,
+                "library": library.summary(),
+            }
 
     @app.get("/api/beats")
     def beats(
