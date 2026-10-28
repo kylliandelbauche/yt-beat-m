@@ -25,12 +25,20 @@ def simulated_download(self, args, on_line=None, *, timeout=600):
                 "id": identity,
                 "title": ("Prod beatmaker " + identity[-1])
                 if identity.startswith("CREATOR")
+                else ("Prod tonalité " + identity[-1])
+                if identity.startswith("KEYREGRESS")
                 else "Prod importée de test",
                 "duration": 30,
                 "channel": "Chaîne de recette",
                 "channel_id": "UC-e2e-producer",
                 "upload_date": "20261023",
-                "description": "Produced by Raw" if identity.startswith("CREATOR") else "140 BPM",
+                "description": "Produced by Raw"
+                if identity.startswith("CREATOR")
+                else "BPM : 130 Clé : E minor"
+                if identity == "KEYREGRESS1"
+                else "144bpm 🎵 / Abm 🎹"
+                if identity == "KEYREGRESS2"
+                else "140 BPM",
             }
         )
     if args[0] == "ffprobe":

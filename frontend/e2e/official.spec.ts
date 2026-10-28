@@ -21,7 +21,7 @@ test('cartes horizontales compactes, actions séparées et lecteur conservé ent
   const bounds = (await first.boundingBox())!
   expect(bounds.width).toBe(384); expect(bounds.height).toBe(128)
   expect((await first.locator('.horizontal-cover').boundingBox())!.width).toBe(127)
-  await expect(first.locator('.horizontal-music')).toHaveText('125 | Sol♯ min')
+  await expect(first.locator('.horizontal-music')).toHaveText('125 | G# minor')
   await expect(audio).toHaveAttribute('src', src!)
   await expect(audio).toHaveAttribute('data-identity', 'preserved')
   await expect(audio).toHaveJSProperty('paused', true)

@@ -39,7 +39,7 @@ test('éditer les informations, filtrer et retirer les filtres sans redémarrer 
     await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
     await expect(dialog.getByRole('status')).toContainText('Informations enregistrées.')
     await expect(dialog.getByLabel('BPM', { exact: true })).toHaveValue('150')
-    await expect(dialog.getByLabel('Tonalité', { exact: true })).toHaveValue('Fa min')
+    await expect(dialog.getByLabel('Tonalité', { exact: true })).toHaveValue('F minor')
     await expect(dialog.getByRole('link', { name: 'Page de vente ↗' })).toHaveAttribute('href', 'https://example.org/produit/la-vie-est-belle/')
     await expect(audio).toHaveJSProperty('paused', true)
     await expect(audio).toHaveJSProperty('currentTime', 10)

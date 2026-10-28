@@ -139,9 +139,9 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
     setError('')
     setNotice('')
     try {
-      const result = await api<Scan & { beatmakers: { updated: number; preserved: number } }>('/api/library/refresh', { method: 'POST' })
+      const result = await api<Scan & { beatmakers: { updated: number; preserved: number }; musical_keys?: { updated: number } }>('/api/library/refresh', { method: 'POST' })
       await refreshImported()
-      setNotice(`${result.added} ajouté(s) · ${result.skipped} déjà présent(s) · ${result.beatmakers.updated} beatmaker(s) actualisé(s) · ${result.beatmakers.preserved} correction(s) conservée(s).${result.errors.length ? ` ${result.errors.length} fichier(s) illisible(s) : ${result.errors.map((item) => item.name).join(', ')}.` : ''}`)
+      setNotice(`${result.added} ajouté(s) · ${result.skipped} déjà présent(s) · ${result.beatmakers.updated} beatmaker(s) actualisé(s) · ${result.beatmakers.preserved} correction(s) conservée(s) · ${result.musical_keys?.updated ?? 0} tonalité(s) complétée(s).${result.errors.length ? ` ${result.errors.length} fichier(s) illisible(s) : ${result.errors.map((item) => item.name).join(', ')}.` : ''}`)
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Indexage impossible.')
     } finally { setBusy(false) }

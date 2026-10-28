@@ -134,3 +134,11 @@ Les fenêtres et le lecteur reprennent les surfaces, flous et ombres de Paper. L
 Un compteur unique présente les résultats dans l’en-tête. Une ligne de 22 px accueille la recherche et les filtres retirables ; les outils restent sous une zone de grille d’au moins 416 px, dont la hauteur est conservée pendant la session lorsqu’un état la réduit. Premier import et absence de résultat proposent leurs propres actions ; le lecteur vide est inactif. Les menus permettent l’effacement local et restaurent le focus ; recherche et autres filtres peuvent être réinitialisés séparément.
 
 Le lien d’import reste visible, et erreur/reprise remplacent la progression dans un emplacement fixe de 20 px sous le champ. Ce format remplace les 24 px de #41. La disponibilité du moteur est vérifiée localement et distinguée d’un échec réseau d’import ; la reprise conserve la piste et sa position. Le bouton d’ouverture d’une bibliothèque est inactif sans chemin. Les mesures et scénarios sont dans [la vérification du dashboard](design/57-dashboard-states.md).
+
+## Tonalités explicites et notation anglaise (#27)
+
+À la demande de l’utilisateur du 28 octobre 2026, les tonalités s’affichent et se modifient en notation anglaise : `E minor`, `Ab minor`, `F# major`. Ce choix remplace leur traduction française dans les cartes et fiches Paper ; les libellés de l’interface restent en français.
+
+L’import reconnaît Key, Clé/Cle, Tonalité/Tonalite et Gamme, les notes françaises ou anglaises avec un mode explicite, et les formes compactes dans un bloc musical comme `144bpm 🎵 / Abm 🎹`. Des indications contradictoires restent inconnues ; les mots courants, liens et adresses ne deviennent pas des notes. Les corrections et filtres utilisent la même normalisation.
+
+Le bouton Actualiser complète aussi les tonalités manquantes depuis le titre et la description source conservés, sans téléchargement ni renommage du MP3. Une valeur déjà connue ou corrigée manuellement, même volontairement vidée, est préservée. Si la description a été réécrite, le texte source original conservé sert à cette extraction. Aucune analyse de marketplace ou de l’audio n’est ajoutée.

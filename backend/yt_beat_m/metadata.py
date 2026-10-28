@@ -2,7 +2,6 @@
 
 import json
 import math
-import re
 import unicodedata
 from urllib.parse import urlsplit
 
@@ -10,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from yt_beat_m.beatmakers import _write, channel_keys, propose, provenance, write_correction
 from yt_beat_m.library import Library, LibraryError
+from yt_beat_m.musical_keys import canonical_key as canonical_key
 
 
 def normalize(value: str | None) -> str:
@@ -19,26 +19,6 @@ def normalize(value: str | None) -> str:
         )
         .casefold()
         .split()
-    )
-
-
-def canonical_key(value: str | None) -> str | None:
-    text = normalize(value).replace("♯", "#").replace("♭", "b")
-    match = re.fullmatch(
-        r"(do|re|mi|fa|sol|la|si|[a-g])\s*([#b]?)\s*(minor|mineur|min|m|major|majeur|maj)",
-        text,
-    )
-    if not match:
-        return None
-    note, accidental, mode = match.groups()
-    note = {"do": "c", "re": "d", "mi": "e", "fa": "f", "sol": "g", "la": "a", "si": "b"}.get(
-        note, note
-    )
-    # Keep enharmonic spellings distinct: no audio-derived pitch assumptions.
-    return (
-        note.upper()
-        + accidental
-        + (" minor" if mode in {"minor", "mineur", "min", "m"} else " major")
     )
 
 
@@ -103,7 +83,7 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
         key = canonical_key(raw)
         if raw and raw.strip() and key is None:
             raise LibraryError(
-                "Tonalité : indique une note et un mode, par exemple F mineur ou Do majeur."
+                "Tonalité : indique une note et un mode, par exemple F minor ou C major."
             )
         changes["musical_key"] = key
     for field in ("styles", "moods"):

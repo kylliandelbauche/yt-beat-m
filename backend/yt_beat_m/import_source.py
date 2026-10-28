@@ -5,6 +5,7 @@ from datetime import datetime
 from urllib.parse import parse_qs, urlsplit
 
 from yt_beat_m.library import LibraryError
+from yt_beat_m.musical_keys import extract_key
 
 
 def youtube_source(value: str) -> tuple[str, str]:
@@ -59,15 +60,7 @@ def source_metadata(info: dict, identity: str) -> dict:
     bpm = next(iter(bpm_values)) if len(bpm_values) == 1 else None
     if bpm is not None and not 20 <= bpm <= 400:
         bpm = None
-    keys = set(
-        re.findall(
-            r"\b(?:key|tonalité)\s*[:=\-]\s*([A-G](?:#|b)?(?:\s*(?:minor|major|min|maj|m))?)"
-            r"(?=\s*(?:$|[\n\r,;|]))",
-            text,
-            re.I,
-        )
-    )
-    musical_key = next(iter(keys)).strip() if len(keys) == 1 else None
+    musical_key = extract_key(title, description)
     published = None
     try:
         published = datetime.strptime(info.get("upload_date", ""), "%Y%m%d").date().isoformat()
