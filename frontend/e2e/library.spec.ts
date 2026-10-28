@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('catalogue vide puis erreur récupérable au chargement', async ({ page }) => {
   await page.route('**/api/beats?*', (route) => route.fulfill({ json: { beats: [], total: 0 } }))
   await page.goto('/')
-  await expect(page.getByText('Une place pour tes premières prods.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Ta première prod t’attend', { exact: true })).toBeVisible()
   await page.unroute('**/api/beats?*')
   await page.route('**/api/beats?*', (route) => route.fulfill({ status: 503, json: { detail: 'Catalogue temporairement indisponible.' } }))
   await page.reload()
@@ -63,7 +63,7 @@ test('favori persistant, filtres combinés et état sans résultat', async ({ pa
   await expect(page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Retirer des favoris R&B Mélancolique', exact: true }).click()
-  await expect(page.getByText('Aucune prod ne correspond à ces filtres.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Aucune prod ne correspond', { exact: true })).toBeVisible()
 })
 
 test('formulaire d’import, erreur récupérable et ouverture du doublon', async ({ page }) => {

@@ -8,7 +8,7 @@ import type { ModalClose } from './useModalLifecycle'
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
 
-export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
+export function LibraryPanel({ diagnostic, connected, onRetry, onDiagnostic }: { diagnostic: ReactNode; connected: boolean; onRetry: () => void; onDiagnostic: () => void }) {
   const [status, setStatus] = useState<LibraryStatus | null>(null)
   const [path, setPath] = useState('')
   const [name, setName] = useState('Mes prods')
@@ -28,10 +28,11 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
     setStatus((current) => current?.library ? { ...current, library: { ...current.library, beat_count: count } } : current)
   }, [])
   useEffect(() => {
+    if (!connected) return
     const controller = new AbortController()
-    api<LibraryStatus>('/api/library', { signal: controller.signal }).then((value) => { if (!controller.signal.aborted) setStatus(value) }).catch((cause: unknown) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Le catalogue est indisponible.') })
+    api<LibraryStatus>('/api/library', { signal: controller.signal }).then((value) => { if (!controller.signal.aborted) { setStatus(value); setError('') } }).catch((cause: unknown) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Le catalogue est indisponible.') })
     return () => controller.abort()
-  }, [])
+  }, [connected])
   async function select(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError('')
     try {
@@ -56,21 +57,21 @@ export function LibraryPanel({ diagnostic }: { diagnostic: ReactNode }) {
   }
   const library = status?.library
   const form = <form className="library-form" onSubmit={(event) => { void select(event) }}>
-    <div className="mode-selector" aria-label="Action sur la bibliothèque"><button type="button" aria-pressed={mode === 'open'} onClick={() => { void chooseFolder('open') }} disabled={busy}>Ouvrir un dossier</button><button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')} disabled={busy}>Créer une bibliothèque</button></div>
-    <label>Dossier de bibliothèque<input value={path} onChange={(event) => setPath(event.target.value)} placeholder="Choisis un dossier ou saisis son chemin" required disabled={busy} autoComplete="off" spellCheck={false} /></label>
-    {mode === 'create' && <button type="button" disabled={busy} onClick={() => { void chooseFolder('create') }}>Choisir un dossier</button>}
-    {mode === 'create' && <label>Nom de la bibliothèque<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} disabled={busy} /></label>}
+    <div className="mode-selector" aria-label="Action sur la bibliothèque"><button type="button" aria-pressed={mode === 'open'} onClick={() => { void chooseFolder('open') }} disabled={busy || !connected}>Ouvrir un dossier</button><button type="button" aria-pressed={mode === 'create'} onClick={() => setMode('create')} disabled={busy || !connected}>Créer une bibliothèque</button></div>
+    <label>Dossier de bibliothèque<input value={path} onChange={(event) => setPath(event.target.value)} placeholder="Choisis un dossier ou saisis son chemin" required disabled={busy || !connected} autoComplete="off" spellCheck={false} /></label>
+    {mode === 'create' && <button type="button" disabled={busy || !connected} onClick={() => { void chooseFolder('create') }}>Choisir un dossier</button>}
+    {mode === 'create' && <label>Nom de la bibliothèque<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} disabled={busy || !connected} /></label>}
     <p className="form-hint">{mode === 'create' ? 'Choisis un nouveau dossier ou un dossier vide. Il contiendra tes MP3, pochettes et annotations.' : 'Choisis le dossier contenant library.json. Il peut se trouver sur ton disque externe.'}</p>
-    <button type="submit" className="primary" disabled={busy}>{busy ? 'Un instant…' : mode === 'create' ? 'Créer la bibliothèque' : 'Ouvrir la bibliothèque'}</button>
+    <button type="submit" className="primary" disabled={busy || !connected || !path.trim()}>{busy ? 'Un instant…' : mode === 'create' ? 'Créer la bibliothèque' : 'Ouvrir la bibliothèque'}</button>
   </form>
-  const heading = <div className="section-heading"><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2><span className="phase">{library ? `${library.beat_count} prod${library.beat_count > 1 ? 's' : ''}` : 'Dossier portable'}</span></div>
+  const heading = (count?: number) => <div className="section-heading"><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2><span className="phase">{!connected ? '—' : library ? `${count ?? library.beat_count} prod${(count ?? library.beat_count) > 1 ? 's' : ''}` : 'Dossier portable'}</span></div>
   const tools = <><button onClick={() => { setError(''); setOpened(true) }}><Icon name="folder" />Bibliothèque</button>{diagnostic}</>
   return <section className="library-placeholder" aria-labelledby="library-heading">
-    {library ? <BeatGallery key={library.id} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library.name} /> : <>{heading}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
-    {!opened && (error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
+    {library || !connected ? <BeatGallery key={library?.id || 'offline'} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library?.name || ''} connected={connected} onRetry={onRetry} onDiagnostic={onDiagnostic} onLibrary={() => { setError(''); setOpened(true) }} /> : <>{heading()}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
+    {!opened && connected && (error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
     {opened && <Modal label="Bibliothèque" title={<h2>Bibliothèque</h2>} closeLabel="Fermer la fenêtre Bibliothèque" onClose={finishClose} canClose={() => !busy} closeRef={closeModal} className="library-modal">
       <div className="modal-content"><div className="library-summary"><strong>{library?.name}</strong><span>{library?.beat_count} prods · ouverte</span><p className="library-path">{library?.root}</p></div>
-      {error && <p className="library-error" role="alert">{error}</p>}{form}<button className="close-library" disabled={busy} onClick={() => { void close() }}>Fermer la bibliothèque</button></div>
+      <div className="library-form-feedback" role="alert">{error}</div>{form}<button className="close-library" disabled={busy || !connected} onClick={() => { void close() }}>Fermer la bibliothèque</button></div>
     </Modal>}
   </section>
 }

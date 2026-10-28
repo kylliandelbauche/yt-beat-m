@@ -100,7 +100,7 @@ test('progression mesurée, phases indéterminées, erreur puis relance sans his
   await expect(page.getByText('Une nouvelle prod ?', { exact: true })).toHaveCount(0)
   await page.getByRole('textbox', { name: 'Lien YouTube de la prod' }).fill('https://youtu.be/PROGRESS001')
   await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
-  const progress = page.locator('.import-progress-track')
+  const progress = page.getByRole('progressbar', { name: 'Progression de l’import', exact: true })
   await expect(progress).toBeVisible()
   await expect(progress).not.toHaveAttribute('aria-valuenow')
   for (const percent of [8, 32, 64]) {

@@ -128,3 +128,9 @@ La référence Paper officielle du 26/10 remplace la grande carte de 416 px par 
 ## Finitions et transitions officielles (#56)
 
 Les fenêtres et le lecteur reprennent les surfaces, flous et ombres de Paper. Les cartes restent immobiles pendant leurs retours de survol et de lecture ; seule l’icône se contracte à la pression. Les fenêtres entrent en 180 ms et sortent en 140 ms avec fondu et déplacement de 8 px ; une fermeture peut interrompre l’entrée. Le dialogue natif, le verrouillage de page et le focus restent actifs jusqu’à la fin de la sortie. Un brouillon empêche de démarrer cette sortie avant accord. Les préférences de mouvement/transparence réduits sont respectées. Voir [les valeurs et vérifications](design/56-fluid-finishes.md).
+
+## États du dashboard (#57)
+
+Un compteur unique présente les résultats dans l’en-tête. Une ligne de 22 px accueille la recherche et les filtres retirables ; les outils restent sous une zone de grille d’au moins 416 px, dont la hauteur est conservée pendant la session lorsqu’un état la réduit. Premier import et absence de résultat proposent leurs propres actions ; le lecteur vide est inactif. Les menus permettent l’effacement local et restaurent le focus ; recherche et autres filtres peuvent être réinitialisés séparément.
+
+Le lien d’import reste visible, et erreur/reprise remplacent la progression dans un emplacement fixe de 20 px sous le champ. Ce format remplace les 24 px de #41. La disponibilité du moteur est vérifiée localement et distinguée d’un échec réseau d’import ; la reprise conserve la piste et sa position. Le bouton d’ouverture d’une bibliothèque est inactif sans chemin. Les mesures et scénarios sont dans [la vérification du dashboard](design/57-dashboard-states.md).
