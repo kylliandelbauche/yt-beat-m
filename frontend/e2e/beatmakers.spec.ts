@@ -40,3 +40,51 @@ test('corriger un beatmaker dans la fiche épurée et conserver la correction ap
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('me reste une proposition de chaîne, la correction conserve le collaborateur et la règle ne fuit pas vers les autres invités', async ({ page }) => {
+  const original = (await (await page.request.get('/api/library')).json()).library
+  const root = await mkdtemp(path.join(tmpdir(), 'self-credit-browser-'))
+  const token = (await (await page.request.get('/api/session')).json()).token
+  const headers = { Origin: 'http://127.0.0.1:8767', 'X-Session-Token': token }
+  try {
+    expect((await page.request.post('/api/library', { headers, data: { path: root, create: true, name: 'Collaborations de test' } })).ok()).toBe(true)
+    await page.goto('/')
+    await page.getByRole('textbox', { name: 'Lien YouTube de la prod' }).fill('https://youtu.be/SELFCREDIT1')
+    await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
+    const dialog = page.getByRole('dialog')
+    const maker = dialog.getByRole('textbox', { name: 'Nom du beatmaker', exact: true })
+    await expect(maker).toHaveValue('prodlacco x @m3nacebeats')
+    await expect(maker).toHaveAttribute('title', /proposé depuis la chaîne YouTube/)
+    await expect(maker).toHaveAttribute('aria-description', /À vérifier/)
+    const before = await dialog.locator('#detail-maker, .modal-actions button').evaluateAll((elements) => elements.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))
+    await dialog.getByRole('button', { name: 'Modifier la prod', exact: true }).click()
+    await maker.fill('Laco x @m3nacebeats')
+    await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
+    await expect(maker).toHaveAttribute('title', 'Nom corrigé manuellement.')
+    expect(await dialog.locator('#detail-maker, .modal-actions button').evaluateAll((elements) => elements.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))).toEqual(before)
+    const first = (await (await page.request.get('/api/beats')).json()).beats[0]
+    expect((await page.request.patch(`/api/beats/${first.id}/beatmaker`, { headers, data: { beatmaker: 'Laco x @m3nacebeats', remember_channel: true } })).ok()).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('textbox', { name: 'Lien YouTube de la prod' }).fill('https://youtu.be/SELFCREDIT2')
+    await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
+    await expect(maker).toHaveValue('Laco x @Other')
+    await expect(maker).toHaveAttribute('title', /règle de chaîne mémorisée/)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await page.getByRole('button', { name: 'Écouter Prod crédit 1', exact: true }).click()
+    const audio = page.locator('audio')
+    await expect(audio).toHaveJSProperty('paused', false)
+    await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 7; el.dataset.identity = 'self-credit-player' })
+    await page.getByRole('button', { name: 'Actualiser', exact: true }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'correction(s) conservée(s)' })).toBeVisible()
+    await expect(audio).toHaveJSProperty('currentTime', 7)
+    await expect(audio).toHaveAttribute('data-identity', 'self-credit-player')
+    await page.getByRole('searchbox', { name: 'Rechercher une prod' }).fill('m3nacebeats')
+    await expect(page.locator('.beat-card')).toHaveCount(1)
+    await expect(page.locator('.beat-maker')).toHaveText('Laco x @m3nacebeats')
+  } finally {
+    expect((await page.request.post('/api/library', { headers, data: { path: original.root } })).ok()).toBe(true)
+    await rm(root, { recursive: true, force: true })
+  }
+})

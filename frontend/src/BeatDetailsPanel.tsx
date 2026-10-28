@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from './api'
-import { duration, externalLink, musicalKeyLabel } from './beat'
+import { beatmakerSourceLabel, duration, externalLink, musicalKeyLabel } from './beat'
 import type { Beat, BeatDetails } from './beat'
 import { Artwork } from './Artwork'
 import { Icon, Modal } from './Modal'
@@ -162,7 +162,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
       <div className="detail-right">
         <h2 id="beat-details-title" aria-label={beat.title} tabIndex={0}><label className="detail-title-input"><span className="sr-only">Titre de la prod</span><input ref={titleInput} id="detail-title" title={beat.title} type="text" required maxLength={500} readOnly={!editing || busy} aria-invalid={invalid.includes('detail-title')} aria-describedby={invalid.includes('detail-title') ? 'detail-error-message' : undefined} value={draft.title} onFocus={() => { titleBlurred.current = false }} onBlur={(event) => { if (event.currentTarget.scrollLeft) titlePosition.current = event.currentTarget.scrollLeft; titleBlurred.current = true; const input = event.currentTarget; requestAnimationFrame(() => { if (input.isConnected && titleBlurred.current) input.scrollLeft = titlePosition.current }) }} onScroll={(event) => { if (!titleBlurred.current) titlePosition.current = event.currentTarget.scrollLeft }} onChange={(e) => update('title', e.target.value)} /></label></h2>
         <dl className="detail-identity">
-          <div><dt><label htmlFor="detail-maker">Beatmaker</label></dt><dd><input className="identity-value" id="detail-maker" aria-label="Nom du beatmaker" aria-invalid={invalid.includes('detail-maker')} aria-describedby={invalid.includes('detail-maker') ? 'detail-error-message' : undefined} maxLength={200} readOnly={!editing || busy} placeholder="Non renseigné" value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} /></dd></div>
+          <div><dt><label htmlFor="detail-maker">Beatmaker</label></dt><dd><input className="identity-value" id="detail-maker" aria-label="Nom du beatmaker" title={beatmakerSourceLabel(beat.beatmaker_source)} aria-description={beatmakerSourceLabel(beat.beatmaker_source)} aria-invalid={invalid.includes('detail-maker')} aria-describedby={invalid.includes('detail-maker') ? 'detail-error-message' : undefined} maxLength={200} readOnly={!editing || busy} placeholder="Non renseigné" value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} /></dd></div>
           <div className="source-identity"><dt>Chaîne YouTube</dt><dd title={beat.channel || undefined}><span className="identity-value">{beat.channel || 'Non renseignée'}</span></dd></div>
         </dl>
         <dl className="detail-dates"><div><dt>Publication YouTube</dt><dd>{dateLabel(beat.published_on, true)}</dd></div><div><dt>Ajout à la bibliothèque</dt><dd>{dateLabel(beat.added_at)}</dd></div></dl>
