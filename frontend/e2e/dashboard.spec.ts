@@ -85,6 +85,29 @@ for (const width of [1280, 390]) {
   })
 }
 
+test('un import repris au rechargement garde son lien et permet la relance même après effacement du champ', async ({ page }) => {
+  const url = 'https://youtu.be/PROGRESS001'
+  const base = { id: 'resume-57', source_url: url, state: 'running', stage: 'downloading', progress: 24, error_message: null, beat_id: null }
+  let job = { ...base }
+  let submitted = ''
+  await page.route('**/api/imports', async (route) => {
+    if (route.request().method() === 'POST') {
+      submitted = route.request().postDataJSON().url
+      job = { ...base }
+      await route.fulfill({ json: { job, beat_id: null, duplicate: false } })
+    } else await route.fulfill({ json: { jobs: [job] } })
+  })
+  await page.goto('/')
+  await expect(page.locator('#youtube-url')).toHaveValue(url)
+  job = { ...base, state: 'failed', stage: 'failed' }
+  await expect(page.getByRole('button', { name: 'Réessayer', exact: true })).toBeEnabled()
+  await page.locator('#youtube-url').fill('')
+  await page.getByRole('button', { name: 'Réessayer', exact: true }).click()
+  await expect.poll(() => submitted).toBe(url)
+  await expect(page.locator('#youtube-url')).toHaveValue(url)
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '24')
+})
+
 test('premier import : actions utiles, lecteur inactif et ouverture de bibliothèque sans déplacement', async ({ page }, testInfo) => {
   await page.route('**/api/beats?*', (route) => route.fulfill({ json: { beats: [], total: 0 } }))
   await page.goto('/')

@@ -11,6 +11,7 @@
 .import-progress { height: 20px; }
 .import-progress > span { flex: 0 0 40px; text-align: right; font-variant-numeric: tabular-nums; }
 .import-error-slot { height: 20px; overflow: auto; color: #f4b4be; font-size: 12px; line-height: 18px; scrollbar-width: thin; }
+.import-error-slot:focus-visible { outline: 2px solid var(--paper-mint); outline-offset: 1px; }
 .import-form [aria-invalid="true"] { border-color: #f4b4be; }
 .catalog-filters { margin-bottom: 0; padding-block: 7px; min-height: 54px; }
 .catalog-filters[aria-disabled="true"] { opacity: .55; }

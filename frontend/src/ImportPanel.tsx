@@ -36,8 +36,8 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
         setJobs(result.jobs)
         setTrackingError('')
         if (!initialized.current) {
-          const failed = result.jobs.find((job) => ['failed', 'interrupted'].includes(job.state))
-          if (failed?.source_url) setUrl((current) => current || failed.source_url)
+          const resumable = result.jobs.find((job) => ['running', 'queued'].includes(job.state)) || result.jobs.find((job) => ['failed', 'interrupted'].includes(job.state))
+          if (resumable?.source_url) setUrl((current) => current || resumable.source_url)
         }
         for (const job of result.jobs) {
           if (['queued', 'running'].includes(job.state)) watched.current.add(job.id)
@@ -90,9 +90,11 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
     event.preventDefault()
     if (!connected) return
     if (trackingError && !error) { setTrackingError(''); setRefresh((value) => value + 1); return }
-    try { const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error() }
+    const value = url.trim() || (currentJob && ['failed', 'interrupted'].includes(currentJob.state) ? currentJob.source_url : '')
+    try { const parsed = new URL(value); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error() }
     catch { setError('Colle un lien YouTube valide.'); return }
-    void enqueue(url)
+    setUrl(value)
+    void enqueue(value)
   }
 
   const currentJob = jobs.find((job) => job.state === 'running') || jobs.find((job) => job.state === 'queued') || jobs.find((job) => job.id === focusedJob) || jobs.find((job) => ['failed', 'interrupted'].includes(job.state))
@@ -106,7 +108,7 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
       <button className="import-submit" type="submit" disabled={busy || (!!active && !problem) || !connected}>{busy ? 'Ajout…' : problem ? 'Réessayer' : active ? currentJob.stage === 'converting' ? 'Conversion…' : currentJob.stage === 'extracting' ? 'Lecture…' : currentJob.stage === 'verifying' ? 'Vérification…' : 'Import en cours' : 'Importer la prod'}</button>
     </form>
     <div className="import-progress-list">
-    {problem ? <div id="import-feedback" className="import-error-slot" role="alert">{problem}</div> : currentJob ? (() => {
+    {problem ? <div id="import-feedback" className="import-error-slot" role="alert" tabIndex={0}>{problem}</div> : currentJob ? (() => {
       const job = currentJob
       const ready = job.state === 'completed'
       const measured = job.stage === 'downloading' && job.progress !== null && Number.isFinite(job.progress) && job.progress >= 0 && job.progress < 100 ? Math.floor(job.progress) : undefined

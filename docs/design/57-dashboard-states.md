@@ -46,7 +46,7 @@ La hauteur nécessaire à une grande grille est conservée durant la session de 
 | Moteur · Déconnecté | panne initiale ou en session, reprise, diagnostic et géométrie |
 | Détail · Erreur de sauvegarde | erreur et brouillon préservé, suite existante |
 
-Les tests navigateur utilisent uniquement un catalogue et de l’audio synthétiques. Les huit scénarios de `dashboard.spec.ts` couvrent notamment 1280 et 390 px, les coordonnées du titre, des filtres, de la grille et des outils, les cinq états d’import, les erreurs BPM/bibliothèque, une grande grille et la reprise d’une panne initiale. La suite existante contrôle aussi les 22 repères de texte des fiches, les transitions, la persistance des corrections et les parcours audio. Les captures jointes illustrent premier import, aucun résultat, déconnexion et erreur d’import. Aucune valeur musicale ou date illustrative de Paper n’est injectée au catalogue.
+Les tests navigateur utilisent uniquement un catalogue et de l’audio synthétiques. Les neuf scénarios de `dashboard.spec.ts` couvrent notamment 1280 et 390 px, les coordonnées du titre, des filtres, de la grille et des outils, les cinq états d’import, les erreurs BPM/bibliothèque, une grande grille et la reprise d’une panne initiale. La suite existante contrôle aussi les 22 repères de texte des fiches, les transitions, la persistance des corrections et les parcours audio. Les captures jointes illustrent premier import, aucun résultat, déconnexion et erreur d’import. Aucune valeur musicale ou date illustrative de Paper n’est injectée au catalogue.
 
 Captures : [premier import](57-first-import.png), [aucun résultat](57-no-results.png), [moteur déconnecté](57-engine-offline.png), [erreur et relance d’import](57-import-error.png).
 
