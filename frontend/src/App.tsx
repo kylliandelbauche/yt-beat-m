@@ -8,7 +8,9 @@ import './Typography.css'
 import './BeatDetails.css'
 import './CoverCards.css'
 import './Fluid.css'
+import './Dashboard.css'
 import { Icon, Modal } from './Modal'
+import { useEngineConnection } from './useEngineConnection'
 
 type Dependency = { name: string; version: string | null; available: boolean; hint: string }
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
@@ -18,31 +20,34 @@ function App() {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [showDiagnostic, setShowDiagnostic] = useState(false)
+  const engine = useEngineConnection()
+  const connected = engine.state !== 'offline'
 
   useEffect(() => {
+    if (!connected) return
     const controller = new AbortController()
     fetch('/api/diagnostics', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('Le moteur local ne répond pas correctement.')
         return response.json() as Promise<Diagnostic>
       })
-      .then(setDiagnostic)
+      .then((value) => { setError(''); setDiagnostic(value) })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
           setError(cause instanceof Error ? cause.message : 'Connexion au moteur impossible.')
         }
       })
     return () => controller.abort()
-  }, [attempt])
+  }, [attempt, connected])
 
   const diagnosticPanel = <>
     <button onClick={() => setShowDiagnostic(true)}><Icon name="diagnostic" />Diagnostic</button>
     {showDiagnostic && <Modal label="Diagnostic" title={<h2>Diagnostic</h2>} closeLabel="Fermer la fenêtre Diagnostic" onClose={() => setShowDiagnostic(false)} className="diagnostic-modal">
       <section className="modal-content diagnostic" aria-label="État du moteur local">
-        <h3>{diagnostic?.ready ? 'Prêt à importer' : 'État du moteur'}</h3>
-        <p role="status">{error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
+        <h3>{!connected ? 'Moteur déconnecté' : diagnostic?.ready ? 'Prêt à importer' : 'État du moteur'}</h3>
+        <p role="status">{!connected ? 'Le moteur local ne répond pas. Cette connexion est indépendante de l’accès à Internet.' : error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
         {diagnostic && <ul className="dependency-list">{diagnostic.dependencies.map((item) => <li key={item.name}><span>{item.name}</span><span className={item.available ? 'dependency-ok' : 'dependency-missing'}>{item.available ? item.version : item.hint}</span></li>)}</ul>}
-        <button onClick={() => { setError(''); setDiagnostic(null); setAttempt((value) => value + 1) }}>Vérifier à nouveau</button>
+        <button onClick={() => { engine.retry(); setError(''); setDiagnostic(null); setAttempt((value) => value + 1) }}>Vérifier à nouveau</button>
       </section>
     </Modal>}
   </>
@@ -53,11 +58,11 @@ function App() {
         <a className="brand" href="/" aria-label="YT Beat M, accueil">
           <span className="brand-mark">b.</span> beat m
         </a>
-        <span className="status"><span className={error ? 'dot error-dot' : 'dot'} />
-          {error ? 'Moteur indisponible' : diagnostic ? 'Moteur connecté' : 'Connexion…'}
+        <span className="status" role="status"><span className={!connected ? 'dot warning-dot' : 'dot'} />
+          {!connected ? 'Déconnecté' : engine.state === 'online' ? 'Moteur connecté' : 'Connexion…'}
         </span>
       </header>
-      <LibraryPanel diagnostic={diagnosticPanel} />
+      <LibraryPanel diagnostic={diagnosticPanel} connected={connected} onRetry={engine.retry} onDiagnostic={() => setShowDiagnostic(true)} />
 
     </main>
   )
