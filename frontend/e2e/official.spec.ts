@@ -122,13 +122,12 @@ test('progression mesurée, phases indéterminées, erreur puis relance sans his
   await page.getByRole('button', { name: 'Réessayer', exact: true }).click()
   await expect(page.getByRole('alert')).toHaveCount(0)
   job = { ...base, stage: 'completed', state: 'completed', beat_id: '00000000-0000-0000-0000-000000000001', progress: 100 }
-  await expect(progress).toHaveAttribute('aria-valuenow', '100')
-  await expect(page.getByRole('status').filter({ hasText: 'Prête à écouter · 100 %' })).toBeVisible()
   await expect(page.getByRole('dialog')).toBeVisible()
+  await expect(progress).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Voir la prod', exact: true })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(progress).toHaveAttribute('aria-valuenow', '100')
+  await expect(progress).toHaveCount(0)
 })
 
 
@@ -148,9 +147,11 @@ test('une fin d’import attend la fermeture d’un brouillon ouvert et ne rejou
   await expect.poll(() => completedPolls, { timeout: 10000 }).toBeGreaterThan(1)
   await expect(page.getByRole('dialog').getByRole('textbox', { name: 'Titre de la prod', exact: true })).toHaveValue('Drill minuit')
   await expect(page.getByLabel('BPM', { exact: true })).toHaveValue('149')
+  await expect(page.locator('.import-progress-track')).toHaveAttribute('aria-valuenow', '100')
   await page.getByRole('button', { name: 'Annuler les modifications', exact: true }).click()
   await page.getByRole('button', { name: 'Fermer la fiche', exact: true }).click()
   await expect(page.getByRole('dialog').getByRole('heading', { name: 'R&B Mélancolique', exact: true })).toBeVisible()
+  await expect(page.locator('.import-progress-track')).toHaveCount(0)
   await page.keyboard.press('Escape')
   const before = completedPolls
   await expect.poll(() => completedPolls, { timeout: 10000 }).toBeGreaterThan(before)

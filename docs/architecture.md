@@ -95,6 +95,8 @@ La liste expose BPM et tonalité pour les cartes horizontales. La disposition es
 
 La confirmation de sauvegarde remplace temporairement l’icône du bouton existant par une coche ; une zone d’annonce accessible hors du flux donne le résultat. Les erreurs et la demande d’abandon occupent une surface superposée dans la fiche, avec actions accessibles. Aucun de ces états ne crée de ligne supplémentaire entre l’en-tête et les colonnes (#37).
 
+Depuis #66, une demande d’ouverture automatique porte une confirmation onShown. La galerie confirme lorsque la fiche est ouverte, immédiatement ou après la file protégeant un autre brouillon. Le panneau d’import masque alors la progression de cette tâche jusqu’à une nouvelle tentative explicite. Le slot de 20 px reste en place ; les tâches backend et leur historique ne sont ni supprimés ni modifiés. Les anciennes réussites et le repos n’affichent aucun rail. Un doublon déjà prêt ouvre également sa fiche sans laisser une progression persistante.
+
 ## ADR-003 — Import sérialisé et récupérable
 
 1. Valider le lien et extraire un identifiant vidéo YouTube ; accepter uniquement les hôtes et formes d'URL prévus. Les playlists seules sont hors MVP.
