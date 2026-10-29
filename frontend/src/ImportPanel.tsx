@@ -13,7 +13,7 @@ const stages: Record<string, string> = {
   failed: 'Import échoué', interrupted: 'Import interrompu',
 }
 
-export function ImportPanel({ onImported, onShowBeat, connected }: { onImported: () => Promise<void>; onShowBeat: (id: string) => void; connected: boolean }) {
+export function ImportPanel({ onImported, onShowBeat, connected }: { onImported: () => Promise<void>; onShowBeat: (id: string, onShown: () => void) => void; connected: boolean }) {
   const [url, setUrl] = useState('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [busy, setBusy] = useState(false)
@@ -24,6 +24,8 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
   const initialized = useRef(false)
   const watched = useRef(new Set<string>())
   const [focusedJob, setFocusedJob] = useState<string | null>(null)
+  const [shownJobs, setShownJobs] = useState(new Set<string>())
+  function acknowledge(id: string) { setShownJobs((current) => new Set(current).add(id)) }
 
   useEffect(() => {
     if (!connected) return
@@ -46,7 +48,7 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
               await onImported()
               if (controller.signal.aborted) return
               setFocusedJob(job.id)
-              onShowBeat(job.beat_id)
+              onShowBeat(job.beat_id, () => acknowledge(job.id))
             }
             completed.current.add(job.id)
           }
@@ -73,13 +75,14 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
         watched.current.add(result.job.id)
         completed.current.delete(result.job.id)
         setFocusedJob(result.job.id)
+        setShownJobs((current) => { const next = new Set(current); next.delete(result.job!.id); return next })
         setJobs((current) => [result.job!, ...current.filter((job) => job.id !== result.job!.id)])
       }
       const readyId = result.beat_id || (result.job?.state === 'completed' ? result.job.beat_id : null)
       if (readyId) {
         await onImported()
         if (result.job) completed.current.add(result.job.id)
-        onShowBeat(readyId)
+        onShowBeat(readyId, () => { if (result.job) acknowledge(result.job.id) })
       } else setRefresh((current) => current + 1)
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de lancer cet import.')
@@ -108,7 +111,7 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
       <button className="import-submit" type="submit" disabled={busy || (!!active && !problem) || !connected}>{busy ? 'Ajout…' : problem ? 'Réessayer' : active ? currentJob.stage === 'converting' ? 'Conversion…' : currentJob.stage === 'extracting' ? 'Lecture…' : currentJob.stage === 'verifying' ? 'Vérification…' : 'Import en cours' : 'Importer la prod'}</button>
     </form>
     <div className="import-progress-list">
-    {problem ? <div id="import-feedback" className="import-error-slot" role="alert" tabIndex={0}>{problem}</div> : currentJob ? (() => {
+    {problem ? <div id="import-feedback" className="import-error-slot" role="alert" tabIndex={0}>{problem}</div> : currentJob && !shownJobs.has(currentJob.id) ? (() => {
       const job = currentJob
       const ready = job.state === 'completed'
       const measured = job.stage === 'downloading' && job.progress !== null && Number.isFinite(job.progress) && job.progress >= 0 && job.progress < 100 ? Math.floor(job.progress) : undefined
@@ -116,7 +119,7 @@ export function ImportPanel({ onImported, onShowBeat, connected }: { onImported:
       return <div className="import-job" key={job.id}>
         <div className="import-progress"><div className={`import-progress-track${progress === undefined ? ' indeterminate' : ''}`} role="progressbar" aria-label="Progression de l’import" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span className="import-progress-fill" style={progress === undefined ? undefined : { width: `${progress}%` }} /></div><span role="status"><span className="sr-only">{stages[job.stage || job.state] || 'Import en cours'}{progress !== undefined ? ' · ' : ''}</span>{progress !== undefined ? `${progress} %` : '—'}</span></div>
       </div>
-    })() : <div className="import-progress" aria-hidden="true"><div className="import-progress-track"><span className="import-progress-fill" /></div><span>0 %</span></div>}
+    })() : null}
     {!problem && <span className="sr-only" id="import-feedback" />}
     </div>
   </section>

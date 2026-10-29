@@ -150,3 +150,9 @@ Les crédits `prod by me`, `myself` ou `moi` ne confirment pas un nom d’artist
 Une règle corrigeant un auteur ne remplace pas toute une collaboration et ne réinjecte pas un ancien invité dans une nouvelle prod. Une règle portant sur un crédit collectif n’est pas assimilée automatiquement à une personne. Sans auteur identifiable, `À préciser` signale la partie manquante, tout en gardant les collaborateurs connus. Des crédits explicites contradictoires restent à corriger. `Compositeur : Jake B` est aussi reconnu comme crédit explicite.
 
 L’origine de la proposition se consulte au survol du champ Beatmaker et via sa description accessible, sans ajouter de ligne à la fiche. Actualiser recalcule les propositions automatiques depuis le texte source conservé ; les corrections manuelles, les anciennes valeurs sans provenance, les autres annotations et les fichiers restent préservés. Le regroupement en véritables profils beatmakers reste suivi dans #62.
+
+## Visibilité de la progression d’import (#66)
+
+À la demande de l’utilisateur du 29 octobre 2026, aucun rail ni pourcentage n’apparaît au repos. La progression accompagne l’import puis disparaît à l’ouverture de la fiche de la prod concernée ; elle ne revient ni à la fermeture de cette fiche ni lors des relevés suivants. Si un autre brouillon retarde l’ouverture, le suivi reste affiché jusqu’à la fiche attendue. Les erreurs et relances restent accessibles.
+
+L’emplacement de 20 px et ses marges restent toujours réservés, même sans contenu visible, pour conserver la géométrie du dashboard. Ce comportement remplace le rail de repos à 0 % et le maintien de 100 % des anciennes références.

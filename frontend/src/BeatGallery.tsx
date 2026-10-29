@@ -33,15 +33,17 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
   const [details, setDetails] = useState<string | null>(null)
   const detailsRef = useRef<string | null>(null)
   useEffect(() => { detailsRef.current = details }, [details])
-  const pendingDetails = useRef<string[]>([])
-  const showImported = useCallback((identity: string) => {
+  const pendingDetails = useRef<{ identity: string; onShown: () => void }[]>([])
+  const showImported = useCallback((identity: string, onShown: () => void) => {
     if (detailsRef.current && detailsRef.current !== identity) {
-      if (!pendingDetails.current.includes(identity)) pendingDetails.current.push(identity)
-    } else { detailsRef.current = identity; setDetails(identity) }
+      const queued = pendingDetails.current.find((item) => item.identity === identity)
+      if (queued) { const previous = queued.onShown; queued.onShown = () => { previous(); onShown() } }
+      else pendingDetails.current.push({ identity, onShown })
+    } else { detailsRef.current = identity; setDetails(identity); onShown() }
   }, [])
   function closeDetails() {
-    const next = pendingDetails.current.shift() || null
-    detailsRef.current = next; setDetails(next)
+    const next = pendingDetails.current.shift()
+    detailsRef.current = next?.identity || null; setDetails(next?.identity || null); next?.onShown()
   }
   const [loading, setLoading] = useState(true)
   const [reload, setReload] = useState(0)
