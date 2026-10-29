@@ -184,7 +184,9 @@ for (const width of [1280, 390]) {
     const merged = page.getByRole('dialog', { name: `Profil de ${target.name}`, exact: true })
     await expect(merged.getByText(`Alias : ${source.name}`, { exact: true })).toBeVisible()
     expect((await (await page.request.get(`/api/beats/${beat}`)).json()).beatmakers.map((p: { id: string }) => p.id)).toEqual([target.id, guest.id])
+    if (width === 1280) { expect(await merged.locator('.producer-columns').evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true) }
     await page.screenshot({ path: testInfo.outputPath('merged-profile.png') })
+    await expect(merged.getByRole('button', { name: 'Supprimer', exact: true })).toBeInViewport()
     await merged.getByRole('button', { name: 'Supprimer', exact: true }).click()
     const remove = page.getByRole('dialog', { name: `Supprimer ${target.name}`, exact: true })
     await expect(remove.getByText('Les prods, les MP3 et les autres collaborateurs seront conservés. Ce profil ne sera plus recréé automatiquement.', { exact: true })).toBeVisible()
