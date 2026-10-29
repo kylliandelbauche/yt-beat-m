@@ -30,6 +30,9 @@ def test_portrait_owner_only_failure_cooldown_retry_and_manual_priority(tmp_path
         profiles = list_profiles(lib)["profiles"]
         owner = next(p for p in profiles if p["name"] == "LACCO")
         guest = next(p for p in profiles if p["name"] == "@m3nacebeats")
+        assert get_profile(lib, guest["id"])["youtube_channels"] == [
+            {"url": "https://www.youtube.com/@m3nacebeats", "label": "@m3nacebeats"}
+        ]
         assert enrich_next_photo(lib, None)  # controlled offline default
         assert enrich_next_photo(lib, None)  # guest uses its own explicit handle
         assert not enrich_next_photo(lib, None)  # cooldown, not one request per render
@@ -185,12 +188,16 @@ def test_existing_source_channel_wins_over_display_name_and_guest_stays_separate
                 "Elegance isn't it?",
                 "abcdefghijk",
             )
+        assert get_profile(lib, identity)["youtube_channels"] == [
+            {"url": "https://www.youtube.com/channel/" + channel_id, "label": "Elegance isn't it?"}
+        ]
         # A guest in a collaboration cannot inherit this uploader's portrait.
         other = add_beat(lib, "Owner x Guest", channel="Owner channel")
         guest = next(p for p in list_profiles(lib)["profiles"] if p["name"] == "Guest")
         with lib.catalog() as c:
             c.execute("UPDATE beats SET channel_id=? WHERE id=?", ("UC" + "b" * 22, other))
             assert photo_candidate(c, guest["id"]) is None
+        assert get_profile(lib, guest["id"])["youtube_channels"] == []
     finally:
         lib.close()
 

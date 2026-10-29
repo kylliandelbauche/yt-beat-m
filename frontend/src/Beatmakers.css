@@ -113,7 +113,7 @@
 .producer-stage .empty-state p { font-size: 12px; margin: 0 0 8px; }
 .producer-stage .empty-state button { padding: 5px 12px; min-height: 30px; font-size: 12px; }
 
-.producer-aliases { width: 100%; height: 36px; overflow: auto; font-size: 11px; color: #b5c2d1; text-align: center; }
+.producer-aliases { width: 100%; height: 18px; overflow: auto; font-size: 11px; color: #b5c2d1; text-align: center; }
 .producer-management-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 6px; }
 .producer-management-actions button { height: 36px; padding: 4px; font-size: 11px; }
 .producer-management-actions button:first-child { grid-column: 1 / -1; }
@@ -134,3 +134,9 @@
 .producer-manage-footer { display: flex; gap: 8px; justify-content: space-between; height: 40px; flex-shrink: 0; }
 .producer-manage-footer button { height: 40px; padding: 8px; font-size: 12px; }
 @media(max-width:760px) { .producer-aliases, .producer-management-actions { grid-column: 1 / -1; } }
+
+.producer-channel-slot { width: 100%; height: 18px; flex-shrink: 0; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; font-size: 12px; line-height: 18px; }
+.producer-channel-slot a { color: var(--paper-mint); margin: auto; }
+.producer-channel-slot > span { margin: auto; color: #b5c2d1; font-size: 11px; }
+@media(max-width:760px) { .producer-channel-slot { grid-column: 1 / -1; } }
+ .producer-channel-slot + .producer-aliases { margin-top: -12px; }

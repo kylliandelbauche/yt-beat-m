@@ -127,6 +127,38 @@ def fetch_channel(channel_id, handle, runner, video_id=None):
     return download_avatar(images[0]["url"], stopping=getattr(runner, "stopping", None))
 
 
+def profile_source_channels(c, profile):
+    names = [profile["name"], *json.loads(profile["aliases"])]
+    branded, credited = {brand(n) for n in names}, {normalized_name(n) for n in names}
+    rows = c.execute(
+        "SELECT b.* FROM beats b JOIN beat_profile_links l ON l.beat_id=b.id "
+        "WHERE l.profile_id=? AND b.channel IS NOT NULL",
+        (profile["id"],),
+    ).fetchall()
+    result = []
+    for row in rows:
+        parts = credit_parts(row["beatmaker"] or "")
+        if brand(row["channel"]) in branded or (
+            len(parts) == 1
+            and normalized_name(parts[0]) in credited
+            and provenance(row).get("beatmaker") in {"explicit_credit", "channel_alias", "manual"}
+        ):
+            result.append(row)
+    return result
+
+
+def youtube_links(c, profile):
+    result = {}
+    for row in profile_source_channels(c, profile):
+        if row["channel_id"] and re.fullmatch(r"UC[A-Za-z0-9_-]{22}", row["channel_id"]):
+            url = "https://www.youtube.com/channel/" + row["channel_id"]
+            result[url] = {"url": url, "label": row["channel"]}
+    if not result and re.fullmatch(r"@[\w.-]{3,40}", profile["name"]):
+        url = "https://www.youtube.com/" + profile["name"]
+        result[url] = {"url": url, "label": profile["name"]}
+    return list(result.values())
+
+
 def photo_candidate(c, identity=None):
     cutoff = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     rows = c.execute(
@@ -137,26 +169,7 @@ def photo_candidate(c, identity=None):
         (cutoff, identity) if identity else (cutoff,),
     ).fetchall()
     for p in rows:
-        names = {brand(n) for n in [p["name"], *json.loads(p["aliases"])]}
-        channels = c.execute(
-            "SELECT b.* FROM beats b JOIN beat_profile_links l "
-            "ON l.beat_id=b.id WHERE l.profile_id=? AND b.channel IS NOT NULL",
-            (p["id"],),
-        ).fetchall()
-        credited_names = {normalized_name(n) for n in [p["name"], *json.loads(p["aliases"])]}
-
-        def source_owner(row, names=names, credited_names=credited_names):
-            if brand(row["channel"]) in names:
-                return True
-            parts = credit_parts(row["beatmaker"] or "")
-            return (
-                len(parts) == 1
-                and normalized_name(parts[0]) in credited_names
-                and provenance(row).get("beatmaker")
-                in {"explicit_credit", "channel_alias", "manual"}
-            )
-
-        own = [r for r in channels if source_owner(r)]
+        own = profile_source_channels(c, p)
         ids = {r["channel_id"] for r in own if r["channel_id"]}
         if own and len(ids) <= 1:
             chosen = next((r for r in own if r["channel_id"]), own[0])

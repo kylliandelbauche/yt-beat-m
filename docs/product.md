@@ -182,3 +182,7 @@ Les portraits de chaînes correspondantes sont récupérés en arrière-plan et 
 ## Portraits depuis la source YouTube (#74)
 
 Le portrait suit directement la chaîne enregistrée de la prod, même si son nom diffère du crédit unique du beatmaker (Elegance / Elegance isn’t it?). Si l’identifiant manque sur un ancien import, il est récupéré depuis la vidéo d’origine. Aucun moteur de recherche ni handle deviné depuis un nom affiché. Les invités restent distincts et les images locales/manuelles restent prioritaires.
+
+## Accès à la chaîne depuis le profil (#76)
+
+Le profil affiche un lien Chaîne YouTube, ouvert dans un nouvel onglet, issu de l’identifiant connu de la chaîne source ou du handle explicitement crédité d’un invité. Plusieurs chaînes liées sont présentées séparément. Aucun lien n’est construit depuis un nom d’artiste supposé. L’emplacement du lien reste réservé en lecture, édition et chargement ; les profils sans source affichent Chaîne non renseignée.

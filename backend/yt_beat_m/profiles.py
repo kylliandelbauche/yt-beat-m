@@ -138,7 +138,11 @@ def get_profile(library: Library, identity: str):
     with library.catalog() as c:
         identity = resolve_profile(c, identity)
         row = c.execute(PROFILE_SELECT + " WHERE id=?", (identity,)).fetchone()
-        return profile_view(row) if row else None
+        if not row:
+            return None
+        from yt_beat_m.profile_photos import youtube_links
+
+        return {**profile_view(row), "youtube_channels": youtube_links(c, row)}
 
 
 def save_profile(library: Library, payload: ProfileUpdate, identity=None):
