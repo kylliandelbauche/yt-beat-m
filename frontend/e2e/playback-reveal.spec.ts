@@ -81,6 +81,8 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 650 
     await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Écouter Drill minuit', exact: true }).click()
     await expect(audio).toHaveJSProperty('paused', false)
+    // The native play event may still be queued when play() clears paused.
+    await expect(page.getByRole('button', { name: 'Mettre en pause Drill minuit', exact: true })).toBeVisible()
     expect(await audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeLessThan(5)
     await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.dispatchEvent(new Event('error')) })
     await expect(page.getByRole('button', { name: /^Mettre en pause/ })).toHaveCount(0)
