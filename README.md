@@ -118,3 +118,11 @@ Les fichiers personnels et les bibliothèques audio restent hors du dépôt Git.
 ## Référence visuelle
 
 L’écran principal suit la ligne **Officiel** de [Paper — Beat m](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-1-0) : petit header, import et progression réelle, filtres actifs, dispositions grandes pochettes ou cartes horizontales. Le sélecteur près du tri conserve le lecteur et mémorise la disposition dans ce navigateur. **Bibliothèque** et **Diagnostic** ouvrent des fenêtres centrées. La fiche propose une édition par crayon/Save, une annulation et une description fixe à défilement interne. Les valeurs sources restent distinctes des corrections. Le lecteur affiche la pochette de la piste active.
+
+## Profils Beatmakers
+
+Dans **Beatmakers**, créer un profil avec son nom, une photo JPEG/PNG locale, ses réseaux et ses sites de vente. Le crayon active l'édition ; Save enregistre, Annuler rétablit les valeurs précédentes. Le compteur et l'aperçu permettent de retrouver ses prods, puis **Voir les prods** ouvre la bibliothèque filtrée.
+
+Dans la fiche d'une prod, **Associer** ouvre une sélection multiple. Choisir chaque producteur séparément, cliquer sur **Utiliser la sélection**, puis **Save** dans la fiche. Chaque nom associé ouvre son profil. La chaîne YouTube et le crédit source restent distincts ; les associations manuelles sont conservées par Actualiser.
+
+Les anciens crédits explicites sont repris avec sauvegarde du catalogue. Les propositions de chaîne et crédits ambigus restent à vérifier via **Voir les prods sans profil**. Aucune fusion automatique de personnes sur le seul nom. Les photos et relations voyagent avec le catalogue ; les MP3 existants ne sont pas renommés. Changer de page ou consulter un profil conserve le lecteur actif.

@@ -14,6 +14,7 @@ FORMAT_VERSION = 1
 MIGRATIONS = {
     1: Path(__file__).parent / "migrations" / "001_initial.sql",
     2: Path(__file__).parent / "migrations" / "002_beatmakers.sql",
+    3: Path(__file__).parent / "migrations" / "003_profiles.sql",
 }
 
 
@@ -204,6 +205,10 @@ class Library:
                                 statement = ""
                         if statement.strip():
                             raise LibraryError("Migration SQL incomplète.")
+                        if number == 3:
+                            from yt_beat_m.profiles import backfill_profiles
+
+                            backfill_profiles(connection)
                         connection.execute(
                             "INSERT INTO schema_migrations VALUES (?, ?)",
                             (number, datetime.now(UTC).isoformat()),

@@ -1,6 +1,7 @@
 export type Beat = {
   id: string
   title: string
+  beatmakers?: { id: string; name: string; photo_url?: string | null }[]
   beatmaker: string | null
   beatmaker_source: 'explicit_credit' | 'channel' | 'channel_alias' | 'ambiguous_credit' | 'channel_self_credit' | 'channel_alias_self_credit' | 'unresolved_self_credit' | 'manual' | 'legacy' | null
   channel: string | null
@@ -56,3 +57,5 @@ export function beatmakerSourceLabel(source: Beat['beatmaker_source']) {
   if (source === 'ambiguous_credit') return 'Crédits contradictoires ; une correction est nécessaire.'
   return source === 'manual' ? 'Nom corrigé manuellement.' : 'Nom du beatmaker à vérifier.'
 }
+
+export function makerLabel(beat: Beat) { return beat.beatmakers?.length ? beat.beatmakers.map((p) => p.name).join(" × ") : beat.beatmaker || beat.channel || "Fichier local" }

@@ -16,6 +16,7 @@ type Dependency = { name: string; version: string | null; available: boolean; hi
 type Diagnostic = { ready: boolean; dependencies: Dependency[] }
 
 function App() {
+  const [view, setView] = useState<'prods' | 'beatmakers'>('prods')
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -55,14 +56,15 @@ function App() {
   return (
     <main className="workspace">
       <header className="topbar">
-        <a className="brand" href="/" aria-label="YT Beat M, accueil">
+        <a className="brand" href="/" aria-label="YT Beat M, accueil" onClick={(event) => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); setView('prods') } }}>
           <span className="brand-mark">b.</span> beat m
         </a>
+        <nav className="primary-nav" aria-label="Navigation principale"><button aria-current={view === 'prods' ? 'page' : undefined} onClick={() => setView('prods')}>Prods</button><button aria-current={view === 'beatmakers' ? 'page' : undefined} onClick={() => setView('beatmakers')}>Beatmakers</button></nav>
         <span className="status" role="status"><span className={!connected ? 'dot warning-dot' : 'dot'} />
           {!connected ? 'Déconnecté' : engine.state === 'online' ? 'Moteur connecté' : 'Connexion…'}
         </span>
       </header>
-      <LibraryPanel diagnostic={diagnosticPanel} connected={connected} onRetry={engine.retry} onDiagnostic={() => setShowDiagnostic(true)} />
+      <LibraryPanel view={view} onView={setView} diagnostic={diagnosticPanel} connected={connected} onRetry={engine.retry} onDiagnostic={() => setShowDiagnostic(true)} />
 
     </main>
   )

@@ -4,6 +4,7 @@ import json
 import math
 import unicodedata
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -41,6 +42,7 @@ class MetadataUpdate(BaseModel):
     styles: list[str] = Field(default_factory=list, max_length=30)
     moods: list[str] = Field(default_factory=list, max_length=30)
     links: list[PurchaseLink] = Field(default_factory=list, max_length=20)
+    beatmaker_ids: list[UUID] = Field(default_factory=list, max_length=20)
 
 
 def clean_tags(values: list[str], field: str) -> list[str]:
@@ -59,6 +61,7 @@ def clean_tags(values: list[str], field: str) -> list[str]:
 
 def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -> bool:
     changes = payload.model_dump(exclude_unset=True)
+    profile_ids = changes.pop("beatmaker_ids", None)
     remember = changes.pop("remember_channel", False)
     reset = changes.pop("reset_beatmaker", False)
     forget = changes.pop("forget_channel_alias", False)
@@ -117,6 +120,14 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
         row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
         if row is None:
             return False
+        if profile_ids is not None:
+            from yt_beat_m.profiles import assign_profiles
+
+            if maker_changed or reset or remember:
+                raise LibraryError(
+                    "Beatmaker : choisis les profils ou une correction textuelle, pas les deux."
+                )
+            assign_profiles(connection, identity, profile_ids)
         if (reset and (maker_changed or remember)) or (forget and remember):
             raise LibraryError(
                 "Beatmaker : choisir soit une correction, soit le retour à la proposition."

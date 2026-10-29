@@ -372,6 +372,11 @@ class ImportWorker:
                     "INSERT INTO source_links(beat_id, url, label, provenance) VALUES (?, ?, ?, ?)",
                     (job_id, link, "Page de vente", "youtube_description"),
                 )
+            from yt_beat_m.profiles import sync_profiles
+
+            sync_profiles(
+                catalog, catalog.execute("SELECT * FROM beats WHERE id=?", (job_id,)).fetchone()
+            )
             catalog.execute(
                 "UPDATE import_jobs SET state='completed', stage='completed', progress=100, "
                 "beat_id=?, updated_at=? WHERE id=?",

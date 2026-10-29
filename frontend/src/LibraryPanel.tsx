@@ -8,7 +8,7 @@ import type { ModalClose } from './useModalLifecycle'
 type Library = { id: string; name: string; root: string; beat_count: number; schema_version: number }
 type LibraryStatus = { library: Library | null; error: string | null }
 
-export function LibraryPanel({ diagnostic, connected, onRetry, onDiagnostic }: { diagnostic: ReactNode; connected: boolean; onRetry: () => void; onDiagnostic: () => void }) {
+export function LibraryPanel({ view, onView, diagnostic, connected, onRetry, onDiagnostic }: { view: 'prods' | 'beatmakers'; onView: (view: 'prods' | 'beatmakers') => void; diagnostic: ReactNode; connected: boolean; onRetry: () => void; onDiagnostic: () => void }) {
   const [status, setStatus] = useState<LibraryStatus | null>(null)
   const [path, setPath] = useState('')
   const [name, setName] = useState('Mes prods')
@@ -67,7 +67,7 @@ export function LibraryPanel({ diagnostic, connected, onRetry, onDiagnostic }: {
   const heading = (count?: number) => <div className="section-heading"><h2 id="library-heading">{library?.name || 'Bibliothèque locale'}</h2><span className="phase">{!connected ? '—' : library ? `${count ?? library.beat_count} prod${(count ?? library.beat_count) > 1 ? 's' : ''}` : 'Dossier portable'}</span></div>
   const tools = <><button onClick={() => { setError(''); setOpened(true) }}><Icon name="folder" />Bibliothèque</button>{diagnostic}</>
   return <section className="library-placeholder" aria-labelledby="library-heading">
-    {library || !connected ? <BeatGallery key={library?.id || 'offline'} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library?.name || ''} connected={connected} onRetry={onRetry} onDiagnostic={onDiagnostic} onLibrary={() => { setError(''); setOpened(true) }} /> : <>{heading()}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
+    {library || !connected ? <BeatGallery view={view} onView={onView} key={library?.id || 'offline'} onIndexed={handleIndexed} heading={heading} tools={tools} libraryName={library?.name || ''} connected={connected} onRetry={onRetry} onDiagnostic={onDiagnostic} onLibrary={() => { setError(''); setOpened(true) }} /> : <>{heading()}{!status && !error && <p className="form-hint" role="status">Ouverture du catalogue…</p>}{form}{diagnostic}</>}
     {!opened && connected && (error || status?.error) && <p className="library-error" role="alert">{error || status?.error}</p>}
     {opened && <Modal label="Bibliothèque" title={<h2>Bibliothèque</h2>} closeLabel="Fermer la fenêtre Bibliothèque" onClose={finishClose} canClose={() => !busy} closeRef={closeModal} className="library-modal">
       <div className="modal-content"><div className="library-summary"><strong>{library?.name}</strong><span>{library?.beat_count} prods · ouverte</span><p className="library-path">{library?.root}</p></div>
