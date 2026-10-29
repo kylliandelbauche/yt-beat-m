@@ -228,11 +228,16 @@ def propose(connection, data) -> tuple[str | None, str | None]:
 
 
 def _write(connection, row, name, source):
+    from yt_beat_m.profiles import sync_profiles
+
     fields = provenance(row)
     fields["beatmaker"] = source
     connection.execute(
         "UPDATE beats SET beatmaker=?, field_provenance=? WHERE id=?",
         (name, json.dumps(fields, ensure_ascii=False), row["id"]),
+    )
+    sync_profiles(
+        connection, connection.execute("SELECT * FROM beats WHERE id=?", (row["id"],)).fetchone()
     )
 
 
@@ -243,6 +248,9 @@ def refresh_beatmakers(library: Library) -> dict:
             row = dict(record)
             source = provenance(row).get("beatmaker")
             if source not in AUTOMATIC or (row["beatmaker"] is not None and source is None):
+                from yt_beat_m.profiles import sync_profiles
+
+                sync_profiles(connection, row)
                 preserved += 1
                 continue
             name, origin = propose(connection, row)

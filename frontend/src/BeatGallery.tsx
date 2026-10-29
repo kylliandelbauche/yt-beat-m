@@ -6,10 +6,13 @@ import './BeatGallery.css'
 import { ImportPanel } from './ImportPanel'
 import { BeatDetailsPanel } from './BeatDetailsPanel'
 import { ScrollingTitle } from './ScrollingTitle'
-import { duration, musicalKeyLabel } from './beat'
+import { duration, musicalKeyLabel, makerLabel } from './beat'
 import { Artwork } from './Artwork'
 import { Icon } from './Modal'
 import type { Beat } from './beat'
+import { BeatmakersPage, ProducerProfile } from './Beatmakers'
+import type { Producer } from './Beatmakers'
+import type { ModalClose } from './useModalLifecycle'
 import { ActiveFilters, CatalogFilters } from './CatalogFilters'
 import { emptyFilters, emptyOptions, filterQuery } from './filterState'
 import type { Filters, FilterOptions } from './filterState'
@@ -18,7 +21,14 @@ type Selection = { beat: Beat; play: boolean }
 type Scan = { added: number; skipped: number; errors: { name: string; message: string }[]; library: { beat_count: number } }
 const unavailableAudio = 'Fichier audio indisponible ou illisible. Vérifie le disque.'
 
-export function BeatGallery({ onIndexed, heading, tools, libraryName, connected, onRetry, onDiagnostic, onLibrary }: { onIndexed: (count: number) => void; heading: (count?: number) => ReactNode; tools: ReactNode; libraryName: string; connected: boolean; onRetry: () => void; onDiagnostic: () => void; onLibrary: () => void }) {
+export function BeatGallery({ view, onView, onIndexed, heading, tools, libraryName, connected, onRetry, onDiagnostic, onLibrary }: { view: 'prods' | 'beatmakers'; onView: (view: 'prods' | 'beatmakers') => void; onIndexed: (count: number) => void; heading: (count?: number) => ReactNode; tools: ReactNode; libraryName: string; connected: boolean; onRetry: () => void; onDiagnostic: () => void; onLibrary: () => void }) {
+  const [producer, setProducer] = useState<string | null>(null)
+  const producerRef = useRef<string | null>(null)
+  function openProducer(id: string) { producerRef.current = id; setProducer(id) }
+  function closeProducer() { producerRef.current = null; setProducer(null); if (!detailsRef.current) closeDetails() }
+  const [producerRevision, setProducerRevision] = useState(0)
+  const [profileFilter, setProfileFilter] = useState<{ id: string; name: string } | null>(null)
+  const [unassigned, setUnassigned] = useState(false)
   const [layout, setLayout] = useState<'covers' | 'horizontal'>(() => { try { return localStorage.getItem('beat-m-layout') === 'horizontal' ? 'horizontal' : 'covers' } catch { return 'covers' } })
   useEffect(() => { try { localStorage.setItem('beat-m-layout', layout) } catch { /* The layout remains usable when storage is unavailable. */ } }, [layout])
   const [page, setPage] = useState<BeatPage | null>(null)
@@ -33,11 +43,12 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
   const [options, setOptions] = useState<FilterOptions>(emptyOptions)
   const [sort, setSort] = useState('added_desc')
   const [details, setDetails] = useState<string | null>(null)
+  const detailNavigation = useRef<ModalClose | null>(null)
   const detailsRef = useRef<string | null>(null)
   useEffect(() => { detailsRef.current = details }, [details])
   const pendingDetails = useRef<{ identity: string; onShown: () => void }[]>([])
   const showImported = useCallback((identity: string, onShown: () => void) => {
-    if (detailsRef.current && detailsRef.current !== identity) {
+    if (producerRef.current || (detailsRef.current && detailsRef.current !== identity)) {
       const queued = pendingDetails.current.find((item) => item.identity === identity)
       if (queued) { const previous = queued.onShown; queued.onShown = () => { previous(); onShown() } }
       else pendingDetails.current.push({ identity, onShown })
@@ -74,11 +85,13 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
     return () => observer.disconnect()
   }, [])
   const params = filterQuery(filters)
+  if (profileFilter) params.set('profile_ids', profileFilter.id)
+  if (unassigned) params.set('unassigned_profiles', 'true')
   params.set('q', query); params.set('favorites', String(favoritesOnly)); params.set('sort', sort)
   const catalogQuery = params.toString()
   const activeQuery = useRef(catalogQuery)
   useEffect(() => { activeQuery.current = catalogQuery }, [catalogQuery])
-  const hasFilters = Boolean(query || favoritesOnly || filterQuery(filters).size)
+  const hasFilters = Boolean(query || favoritesOnly || profileFilter || unassigned || filterQuery(filters).size)
   const refreshImported = useCallback(async () => {
     setReload((value) => value + 1)
     const status = await api<{ library: { beat_count: number } | null }>('/api/library')
@@ -184,9 +197,10 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
 
   function filtersChanged() { setStageHeight(Math.max(416, stage.current?.getBoundingClientRect().height || 416)); setLoading(true); setError('') }
   function focusSearch() { document.querySelector<HTMLInputElement>('.catalog-search input')?.focus({ preventScroll: true }) }
-  function resetFilters() { filtersChanged(); setFavoritesOnly(false); setFilters(emptyFilters); focusSearch() }
+  function resetFilters() { filtersChanged(); setFavoritesOnly(false); setFilters(emptyFilters); setProfileFilter(null); setUnassigned(false); focusSearch() }
 
   return <div className="beat-collection">
+    <div hidden={view !== 'prods'}>
     <ImportPanel onImported={refreshImported} onShowBeat={showImported} connected={connected} />
     {heading(page?.total)}
     <div className="catalog-filters" inert={!connected} aria-disabled={!connected}>
@@ -200,6 +214,8 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
       <span className="catalog-status" role="status">{connected && loading ? 'Recherche…' : ''}</span>
       {sort.startsWith('published') && <span className="sr-only" role="status">Tri par publication · publications inconnues à la fin</span>}
       <div className="catalog-filter-actions" inert={!connected}>
+        {profileFilter && <button className="text-filter-chip" onClick={() => { setProfileFilter(null); filtersChanged() }}>Profil : {profileFilter.name} ×</button>}
+        {unassigned && <button className="text-filter-chip" onClick={() => { setUnassigned(false); filtersChanged() }}>Sans profil ×</button>}
         <ActiveFilters filters={filters} onChange={(next) => { filtersChanged(); setFilters(next); focusSearch() }} />
         {query && <button className="text-filter-chip" onClick={() => { filtersChanged(); setQuery(''); focusSearch() }}>Recherche : {query} ×</button>}
         {hasFilters && <button onClick={() => { resetFilters(); setQuery('') }}>Effacer les filtres</button>}
@@ -223,7 +239,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
         <button className="horizontal-cover" aria-label={`${playingId === beat.id ? 'Mettre en pause' : 'Écouter'} ${beat.title}`} onClick={() => togglePlayback(beat)}><Artwork beat={beat} /><span className={`cover-play${playingId === beat.id ? ' is-playing' : ''}`} aria-hidden="true"><Icon name={playingId === beat.id ? 'pause' : 'play'} filled /></span></button>
         <button className="horizontal-details" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
           <ScrollingTitle className="horizontal-title" title={beat.title} />
-          <span className="horizontal-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || beat.channel || 'Fichier local'}</span>
+          <span className="horizontal-maker" title={beat.beatmaker || beat.channel || undefined}>{makerLabel(beat)}</span>
           <span className="horizontal-music">{beat.bpm ?? '—'} <span aria-hidden="true">|</span> {musicalKeyLabel(beat.musical_key)}</span>
           <span className="horizontal-footer"><span>{duration(beat.duration_seconds)}</span><span>Détails ↗</span></span>
         </button>
@@ -233,7 +249,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
       </button>
       <button className="beat-card-info beat-details-button" aria-label={`Détails de ${beat.title}`} onClick={() => setDetails(beat.id)}>
         <ScrollingTitle title={beat.title} />
-        <span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{beat.beatmaker || beat.channel || 'Fichier local'}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span>
+        <span className="beat-subtitle"><span className="beat-maker" title={beat.beatmaker || beat.channel || undefined}>{makerLabel(beat)}</span><span className="beat-duration">{duration(beat.duration_seconds)}</span></span>
         <span className="beat-card-footer"><span className="beat-music"><span className="beat-bpm">{beat.bpm ?? '—'}</span><span className="music-separator" aria-hidden="true">|</span><span className="beat-musical-key" title={beat.musical_key || undefined}>{musicalKeyLabel(beat.musical_key)}</span></span><span className="details-hint">Détails ↗</span></span>
       </button>
       </>}
@@ -246,9 +262,12 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
       <p>● Bibliothèque locale · {libraryName}</p>
       <div className="collection-tools"><button disabled={busy || !connected} aria-busy={busy} onClick={() => { void scan() }}><Icon name="refresh" />Actualiser</button>{tools}</div>
     </div>
-    {details && <BeatDetailsPanel key={details} identity={details} playing={playingId === details} playbackError={playbackError?.id === details ? playbackError.message : ''} onDismissPlaybackError={() => setPlaybackError(null)} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
+    </div>
+    {view === 'beatmakers' && (connected ? <BeatmakersPage revision={producerRevision + reload} onOpen={openProducer} onUnassigned={() => { setQuery(''); setFilters(emptyFilters); setFavoritesOnly(false); setProfileFilter(null); setUnassigned(true); filtersChanged(); onView('prods') }} /> : <EngineOffline retry={onRetry} diagnostic={onDiagnostic} />)}
+    {producer && <ProducerProfile key={producer} identity={producer} revision={producerRevision + reload} onClose={closeProducer} onChanged={() => { setProducerRevision((n) => n + 1); setReload((n) => n + 1) }} onBeat={(b) => { if (detailsRef.current && detailsRef.current !== b.id) { showImported(b.id, () => {}); detailNavigation.current?.(true) } else setDetails(b.id) }} onViewBeats={(p: Producer) => { setQuery(''); setFilters(emptyFilters); setFavoritesOnly(false); setUnassigned(false); setProfileFilter({ id: p.id, name: p.name }); filtersChanged(); onView('prods'); detailNavigation.current?.(true) }} onPlay={togglePlayback} playingId={playingId} />}
+    {details && <BeatDetailsPanel key={details} identity={details} navigationRef={detailNavigation} profileRevision={producerRevision} onOpenProfile={openProducer} onProfilesChanged={() => { setProducerRevision((n) => n + 1); setReload((n) => n + 1) }} playing={playingId === details} playbackError={playbackError?.id === details ? playbackError.message : ''} onDismissPlaybackError={() => setPlaybackError(null)} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
     {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
-      <button type="button" disabled={!connected} className="player-description player-details" aria-label={`Détails depuis le lecteur : ${activeBeat.title}`} aria-haspopup="dialog" onClick={() => setDetails(activeBeat.id)}><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></button>
+      <button type="button" disabled={!connected} className="player-description player-details" aria-label={`Détails depuis le lecteur : ${activeBeat.title}`} aria-haspopup="dialog" onClick={() => setDetails(activeBeat.id)}><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{makerLabel(activeBeat)} · {duration(activeBeat.duration_seconds)}</span></div></button>
       <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onVolumeChange={(event) => { if (audio.current === event.currentTarget) audioPreferences.current = { volume: event.currentTarget.volume, muted: event.currentTarget.muted } }} onPlay={(event) => { if (audio.current === event.currentTarget) { setPlayingId(selection.beat.id); setActivatedId(selection.beat.id); setPlaybackError(null) } }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setPlaybackError({ id: selection.beat.id, message: unavailableAudio }) } }} />
     </aside>, document.body)}
     {!selection && createPortal(<aside className="local-player glass empty-player" aria-label="Lecteur audio"><div className="player-description"><span className="player-note" aria-hidden="true" /><div><p>Aucune prod sélectionnée</p><span>{connected ? 'Prêt pour ta première écoute' : 'Moteur déconnecté'}</span></div></div><audio controls aria-label="Lecteur sans prod sélectionnée" inert /></aside>, document.body)}

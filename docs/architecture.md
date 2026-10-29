@@ -2,7 +2,7 @@
 
 Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L’édition locale et les filtres musicaux avancés sont disponibles (#6).
 
-Priorité du 29 octobre 2026 : validation et CI sur Mac pour la phase actuelle ; recette Windows et lanceur à double-clic reportés à la demande de l'utilisateur. Conserver les chemins relatifs, le modèle portable et les adaptateurs existants ; ces choix évitent une réécriture lors d'une reprise future de Windows. Beatmakers puis Mes sons suivent la validation essentielle Mac, sans dépendre d'une recette Windows.
+Priorité du 29 octobre 2026 : validation locale sur Mac pour la phase actuelle ; recette Windows et lanceur à double-clic reportés à la demande de l'utilisateur. Conserver les chemins relatifs, le modèle portable et les adaptateurs existants ; ces choix évitent une réécriture lors d'une reprise future de Windows. Beatmakers puis Mes sons suivent la validation essentielle Mac, sans dépendre d'une recette Windows.
 
 ## Composants
 
@@ -192,3 +192,22 @@ La consultation et l’édition partagent des inputs/textarea natifs persistants
 ## Cycle des dialogues (#56)
 
 `useModalLifecycle` conserve le dialogue natif et son contenu jusqu’à la fin de la sortie. Web Animations anime uniquement opacité/transform ; une fermeture pendant l’entrée repart des styles calculés courants. Le garde `canClose` est évalué avant toute animation. Le contrôleur de fermeture permet un abandon approuvé ou une opération de bibliothèque déjà réussie ; les changements de bibliothèque sont différés jusqu’au commit de fermeture. Les autres contrôles deviennent inertes pendant la sortie, le focus reste dans la fenêtre, puis revient au déclencheur ou à un repli après le commit React. Animations et callbacks périmés sont nettoyés au démontage. Aucun changement d’API, de catalogue, de migration ou de média.
+
+## Entités Beatmaker (#62)
+
+La migration 3 ajoute beatmaker_profiles (UUID, nom, réseaux et sites de vente, photo BLOB et type MIME, dates), beat_profile_links (prod, profil, ordre) et beats.profile_assignment (auto/manual). Les JPEG/PNG sont limités à 2 Mo et restent dans le catalogue portable. Sauvegarde avant migration ; tables et reprise des crédits sont créées dans la même transaction. Un échec de reprise restaure la version précédente et conserve la sauvegarde.
+
+beats.beatmaker conserve le crédit et sa provenance pour compatibilité ; il n'est pas le modèle de relation. L'API des prods ajoute beatmakers, liste d'identifiants et noms. Recherche et filtres consultent les associations. profile_ids sélectionne les identités précisément, même homonymes ; makers reste compatible avec les noms et consulte les profils avant le repli sur un crédit non associé. unassigned_profiles retrouve les prods sans profil.
+
+La reprise automatique utilise crédits explicites et alias confirmés. Les collaborations sont séparées selon les motifs explicites du parseur ; un nom manuel contenant un séparateur reste non associé s'il n'est pas corroboré. Les références réflexives non confirmées ne créent pas de profil pour l'auteur supposé ; les invités explicites restent distincts. Les clés automatiques combinent source et nom normalisé. Une association manuelle unique dans la même chaîne peut corroborer une identité ; les homonymes concurrents restent ambigus. Les associations manuelles, y compris une sélection vide, sont prioritaires lors des actualisations et réimports.
+
+GET/POST /api/beatmakers et GET/PATCH /api/beatmakers/{UUID} exposent les profils. La liste est paginée ; la fiche retourne un aperçu borné à 20 prods, avec compteur total exact et accès à la galerie filtrée. Les photos sont servies par UUID, MIME fixe, nosniff et sans cache persistant ; aucune URL d'image externe n'est récupérée. Mutations et photos exigent la session locale et l'origine autorisée.
+
+PATCH /api/beats/{UUID}/metadata accepte beatmaker_ids dans la transaction existante : UUID validés, dédupliqués, au maximum 20. Une référence absente annule toute la modification. Une correction textuelle et une sélection de profils ne peuvent pas être envoyées ensemble. Le renommage d'un profil ne change pas les identifiants, crédits d'origine ou noms physiques des médias. Les anciens endpoints de correction restent disponibles.
+
+La galerie reste montée pendant la navigation ; son lecteur reste hors du contenu masqué. Les profils et sélections réutilisent les dialogues natifs, le verrouillage du fond, les transitions et le retour du focus. Champs persistants, messages hors flux et emplacements fixes préservent la géométrie. Les actualisations du catalogue n'écrasent pas un brouillon de profil ; les imports terminés attendent sa fermeture.
+
+
+## Coût des validations hébergées — 29 octobre 2026
+
+Après l’alerte de quota Actions, les tests restent exécutés localement sur Mac. Le workflow hébergé devient manuel (workflow_dispatch), Linux par défaut et Mac seulement en option. Aucun push, PR ou fusion ne déclenche de job. Une concurrence par branche annule les exécutions devenues obsolètes ; chaque job est borné à 15 minutes. Le déclenchement manuel reste optionnel et consomme le quota du compte : ne pas le lancer sans demande explicite. Les réglages de facturation du compte ne sont pas modifiés.

@@ -160,3 +160,13 @@ L’origine de la proposition se consulte au survol du champ Beatmaker et via sa
 À la demande de l’utilisateur du 29 octobre 2026, aucun rail ni pourcentage n’apparaît au repos. La progression accompagne l’import puis disparaît à l’ouverture de la fiche de la prod concernée ; elle ne revient ni à la fermeture de cette fiche ni lors des relevés suivants. Si un autre brouillon retarde l’ouverture, le suivi reste affiché jusqu’à la fiche attendue. Les erreurs et relances restent accessibles.
 
 L’emplacement de 20 px et ses marges restent toujours réservés, même sans contenu visible, pour conserver la géométrie du dashboard. Ce comportement remplace le rail de repos à 0 % et le maintien de 100 % des anciennes références.
+
+## Profils Beatmakers (#62)
+
+La page Beatmakers propose recherche, création et consultation des profils : nom, photo locale, réseaux, sites de vente et compteur de prods. Les fiches gardent les mêmes champs et actions entre lecture et édition, avec sauvegarde, annulation et protection du brouillon. Aucun réseau social ou site marchand n'est interrogé automatiquement.
+
+Une prod peut être liée à plusieurs profils distincts. Dans sa fiche, Associer ouvre la sélection multiple ; Utiliser la sélection prépare les associations, puis Save les enregistre avec les autres modifications. Les noms associés ouvrent les profils, qui permettent de retrouver leurs prods. Retirer une association conserve les crédits sources, les profils et les médias.
+
+Les crédits explicites cohérents sont repris automatiquement avec une identité limitée à leur chaîne source. Les homonymes de sources différentes ne sont pas fusionnés. Une association manuelle unique dans la même chaîne peut corroborer un candidat sans ambiguïté. Les anciens crédits ambigus et les noms de chaîne non confirmés restent à associer manuellement ; un auteur seulement supposé depuis une chaîne ne devient pas silencieusement une identité personnelle.
+
+La navigation Prods / Beatmakers conserve le lecteur et sa position. Une fin d'import attend la fermeture d'un profil en cours de consultation ou d'édition avant d'ouvrir la fiche de la prod. Les morceaux personnels restent dans #11 : aucun compte utilisateur ni écran Mes sons factice n'est ajouté à cette tranche.

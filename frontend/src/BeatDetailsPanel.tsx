@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { beatmakerSourceLabel, duration, externalLink, musicalKeyLabel } from './beat'
 import type { Beat, BeatDetails } from './beat'
+import { ProducerPicker, ProducerProfile } from './Beatmakers'
 import { Artwork } from './Artwork'
 import { Icon, Modal } from './Modal'
 import { useTitleMarquee } from './useTitleMarquee'
@@ -17,9 +18,10 @@ function dateLabel(value: string | null, dateOnly = false) {
   return Number.isNaN(date.valueOf()) ? 'Non renseignée' : new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date)
 }
 
-export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPlaybackError, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; playing: boolean; playbackError: string; onDismissPlaybackError: () => void; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
+export function BeatDetailsPanel({ identity, navigationRef, profileRevision, onOpenProfile, onProfilesChanged, playing, playbackError, onDismissPlaybackError, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; navigationRef: { current: ModalClose | null }; profileRevision: number; onOpenProfile: (id: string) => void; onProfilesChanged: () => void; playing: boolean; playbackError: string; onDismissPlaybackError: () => void; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
   const form = useRef<HTMLFormElement>(null)
   const closeModal = useRef<ModalClose | null>(null)
+  useEffect(() => { navigationRef.current = (force = false) => closeModal.current?.(force); return () => { navigationRef.current = null } }, [navigationRef])
   const titleInput = useRef<HTMLInputElement>(null)
   const titlePosition = useRef(0)
   // Chromium may reset native input scroll on blur, before the mode button clicks.
@@ -36,6 +38,11 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
   const [busy, setBusy] = useState(false)
   const [revealing, setRevealing] = useState(false)
   const [editing, setEditing] = useState(false)
+  const editingRef = useRef(false)
+  useLayoutEffect(() => { editingRef.current = editing }, [editing])
+  const [associated, setAssociated] = useState<{ id: string; name: string }[]>([])
+  const [picking, setPicking] = useState(false)
+  const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState('')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   useTitleMarquee(titleInput, Boolean(beat) && !editing, titlePosition)
@@ -68,10 +75,10 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
   useEffect(() => {
     const controller = new AbortController()
     api<BeatDetails>(`/api/beats/${identity}`, { signal: controller.signal }).then((value) => {
-      if (!controller.signal.aborted) { setBeat(value); setDraft(draftFor(value)) }
+      if (!controller.signal.aborted) { setBeat(value); if (!editingRef.current) { setDraft(draftFor(value)); setAssociated(value.beatmakers || []) } }
     }).catch((cause: unknown) => { if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Fiche indisponible.') })
     return () => controller.abort()
-  }, [identity, attempt])
+  }, [identity, attempt, profileRevision])
   useEffect(() => {
     if (!notice) return
     const timer = setTimeout(() => setNotice(''), 4000)
@@ -80,11 +87,11 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
   function update<T extends keyof Draft>(field: T, value: Draft[T]) { setError(''); setSaveError(false); setInvalid([]); setDraft((current) => current ? { ...current, [field]: value } : current) }
   function canClose() {
     if (busy) return false
-    if (editing && beat && draft && JSON.stringify(draft) !== JSON.stringify(draftFor(beat))) { setConfirmDiscard(true); return false }
+    if (editing && beat && draft && (JSON.stringify(draft) !== JSON.stringify(draftFor(beat)) || JSON.stringify(associated.map((p) => p.id)) !== JSON.stringify((beat.beatmakers || []).map((p) => p.id)))) { setConfirmDiscard(true); return false }
     return true
   }
   function focusEditor() { form.current?.closest('dialog')?.querySelector<HTMLButtonElement>('.edit-save')?.focus({ preventScroll: true }) }
-  function cancel() { rememberView(); if (beat) setDraft(draftFor(beat)); setEditing(false); setConfirmDiscard(false); setError(''); setInvalid([]); setSaveError(false); focusEditor() }
+  function cancel() { rememberView(); if (beat) { setDraft(draftFor(beat)); setAssociated(beat.beatmakers || []) } setEditing(false); setConfirmDiscard(false); setError(''); setInvalid([]); setSaveError(false); focusEditor() }
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (!beat || !draft || !editing || busy) return
@@ -102,6 +109,7 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
     const original = draftFor(beat)
     const patch: Record<string, unknown> = {}
     for (const key of ['title', 'description', 'beatmaker', 'musical_key'] as const) if (draft[key] !== original[key]) patch[key] = key === 'title' ? draft[key] : draft[key].trim() || null
+    if (JSON.stringify(associated.map((p) => p.id)) !== JSON.stringify((beat.beatmakers || []).map((p) => p.id))) { delete patch.beatmaker; patch.beatmaker_ids = associated.map((p) => p.id) }
     if (draft.bpm !== original.bpm) patch.bpm = draft.bpm.trim() ? Number(draft.bpm) : null
     if (draft.sale_url !== original.sale_url) patch.links = [
       ...(draft.sale_url.trim() ? [{ url: draft.sale_url.trim(), label: beat.links[0]?.label || null }] : []),
@@ -110,7 +118,7 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
     try {
       const result = await api<BeatDetails>(`/api/beats/${beat.id}/metadata`, { method: 'PATCH', body: JSON.stringify(patch) })
       rememberView()
-      setBeat(result); setDraft(draftFor(result)); setEditing(false); setConfirmDiscard(false); setNotice('Informations enregistrées.'); onChanged()
+      setBeat(result); setDraft(draftFor(result)); setAssociated(result.beatmakers || []); setEditing(false); setConfirmDiscard(false); setNotice('Informations enregistrées.'); onChanged()
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Informations non enregistrées.'
       setError(message); setSaveError(true)
@@ -163,7 +171,7 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
       <div className="detail-right">
         <h2 id="beat-details-title" aria-label={beat.title} tabIndex={0}><label className="detail-title-input"><span className="sr-only">Titre de la prod</span><input ref={titleInput} id="detail-title" title={beat.title} type="text" required maxLength={500} readOnly={!editing || busy} aria-invalid={invalid.includes('detail-title')} aria-describedby={invalid.includes('detail-title') ? 'detail-error-message' : undefined} value={draft.title} onFocus={() => { titleBlurred.current = false }} onBlur={(event) => { if (event.currentTarget.scrollLeft) titlePosition.current = event.currentTarget.scrollLeft; titleBlurred.current = true; const input = event.currentTarget; requestAnimationFrame(() => { if (input.isConnected && titleBlurred.current) input.scrollLeft = titlePosition.current }) }} onScroll={(event) => { if (!titleBlurred.current) titlePosition.current = event.currentTarget.scrollLeft }} onChange={(e) => update('title', e.target.value)} /></label></h2>
         <dl className="detail-identity">
-          <div><dt><label htmlFor="detail-maker">Beatmaker</label></dt><dd><input className="identity-value" id="detail-maker" aria-label="Nom du beatmaker" title={beatmakerSourceLabel(beat.beatmaker_source)} aria-description={beatmakerSourceLabel(beat.beatmaker_source)} aria-invalid={invalid.includes('detail-maker')} aria-describedby={invalid.includes('detail-maker') ? 'detail-error-message' : undefined} maxLength={200} readOnly={!editing || busy} placeholder="Non renseigné" value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} /></dd></div>
+          <div><dt className="maker-heading"><label htmlFor="detail-maker">Beatmaker</label><button type="button" disabled={busy} onClick={() => { if (!editing && beat) { rememberView(); setDraft(draftFor(beat)); setEditing(true) } setPicking(true) }}>Associer</button></dt><dd className="producer-credit-cell"><input className="identity-value" id="detail-maker" aria-label="Nom du beatmaker" title={beatmakerSourceLabel(beat.beatmaker_source)} aria-description={beatmakerSourceLabel(beat.beatmaker_source)} aria-invalid={invalid.includes('detail-maker')} aria-describedby={invalid.includes('detail-maker') ? 'detail-error-message' : undefined} maxLength={200} style={{ visibility: associated.length ? 'hidden' : 'visible' }} tabIndex={associated.length ? -1 : undefined} aria-hidden={!!associated.length} readOnly={!editing || busy} placeholder="Non renseigné" value={draft.beatmaker} onChange={(e) => update('beatmaker', e.target.value)} />{associated.length > 0 && <span className="producer-credit-links">{associated.map((p) => <button type="button" key={p.id} disabled={editing} onClick={() => onOpenProfile(p.id)}>{p.name}</button>)}</span>}</dd></div>
           <div className="source-identity"><dt>Chaîne YouTube</dt><dd title={beat.channel || undefined}><span className="identity-value">{beat.channel || 'Non renseignée'}</span></dd></div>
         </dl>
         <dl className="detail-dates"><div><dt>Publication YouTube</dt><dd>{dateLabel(beat.published_on, true)}</dd></div><div><dt>Ajout à la bibliothèque</dt><dd>{dateLabel(beat.added_at)}</dd></div></dl>
@@ -171,5 +179,7 @@ export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPl
       </div>
 
     </form>}
+    {picking && <ProducerPicker selected={associated} revision={profileRevision} onClose={() => setPicking(false)} onCreate={() => setCreating(true)} onSelect={(values) => { setAssociated(values); setPicking(false) }} />}
+    {creating && <ProducerProfile identity="new" revision={0} onClose={() => setCreating(false)} onChanged={onProfilesChanged} onBeat={() => {}} onViewBeats={() => {}} onPlay={onTogglePlayback} playingId={playing ? identity : null} />}
   </Modal>
 }

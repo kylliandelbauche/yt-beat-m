@@ -28,3 +28,7 @@ Les changements d’état d’un composant (lecture, édition, chargement, sauve
 Priorité utilisateur du 29 octobre 2026 : valider le parcours essentiel sur Mac, puis développer Beatmakers (#62) et Mes sons (#11), une issue à la fois. Windows et le lanceur à double-clic sont reportés ; leur recette ne bloque plus ces développements. Conserver les chemins portables et le code compatible existant sans chantier Windows supplémentaire.
 
 Vérifier les garanties utiles : persistance, chemins portables, migrations, reprise d'import, protection de l'API locale et lecture. Réutiliser les contrôles déjà réussis ; compléter uniquement les garanties affectées ou encore non vérifiées. La recette Mac distingue les contrôles du navigateur et du moteur de l'écoute physique et de l'utilisation dans le logiciel de musique, à confirmer par l'utilisateur.
+
+## Budget GitHub Actions
+
+Après l'alerte de quota du 29 octobre 2026, les validations sont locales par défaut. La CI hébergée est manuelle, sans déclenchement sur push, PR ou fusion, avec Linux par défaut et Mac en option pour un besoin spécifique. Ne pas lancer de CI hébergée sans demande explicite ; publier les vérifications locales dans la PR. Ne pas changer les réglages de facturation à partir d'une simple alerte.

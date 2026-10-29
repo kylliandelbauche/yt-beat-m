@@ -6,6 +6,7 @@ from math import isfinite
 from yt_beat_m.beatmakers import channel_alias, channel_key, provenance
 from yt_beat_m.library import Library, LibraryError
 from yt_beat_m.metadata import canonical_key, normalize
+from yt_beat_m.profiles import profiles_for_beats
 
 
 def beat_view(row) -> dict:
@@ -40,6 +41,8 @@ class CatalogFilters:
     channel_missing: bool = False
     style_missing: bool = False
     mood_missing: bool = False
+    profile_ids: list[str] = field(default_factory=list)
+    unassigned_profiles: bool = False
     sort: str = "added_desc"
 
     def validate(self):
@@ -73,12 +76,25 @@ def list_beats(
         connection.create_function("normalized", 1, normalize, deterministic=True)
         connection.create_function("music_key", 1, key_value, deterministic=True)
         clauses, parameters = [], []
+        if filters.profile_ids:
+            if len(filters.profile_ids) > 100:
+                raise LibraryError("Trop de profils sélectionnés.")
+            clauses.append(
+                "EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id AND "
+                "profile_id IN (" + ",".join("?" for _ in filters.profile_ids) + "))"
+            )
+            parameters.extend(filters.profile_ids)
+        if filters.unassigned_profiles:
+            clauses.append("NOT EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id)")
         if favorites:
             clauses.append("favorite = 1")
         for term in normalize(query).split():
             clauses.append(
                 "instr(normalized(title || ' ' || coalesce(beatmaker, '') || ' ' || "
-                "coalesce(channel, '') || ' ' || coalesce((SELECT group_concat(label, ' ') "
+                "coalesce(channel, '') || ' ' || coalesce((SELECT group_concat(p.name, ' "
+                "') FROM beatmaker_profiles p JOIN beat_profile_links l ON "
+                "p.id=l.profile_id WHERE l.beat_id=beats.id), '') || ' ' || "
+                "coalesce((SELECT group_concat(label, ' ') "
                 "FROM tags JOIN beat_tags ON tags.id=tag_id WHERE beat_id=beats.id), '')), ?) > 0"
             )
             parameters.append(term)
@@ -103,7 +119,6 @@ def list_beats(
             parameters.extend(bpm_args)
         for column, values, missing, fn in (
             ("musical_key", filters.keys, filters.key_missing, "music_key"),
-            ("beatmaker", filters.makers, filters.maker_missing, "normalized"),
             ("channel", filters.channels, filters.channel_missing, "normalized"),
         ):
             parts = []
@@ -116,6 +131,24 @@ def list_beats(
                 parts.append(f"length(trim(coalesce({column}, ''))) = 0")
             if parts:
                 clauses.append("(" + " OR ".join(parts) + ")")
+        maker_parts = []
+        if filters.makers:
+            placeholders = ",".join("?" for _ in filters.makers)
+            maker_parts.append(
+                "(EXISTS (SELECT 1 FROM beat_profile_links l JOIN beatmaker_profiles p ON"
+                " p.id=l.profile_id WHERE l.beat_id=beats.id AND normalized(p.name) IN ("
+                + placeholders
+                + ")) OR (NOT EXISTS (SELECT 1 FROM beat_profile_links "
+                "WHERE beat_id=beats.id) AND normalized(beatmaker) IN (" + placeholders + ")))"
+            )
+            parameters.extend([normalize(v) for v in filters.makers] * 2)
+        if filters.maker_missing:
+            maker_parts.append(
+                "(NOT EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id) "
+                "AND length(trim(coalesce(beatmaker,'')))=0)"
+            )
+        if maker_parts:
+            clauses.append("(" + " OR ".join(maker_parts) + ")")
         for kind, values, missing in (
             ("style", filters.styles, filters.style_missing),
             ("mood", filters.moods, filters.mood_missing),
@@ -148,7 +181,11 @@ def list_beats(
             "SELECT * FROM beats" + where + " ORDER BY " + sort + " LIMIT ? OFFSET ?",
             [*parameters, limit, offset],
         ).fetchall()
-    return {"beats": [beat_view(row) for row in rows], "total": total}
+        associations = profiles_for_beats(connection, [row["id"] for row in rows])
+    return {
+        "beats": [{**beat_view(row), "beatmakers": associations[row["id"]]} for row in rows],
+        "total": total,
+    }
 
 
 def filter_options(library: Library) -> dict:
@@ -156,7 +193,6 @@ def filter_options(library: Library) -> dict:
         rows = connection.execute("SELECT beatmaker,channel,musical_key FROM beats").fetchall()
         result = {}
         for name, column in (
-            ("makers", "beatmaker"),
             ("channels", "channel"),
             ("keys", "musical_key"),
         ):
@@ -166,6 +202,13 @@ def filter_options(library: Library) -> dict:
                 if value and value.strip():
                     labels.setdefault(normalize(value), value)
             result[name] = sorted(labels.values(), key=normalize)
+        maker_names = connection.execute(
+            "SELECT DISTINCT p.name FROM beatmaker_profiles p JOIN beat_profile_links"
+            " l ON p.id=l.profile_id UNION SELECT beatmaker FROM beats WHERE NOT "
+            "EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id) AND "
+            "beatmaker IS NOT NULL"
+        ).fetchall()
+        result["makers"] = sorted({r[0] for r in maker_names if r[0]}, key=normalize)
         for name, kind in (("styles", "style"), ("moods", "mood")):
             labels = {}
             for row in connection.execute(
@@ -193,6 +236,7 @@ def beat_details(library: Library, identity: str) -> dict | None:
         ).fetchall()
         return {
             **beat_view(row),
+            "beatmakers": profiles_for_beats(connection, [identity])[identity],
             "source_url": row["source_url"],
             "bpm": row["bpm"],
             "published_on": row["published_on"],
