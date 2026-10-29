@@ -35,33 +35,51 @@ for (const width of [1280, 390]) {
   })
 
   for (const unavailable of ['missing', 'unreadable']) {
-    test(`erreur audio réelle ${unavailable}, relance et géométrie stable sur ${width}`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 })
-      let fail = true
-      await page.route('**/api/beats/00000000-0000-0000-0000-000000000002/audio', (route) => {
-        if (!fail) return route.continue()
-        return route.fulfill(unavailable === 'missing'
-          ? { status: 404, json: { detail: 'Fichier introuvable ; vérifier le disque.' } }
-          : { contentType: 'audio/mpeg', body: 'Ce fichier ne contient pas de MP3.' })
+    for (const entry of ['carte', 'fiche']) {
+      test(`erreur audio réelle ${unavailable} depuis ${entry}, relance et géométrie stable sur ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 })
+        let fail = true
+        await page.route('**/api/beats/00000000-0000-0000-0000-000000000002/audio', (route) => {
+          if (!fail) return route.continue()
+          return route.fulfill(unavailable === 'missing'
+            ? { status: 404, json: { detail: 'Fichier introuvable ; vérifier le disque.' } }
+            : { contentType: 'audio/mpeg', body: 'Ce fichier ne contient pas de MP3.' })
+        })
+        await page.goto('/')
+        await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toBeVisible()
+        if (entry === 'fiche') {
+          await page.getByRole('button', { name: 'Détails de Drill minuit', exact: true }).click()
+          await expect(page.getByRole('dialog').getByRole('heading', { name: 'Drill minuit', exact: true })).toBeVisible()
+          await page.getByRole('dialog').getByRole('button', { name: 'Modifier la prod', exact: true }).click()
+          await page.getByRole('dialog').getByLabel('BPM', { exact: true }).fill('155')
+        }
+        const scope = entry === 'fiche' ? page.getByRole('dialog') : page.locator('.beat-grid')
+        const feedback = entry === 'fiche' ? scope : page.locator('.catalog-feedback')
+        const geometry = () => page.locator('.local-player, .player-description, audio, .catalog-stage, .collection-toolbar, .beat-details, .details-columns, .modal-actions').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); const fixed = el.closest('.local-player, dialog'); return [r.x + (fixed ? 0 : scrollX), r.y + (fixed ? 0 : scrollY), r.width, r.height] }))
+        const before = await geometry()
+        await scope.getByRole('button', { name: 'Écouter Drill minuit', exact: true }).click()
+        const audio = page.locator('audio')
+        await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.error?.code)).toBe(4)
+        await expect(feedback.getByRole('alert')).toContainText('Fichier audio indisponible')
+        await expect(scope.getByRole('button', { name: /^Mettre en pause/ })).toHaveCount(0)
+        expect(await geometry()).toEqual(before)
+        if (entry === 'fiche') {
+          await scope.getByRole('button', { name: 'Masquer le message d’erreur audio', exact: true }).click()
+          await expect(scope.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toBeFocused()
+          await expect(feedback.getByRole('alert')).toHaveCount(0)
+          await expect(scope.getByLabel('BPM', { exact: true })).toHaveValue('155')
+          expect(await geometry()).toEqual(before)
+        }
+        fail = false
+        await scope.getByRole('button', { name: 'Écouter Drill minuit', exact: true }).click()
+        await expect(audio).toHaveJSProperty('paused', false)
+        await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0)
+        await expect(feedback.getByRole('alert')).toHaveCount(0)
+        await expect(scope.getByRole('button', { name: 'Mettre en pause Drill minuit', exact: true })).toBeVisible()
+        if (entry === 'fiche') await expect(scope.getByLabel('BPM', { exact: true })).toHaveValue('155')
+        expect(await geometry()).toEqual(before)
       })
-      await page.goto('/')
-      const geometry = () => page.locator('.local-player, .player-description, audio, .catalog-stage, .collection-toolbar').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); const fixed = el.closest('.local-player'); return [r.x + (fixed ? 0 : scrollX), r.y + (fixed ? 0 : scrollY), r.width, r.height] }))
-      await expect(page.getByRole('button', { name: 'Écouter Drill minuit', exact: true })).toBeVisible()
-      const before = await geometry()
-      await page.getByRole('button', { name: 'Écouter Drill minuit', exact: true }).click()
-      const audio = page.locator('audio')
-      await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.error?.code)).toBe(4)
-      await expect(page.getByRole('alert')).toContainText('Fichier audio indisponible')
-      await expect(page.getByRole('button', { name: /^Mettre en pause/ })).toHaveCount(0)
-      expect(await geometry()).toEqual(before)
-      fail = false
-      await page.getByRole('button', { name: 'Écouter Drill minuit', exact: true }).click()
-      await expect(audio).toHaveJSProperty('paused', false)
-      await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0)
-      await expect(page.getByRole('alert')).toHaveCount(0)
-      await expect(page.getByRole('button', { name: 'Mettre en pause Drill minuit', exact: true })).toBeVisible()
-      expect(await geometry()).toEqual(before)
-    })
+    }
   }
 }
 

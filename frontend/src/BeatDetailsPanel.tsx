@@ -17,7 +17,7 @@ function dateLabel(value: string | null, dateOnly = false) {
   return Number.isNaN(date.valueOf()) ? 'Non renseignée' : new Intl.DateTimeFormat('fr-BE', { dateStyle: 'long', ...(dateOnly ? { timeZone: 'UTC' } : {}) }).format(date)
 }
 
-export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; playing: boolean; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
+export function BeatDetailsPanel({ identity, playing, playbackError, onDismissPlaybackError, onTogglePlayback, onClose, onFavorite, onChanged }: { identity: string; playing: boolean; playbackError: string; onDismissPlaybackError: () => void; onTogglePlayback: (beat: Beat) => void; onClose: () => void; onFavorite: (beat: Beat) => Promise<boolean>; onChanged: () => void }) {
   const form = useRef<HTMLFormElement>(null)
   const closeModal = useRef<ModalClose | null>(null)
   const titleInput = useRef<HTMLInputElement>(null)
@@ -142,6 +142,7 @@ export function BeatDetailsPanel({ identity, playing, onTogglePlayback, onClose,
     {error && <div className="detail-feedback has-error">
       <div className="detail-error"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M12 6V13M12 16V18" stroke="currentColor" strokeWidth="1.6" /></svg><p id="detail-error-message" className="library-error" role="alert" tabIndex={0} title={error}>{error}</p>{editing && <button type="button" className="cancel-save-error" disabled={busy} aria-label="Annuler les modifications" onClick={cancel}>Annuler</button>}{saveError && editing && <button type="button" className="retry-save" disabled={busy} onClick={() => form.current?.requestSubmit()}>Réessayer</button>}{beat && <button type="button" aria-label="Masquer le message d’erreur" onClick={() => { setError(''); setInvalid([]); focusEditor() }}>✕</button>}</div>
     </div>}
+    {!error && playbackError && <div className="detail-feedback has-error"><div className="detail-error"><p className="library-error" role="alert">{playbackError}</p><button type="button" aria-label="Masquer le message d’erreur audio" onClick={(event) => { onDismissPlaybackError(); event.currentTarget.closest('dialog')?.querySelector<HTMLButtonElement>('.detail-play')?.focus({ preventScroll: true }) }}>✕</button></div></div>}
     {confirmDiscard && <div className="detail-feedback discard-feedback"><div className="discard-prompt" role="alert"><p>Des modifications ne sont pas enregistrées.</p><button onClick={() => { setConfirmDiscard(false); focusEditor() }}>Continuer l’édition</button><button onClick={() => closeModal.current?.(true)}>Abandonner et fermer</button></div></div>}
     {!beat && !error && <p className="form-hint" role="status">Chargement de la fiche…</p>}
     {!beat && error && <button onClick={() => { setError(''); setAttempt((n) => n + 1) }}>Réessayer</button>}
