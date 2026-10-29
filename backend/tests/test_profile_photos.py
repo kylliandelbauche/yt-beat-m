@@ -164,3 +164,72 @@ def test_redirect_to_localhost_is_refused_and_size_is_bounded(monkeypatch):
     monkeypatch.setattr(photos, "build_opener", lambda *a: BigImage())
     with pytest.raises(LibraryError):
         download_avatar("https://yt3.ggpht.com/portrait")
+
+
+def test_existing_source_channel_wins_over_display_name_and_guest_stays_separate(tmp_path):
+    from yt_beat_m.profile_photos import photo_candidate
+
+    lib = Library.create(tmp_path / "Collection")
+    try:
+        beat = add_beat(lib, "Elegance", channel="Elegance isn't it?")
+        identity = list_profiles(lib)["profiles"][0]["id"]
+        channel_id = "UC" + "a" * 22
+        with lib.catalog() as c:
+            c.execute(
+                "UPDATE beats SET channel_id=?,youtube_id=? WHERE id=?",
+                (channel_id, "abcdefghijk", beat),
+            )
+            assert photo_candidate(c, identity) == (
+                identity,
+                channel_id,
+                "Elegance isn't it?",
+                "abcdefghijk",
+            )
+        # A guest in a collaboration cannot inherit this uploader's portrait.
+        other = add_beat(lib, "Owner x Guest", channel="Owner channel")
+        guest = next(p for p in list_profiles(lib)["profiles"] if p["name"] == "Guest")
+        with lib.catalog() as c:
+            c.execute("UPDATE beats SET channel_id=? WHERE id=?", ("UC" + "b" * 22, other))
+            assert photo_candidate(c, guest["id"]) is None
+    finally:
+        lib.close()
+
+
+def test_legacy_source_resolves_channel_from_video_without_guessing_handle(monkeypatch):
+    import yt_beat_m.profile_photos as photos
+
+    calls = []
+    channel_id = "UC" + "a" * 22
+
+    class Runner:
+        def run(self, args, *, timeout):
+            calls.append(args[-1])
+            if "/watch?v=" in args[-1]:
+                return json.dumps({"id": "abcdefghijk", "channel_id": channel_id})
+            return json.dumps(
+                {
+                    "channel_id": channel_id,
+                    "thumbnails": [{"url": "https://yt3.googleusercontent.com/portrait"}],
+                }
+            )
+
+    monkeypatch.setattr(photos, "download_avatar", lambda *a, **k: (JPEG, "image/jpeg"))
+    assert fetch_channel(None, "A different display name", Runner(), "abcdefghijk") == (
+        JPEG,
+        "image/jpeg",
+    )
+    assert calls == [
+        "https://www.youtube.com/watch?v=abcdefghijk",
+        "https://www.youtube.com/channel/" + channel_id,
+    ]
+    calls.clear()
+    with pytest.raises(LibraryError):
+        fetch_channel(None, "GuessedHandle", Runner())
+    assert not calls
+
+    class WrongVideo:
+        def run(self, *args, **kwargs):
+            return json.dumps({"id": "wrongvideo1", "channel_id": channel_id})
+
+    with pytest.raises(LibraryError):
+        fetch_channel(None, "Name", WrongVideo(), "abcdefghijk")
