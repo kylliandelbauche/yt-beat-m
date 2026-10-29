@@ -1,5 +1,11 @@
 # Livraison et validation
 
+## Priorité actualisée — 29 octobre 2026
+
+À la demande de l'utilisateur, #8 se concentre sur les vérifications essentielles Mac. Windows et le lanceur à double-clic sont reportés ; ils ne constituent plus une condition avant Beatmakers (#62), puis Mes sons (#11). Le lancement documenté existant suffit à cette phase. La CI conserve les contrôles Mac et suspend la matrice Windows, sans retirer les adaptateurs ou la portabilité des données.
+
+La recette complète historique ci-dessous sert de référence. Pour la phase actuelle, consigner séparément les essais Mac réalisés, les scénarios déjà couverts par les tests automatisés et les gestes restant à confirmer par l'utilisateur (écoute physique, glisser le MP3 dans son logiciel, disque externe). Ces gestes et les scénarios Windows reportés ne doivent pas être présentés comme validés. Éviter de rejouer des contrôles inchangés sans échec ni garantie manquante.
+
 ## Organisation
 
 Le jalon `v0.1 — MVP local` regroupe les issues indispensables au parcours complet. Les évolutions restent dans un backlog séparé, sans date promise.
@@ -56,7 +62,7 @@ Ces contrôles automatisés consolident #5. Le téléchargement YouTube est simu
 - [ ] Vérifier une vidéo indisponible, une dépendance absente, une interruption d'import et un disque non accessible ; aucune fausse réussite.
 - [ ] Relever le système de fichiers réel du disque et le résultat du test de verrouillage.
 
-Tant que la recette Windows sur machine réelle n'a pas eu lieu, la compatibilité Windows reste « prévue et testée automatiquement », pas « validée en usage réel ». Le jalon ne se ferme pas sur la seule base d'une démonstration visuelle.
+La compatibilité Windows reste « testée automatiquement avant son report », pas « validée en usage réel ». Sa recette physique est différée depuis le 29 octobre et ne bloque plus la phase Mac ni les nouvelles fonctionnalités. Les éléments Mac non vérifiés restent explicitement ouverts.
 
 ## Après le MVP
 

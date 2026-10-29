@@ -4,6 +4,8 @@ Bibliothèque personnelle de prods YouTube : importer une prod, la retrouver par
 
 **Statut : import YouTube, catalogue portable, fiches détaillées et écoute locale disponibles.** L'interface permet de créer/ouvrir une bibliothèque, d'importer une vidéo, d'indexer ses MP3, de rechercher et de gérer ses favoris. L’édition des métadonnées et les filtres musicaux avancés sont disponibles (#6).
 
+**Priorité du 29 octobre : Mac, puis Beatmakers et Mes sons.** Windows et le lanceur à double-clic sont reportés. Le lancement documenté ci-dessous reste utilisable. La [recette essentielle Mac](docs/validation/mac-2026-10-29.md) distingue les vérifications réalisées des gestes utilisateur encore à confirmer.
+
 ## Installer et lancer
 
 Prérequis sur chaque ordinateur : [uv](https://docs.astral.sh/uv/getting-started/installation/), [Node.js 24 LTS](https://nodejs.org/) et [FFmpeg/ffprobe](https://ffmpeg.org/download.html) dans le PATH. uv installe Python 3.13 si nécessaire. Les mêmes commandes fonctionnent dans un terminal Mac et dans PowerShell Windows, depuis la racine du dépôt :
@@ -78,7 +80,7 @@ npm --prefix frontend exec playwright install chromium
 npm --prefix frontend run test:e2e
 ```
 
-Les mêmes contrôles tournent dans GitHub Actions sur Mac et Windows. Playwright démarre un moteur isolé sur le port 8767 avec une bibliothèque temporaire, un son synthétique et un téléchargement simulé ; les médias et préférences personnels ne sont pas utilisés. Les parcours couvrent clavier, description non fiable, favoris persistants, import/doublon, recherche pendant la lecture et consultation avec les requêtes Internet bloquées. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
+Ces contrôles tournent dans GitHub Actions sur Mac. La matrice Windows est suspendue depuis son report du 29 octobre ; ses adaptateurs restent présents. Playwright démarre un moteur isolé sur le port 8767 avec une bibliothèque temporaire, un son synthétique et un téléchargement simulé ; les médias et préférences personnels ne sont pas utilisés. Les parcours couvrent clavier, description non fiable, favoris persistants, import/doublon, recherche pendant la lecture et consultation avec les requêtes Internet bloquées. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
 
 ## Expérience visée
 
