@@ -32,16 +32,29 @@ class ImportWorker:
         self.library = library
         self.stopping = threading.Event()
         self.runner = runner if runner is not None else ProcessRunner(self.stopping)
+        self.photo_runner = ProcessRunner(self.stopping)
+        self._photo_thread: threading.Thread | None = None
         self._thread: threading.Thread | None = None
         self._recover()
 
     def start(self):
         self._thread = threading.Thread(target=self._loop, daemon=True, name="beat-import")
         self._thread.start()
+        self._photo_thread = threading.Thread(
+            target=self._photos, daemon=True, name="beat-portraits"
+        )
+        self._photo_thread.start()
 
     def stop(self):
         self.stopping.set()
         self.runner.cancel()
+        self.photo_runner.cancel()
+        if self._photo_thread:
+            self._photo_thread.join(timeout=12)
+            if self._photo_thread.is_alive():
+                raise LibraryError(
+                    "Un portrait se termine encore ; attends avant de fermer le disque."
+                )
         if self._thread:
             self._thread.join(timeout=12)
             if self._thread.is_alive():
@@ -103,10 +116,23 @@ class ImportWorker:
                     ).fetchone()
                 if row:
                     self.perform(dict(row))
+
             except (LibraryError, OSError):
                 # A disconnected disk is not a new empty library. Leave jobs for recovery.
                 if self.stopping.wait(1):
                     break
+
+    def _photos(self):
+        from yt_beat_m.profile_photos import enrich_next_photo
+
+        while not self.stopping.wait(1):
+            try:
+                enrich_next_photo(self.library, self.photo_runner)
+            except ImportInterrupted:
+                return
+            except (LibraryError, OSError):
+                if self.stopping.wait(1):
+                    return
 
     def _staging(self, job_id: str) -> Path:
         UUID(job_id)

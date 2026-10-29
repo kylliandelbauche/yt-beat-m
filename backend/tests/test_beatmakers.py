@@ -194,7 +194,7 @@ def test_real_v1_migration_backup_alias_and_correction_move_with_library(tmp_pat
             )
         old.close()
     migrated = Library.open(root)
-    assert migrated.summary()["schema_version"] == 3
+    assert migrated.summary()["schema_version"] == 4
     backup = next((root / "backups").glob("*.sqlite3"))
     with closing(sqlite3.connect(backup)) as connection:
         assert connection.execute("PRAGMA user_version").fetchone()[0] == 1

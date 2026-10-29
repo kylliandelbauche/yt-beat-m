@@ -66,6 +66,7 @@ test('me reste une proposition de chaîne, la correction conserve le collaborate
     const laco = await (await page.request.post('/api/beatmakers', { headers, data: { name: 'Laco' } })).json()
     await dialog.getByRole('button', { name: 'Associer', exact: true }).click()
     const picker = page.getByRole('dialog', { name: 'Associer des beatmakers', exact: true })
+    await picker.getByRole('checkbox', { name: 'prodlacco', exact: true }).uncheck()
     await picker.getByRole('checkbox', { name: 'Laco', exact: true }).check()
     await picker.getByRole('button', { name: 'Utiliser la sélection', exact: true }).click()
     await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()

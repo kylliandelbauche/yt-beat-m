@@ -121,6 +121,8 @@ L’écran principal suit la ligne **Officiel** de [Paper — Beat m](https://ap
 
 ## Profils Beatmakers
 
+**Fusionner** réunit un doublon avec un profil choisi après aperçu ; **Supprimer** retire un profil sans effacer ses prods ou MP3. Les anciens noms restent des alias et les retraits ne sont pas recréés automatiquement. Les portraits YouTube correspondants sont récupérés en arrière-plan ; une photo manuelle reste prioritaire.
+
 Dans **Beatmakers**, créer un profil avec son nom, une photo JPEG/PNG locale, ses réseaux et ses sites de vente. Le crayon active l'édition ; Save enregistre, Annuler rétablit les valeurs précédentes. Le compteur et l'aperçu permettent de retrouver ses prods, puis **Voir les prods** ouvre la bibliothèque filtrée.
 
 Dans la fiche d'une prod, **Associer** ouvre une sélection multiple. Choisir chaque producteur séparément, cliquer sur **Utiliser la sélection**, puis **Save** dans la fiche. Chaque nom associé ouvre son profil. La chaîne YouTube et le crédit source restent distincts ; les associations manuelles sont conservées par Actualiser.

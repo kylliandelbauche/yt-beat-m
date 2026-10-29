@@ -69,6 +69,13 @@ def simulated_download(self, args, on_line=None, *, timeout=600):
 
 def main():
     # These replacements exist only in this isolated test process, never in the application.
+    import yt_beat_m.profile_photos as portraits
+    from yt_beat_m.library import LibraryError
+
+    def no_portrait(*args):
+        raise LibraryError("Portrait indisponible dans la recette isolée.")
+
+    portraits.fetch_channel = no_portrait
     ProcessRunner.run = simulated_download
     imports.shutil.which = lambda name: name
     with tempfile.TemporaryDirectory(prefix="yt-beat-m-e2e-") as folder:

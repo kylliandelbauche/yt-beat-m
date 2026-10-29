@@ -83,7 +83,9 @@ def list_beats(
                 "EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id AND "
                 "profile_id IN (" + ",".join("?" for _ in filters.profile_ids) + "))"
             )
-            parameters.extend(filters.profile_ids)
+            from yt_beat_m.profiles import resolve_profile
+
+            parameters.extend(resolve_profile(connection, value) for value in filters.profile_ids)
         if filters.unassigned_profiles:
             clauses.append("NOT EXISTS (SELECT 1 FROM beat_profile_links WHERE beat_id=beats.id)")
         if favorites:
@@ -91,7 +93,8 @@ def list_beats(
         for term in normalize(query).split():
             clauses.append(
                 "instr(normalized(title || ' ' || coalesce(beatmaker, '') || ' ' || "
-                "coalesce(channel, '') || ' ' || coalesce((SELECT group_concat(p.name, ' "
+                "coalesce(channel, '') || ' ' || coalesce((SELECT "
+                "group_concat(p.name || ' ' || p.aliases, ' "
                 "') FROM beatmaker_profiles p JOIN beat_profile_links l ON "
                 "p.id=l.profile_id WHERE l.beat_id=beats.id), '') || ' ' || "
                 "coalesce((SELECT group_concat(label, ' ') "

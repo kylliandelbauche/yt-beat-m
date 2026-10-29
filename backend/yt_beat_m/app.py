@@ -26,7 +26,16 @@ from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
 from yt_beat_m.metadata import MetadataUpdate, correct_metadata
-from yt_beat_m.profiles import ProfileUpdate, get_profile, list_profiles, save_profile
+from yt_beat_m.profile_photos import request_photo
+from yt_beat_m.profiles import (
+    ProfileUpdate,
+    delete_profile,
+    get_profile,
+    list_profiles,
+    merge_profiles,
+    resolve_profile,
+    save_profile,
+)
 from yt_beat_m.reveal import reveal_file
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -44,6 +53,10 @@ class YouTubeImport(BaseModel):
 
 class FavoriteUpdate(BaseModel):
     favorite: bool
+
+
+class ProfileMerge(BaseModel):
+    target_id: UUID
 
 
 class BeatmakerUpdate(BaseModel):
@@ -260,7 +273,7 @@ def create_app(
             return {
                 **result,
                 "beats": list_beats(
-                    library, 20, 0, filters=CatalogFilters(profile_ids=[str(identity)])
+                    library, 20, 0, filters=CatalogFilters(profile_ids=[result["id"]])
                 )["beats"],
             }
 
@@ -272,12 +285,35 @@ def create_app(
                 raise HTTPException(404, "Profil introuvable.")
             return result
 
+    @app.delete("/api/beatmakers/{identity}")
+    def remove_profile(identity: UUID):
+        with manager.active() as library:
+            if not delete_profile(library, str(identity)):
+                raise HTTPException(404, "Profil introuvable.")
+            return {"deleted": True}
+
+    @app.post("/api/beatmakers/{identity}/merge-preview")
+    def preview_merge(identity: UUID, payload: ProfileMerge):
+        with manager.active() as library:
+            return merge_profiles(library, str(identity), str(payload.target_id), preview=True)
+
+    @app.post("/api/beatmakers/{identity}/merge")
+    def merge_producers(identity: UUID, payload: ProfileMerge):
+        with manager.active() as library:
+            return merge_profiles(library, str(identity), str(payload.target_id))
+
+    @app.post("/api/beatmakers/{identity}/photo-refresh")
+    def refresh_profile_photo(identity: UUID):
+        with manager.active() as library:
+            return request_photo(library, str(identity))
+
     @app.get("/api/beatmakers/{identity}/photo")
     def profile_photo(identity: UUID):
         with manager.active() as library:
             with library.catalog() as c:
                 row = c.execute(
-                    "SELECT photo,photo_type FROM beatmaker_profiles WHERE id=?", (str(identity),)
+                    "SELECT photo,photo_type FROM beatmaker_profiles WHERE id=?",
+                    (resolve_profile(c, str(identity)),),
                 ).fetchone()
                 if not row or not row[0]:
                     raise HTTPException(404, "Photo indisponible.")

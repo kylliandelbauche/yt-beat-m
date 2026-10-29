@@ -15,6 +15,7 @@ MIGRATIONS = {
     1: Path(__file__).parent / "migrations" / "001_initial.sql",
     2: Path(__file__).parent / "migrations" / "002_beatmakers.sql",
     3: Path(__file__).parent / "migrations" / "003_profiles.sql",
+    4: Path(__file__).parent / "migrations" / "004_profile_identity.sql",
 }
 
 
@@ -209,6 +210,10 @@ class Library:
                             from yt_beat_m.profiles import backfill_profiles
 
                             backfill_profiles(connection)
+                        if number == 4:
+                            from yt_beat_m.profiles import repair_identities
+
+                            repair_identities(connection)
                         connection.execute(
                             "INSERT INTO schema_migrations VALUES (?, ?)",
                             (number, datetime.now(UTC).isoformat()),
