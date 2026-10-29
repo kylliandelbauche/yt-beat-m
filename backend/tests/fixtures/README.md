@@ -5,3 +5,5 @@
 Commande de génération : `ffmpeg -f lavfi -i sine=frequency=440:sample_rate=44100 -t 1 -c:a libmp3lame -q:a 9 tone.mp3` puis encodage Base64.
 
 `long-tone.mp3.base64` utilise la même commande avec `-t 30`. Les tests navigateur disposent ainsi d'une piste assez longue pour vérifier la continuité de lecture pendant la recherche et l'ouverture d'une fiche, sans boucle artificielle.
+
+`mint-cover.jpg.base64` contient un carré uni de 16 × 16 px, généré pour vérifier la publication et la restitution des pochettes après redémarrage, sans image externe : `ffmpeg -f lavfi -i color=c=0xb7ebcc:s=16x16 -frames:v 1 -f image2pipe -c:v mjpeg pipe:1`, puis encodage Base64.

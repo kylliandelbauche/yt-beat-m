@@ -49,6 +49,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
   const [reload, setReload] = useState(0)
   const [favoriteBusy, setFavoriteBusy] = useState(new Set<string>())
   const audio = useRef<HTMLAudioElement>(null)
+  const audioPreferences = useRef({ volume: 1, muted: false })
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [activatedId, setActivatedId] = useState<string | null>(null)
   const stage = useRef<HTMLDivElement>(null)
@@ -111,7 +112,10 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
 
   useEffect(() => {
     const player = audio.current
-    if (selection?.play && player) startPlayback(player)
+    if (!player) return
+    player.volume = audioPreferences.current.volume
+    player.muted = audioPreferences.current.muted
+    if (selection?.play) startPlayback(player)
   }, [selection])
 
   function startPlayback(player: HTMLAudioElement) {
@@ -119,7 +123,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
       if (cause instanceof DOMException && cause.name === 'AbortError') return
       if (audio.current === player) {
         setPlayingId(null)
-        setError('La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.')
+        setError(player.error ? 'Fichier audio indisponible ou illisible. Vérifie le disque.' : 'La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.')
       }
     })
   }
@@ -129,7 +133,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
     const player = audio.current
     if (selection?.beat.id === beat.id && player) {
       if (!player.paused && !player.ended) player.pause()
-      else { if (player.ended) player.currentTime = 0; startPlayback(player) }
+      else { if (player.error) player.load(); else if (player.ended) player.currentTime = 0; startPlayback(player) }
     } else {
       setPlayingId(null)
       setSelection({ beat, play: true })
@@ -242,7 +246,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
     {details && <BeatDetailsPanel key={details} identity={details} playing={playingId === details} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
     {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <button type="button" disabled={!connected} className="player-description player-details" aria-label={`Détails depuis le lecteur : ${activeBeat.title}`} aria-haspopup="dialog" onClick={() => setDetails(activeBeat.id)}><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></button>
-      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onPlay={(event) => { if (audio.current === event.currentTarget) { setPlayingId(selection.beat.id); setActivatedId(selection.beat.id) } }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setError('Fichier audio indisponible ou illisible. Vérifie le disque.') } }} />
+      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onVolumeChange={(event) => { if (audio.current === event.currentTarget) audioPreferences.current = { volume: event.currentTarget.volume, muted: event.currentTarget.muted } }} onPlay={(event) => { if (audio.current === event.currentTarget) { setPlayingId(selection.beat.id); setActivatedId(selection.beat.id) } }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setError('Fichier audio indisponible ou illisible. Vérifie le disque.') } }} />
     </aside>, document.body)}
     {!selection && createPortal(<aside className="local-player glass empty-player" aria-label="Lecteur audio"><div className="player-description"><span className="player-note" aria-hidden="true" /><div><p>Aucune prod sélectionnée</p><span>{connected ? 'Prêt pour ta première écoute' : 'Moteur déconnecté'}</span></div></div><audio controls aria-label="Lecteur sans prod sélectionnée" inert /></aside>, document.body)}
   </div>
