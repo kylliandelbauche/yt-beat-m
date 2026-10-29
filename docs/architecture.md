@@ -225,3 +225,7 @@ Un second worker annulable, séparé de l’import, extrait les métadonnées pu
 Les actions de gestion utilisent des fenêtres centrées et des emplacements fixes ; le choix de destination, l’aperçu, l’attente et l’erreur gardent la géométrie. La fiche Paper conserve ses dimensions ; les actions de gestion occupent l’espace sous l’identité. Annuler rend le focus au déclencheur ; les brouillons et le lecteur restent montés. Validations hébergées toujours manuelles ; tests locaux et réponses réseau contrôlées pour la recette automatisée.
 
 Référence de l’extraction : [yt-dlp — options et métadonnées](https://github.com/yt-dlp/yt-dlp#usage-and-options).
+
+## Liens de chaîne des profils (#76)
+
+GET /api/beatmakers/{UUID} ajoute youtube_channels, liste dédupliquée de liens canoniques construits depuis les identifiants UC des sources associées. La sélection de source est partagée avec les portraits ; un invité ne reçoit pas le lien de l’uploader. Un handle @ explicitement crédité constitue un repli. Le rendu ne déclenche aucun réseau YouTube, aucune migration ni changement de média. Les références anciennes sans identifiant doivent être complétées depuis leur vidéo d’origine ; les liens ne sont pas inventés depuis les libellés.

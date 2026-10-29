@@ -213,7 +213,7 @@ test('portrait YouTube différé sans déplacement du profil ni interruption aud
   const portraitUrl = '/portrait-fixture.jpg'
   await page.route('**/portrait-fixture.jpg', (route) => route.fulfill({ contentType: 'image/jpeg', body: Buffer.from(readFileSync('../backend/tests/fixtures/mint-cover.jpg.base64', 'utf8'), 'base64') }))
   let ready = false
-  await page.route(`**/api/beatmakers/${p.id}`, async (route) => { const response = await route.fetch(); const body = await response.json(); await route.fulfill({ response, json: ready ? { ...body, photo_url: portraitUrl, photo_origin: 'youtube' } : body }) })
+  await page.route(`**/api/beatmakers/${p.id}`, async (route) => { const response = await route.fetch(); const body = await response.json(); await route.fulfill({ response, json: ready ? { ...body, photo_url: portraitUrl, photo_origin: 'youtube', youtube_channels: [{url: 'https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa', label: 'Source de test'}] } : body }) })
   await page.route(`**/api/beatmakers/${p.id}/photo-refresh`, (route) => { ready = true; return route.fulfill({ json: { queued: true } }) })
   await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
   const audio = page.locator('audio')
@@ -228,6 +228,8 @@ test('portrait YouTube différé sans déplacement du profil ni interruption aud
   await expect(dialog.getByRole('button', { name: 'Recherche…', exact: true })).toBeDisabled()
   expect(await geometry()).toEqual(before)
   await expect(dialog.locator('.producer-avatar img')).toHaveAttribute('src', portraitUrl)
+  await expect(dialog.getByRole('link', { name: 'Chaîne YouTube ↗', exact: true })).toHaveAttribute('href', 'https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa')
+  await expect(dialog.getByRole('link', { name: 'Chaîne YouTube ↗', exact: true })).toHaveAttribute('target', '_blank')
   expect(await geometry()).toEqual(before)
   await expect(audio).toHaveAttribute('data-identity', 'portrait-player')
   await expect(audio).toHaveJSProperty('paused', false)
