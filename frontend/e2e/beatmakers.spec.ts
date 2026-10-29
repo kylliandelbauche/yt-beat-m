@@ -69,6 +69,7 @@ test('me reste une proposition de chaîne, la correction conserve le collaborate
     await picker.getByRole('checkbox', { name: 'Laco', exact: true }).check()
     await picker.getByRole('button', { name: 'Utiliser la sélection', exact: true }).click()
     await dialog.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
+    await expect(dialog.getByRole('status')).toHaveText('Informations enregistrées.')
     await expect(dialog.getByRole('button', { name: 'Laco', exact: true })).toBeVisible()
     await expect(dialog.getByRole('button', { name: '@m3nacebeats', exact: true })).toBeVisible()
     expect(await dialog.locator('#detail-maker, .modal-actions button').evaluateAll((elements) => elements.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))).toEqual(before)

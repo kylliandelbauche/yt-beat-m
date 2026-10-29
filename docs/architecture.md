@@ -2,7 +2,7 @@
 
 Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L’édition locale et les filtres musicaux avancés sont disponibles (#6).
 
-Priorité du 29 octobre 2026 : validation et CI sur Mac pour la phase actuelle ; recette Windows et lanceur à double-clic reportés à la demande de l'utilisateur. Conserver les chemins relatifs, le modèle portable et les adaptateurs existants ; ces choix évitent une réécriture lors d'une reprise future de Windows. Beatmakers puis Mes sons suivent la validation essentielle Mac, sans dépendre d'une recette Windows.
+Priorité du 29 octobre 2026 : validation locale sur Mac pour la phase actuelle ; recette Windows et lanceur à double-clic reportés à la demande de l'utilisateur. Conserver les chemins relatifs, le modèle portable et les adaptateurs existants ; ces choix évitent une réécriture lors d'une reprise future de Windows. Beatmakers puis Mes sons suivent la validation essentielle Mac, sans dépendre d'une recette Windows.
 
 ## Composants
 
@@ -206,3 +206,8 @@ GET/POST /api/beatmakers et GET/PATCH /api/beatmakers/{UUID} exposent les profil
 PATCH /api/beats/{UUID}/metadata accepte beatmaker_ids dans la transaction existante : UUID validés, dédupliqués, au maximum 20. Une référence absente annule toute la modification. Une correction textuelle et une sélection de profils ne peuvent pas être envoyées ensemble. Le renommage d'un profil ne change pas les identifiants, crédits d'origine ou noms physiques des médias. Les anciens endpoints de correction restent disponibles.
 
 La galerie reste montée pendant la navigation ; son lecteur reste hors du contenu masqué. Les profils et sélections réutilisent les dialogues natifs, le verrouillage du fond, les transitions et le retour du focus. Champs persistants, messages hors flux et emplacements fixes préservent la géométrie. Les actualisations du catalogue n'écrasent pas un brouillon de profil ; les imports terminés attendent sa fermeture.
+
+
+## Coût des validations hébergées — 29 octobre 2026
+
+Après l’alerte de quota Actions, les tests restent exécutés localement sur Mac. Le workflow hébergé devient manuel (workflow_dispatch), Linux par défaut et Mac seulement en option. Aucun push, PR ou fusion ne déclenche de job. Une concurrence par branche annule les exécutions devenues obsolètes ; chaque job est borné à 15 minutes. Le déclenchement manuel reste optionnel et consomme le quota du compte : ne pas le lancer sans demande explicite. Les réglages de facturation du compte ne sont pas modifiés.

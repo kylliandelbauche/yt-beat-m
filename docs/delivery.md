@@ -2,7 +2,7 @@
 
 ## Priorité actualisée — 29 octobre 2026
 
-À la demande de l'utilisateur, #8 se concentre sur les vérifications essentielles Mac. Windows et le lanceur à double-clic sont reportés ; ils ne constituent plus une condition avant Beatmakers (#62), puis Mes sons (#11). Le lancement documenté existant suffit à cette phase. La CI conserve les contrôles Mac et suspend la matrice Windows, sans retirer les adaptateurs ou la portabilité des données.
+À la demande de l'utilisateur, #8 se concentre sur les vérifications essentielles Mac. Windows et le lanceur à double-clic sont reportés ; ils ne constituent plus une condition avant Beatmakers (#62), puis Mes sons (#11). Le lancement documenté existant suffit à cette phase. Les validations sont locales sur Mac. Après l’alerte de quota GitHub Actions du même jour, la CI hébergée devient manuelle, Linux par défaut, Mac en option : aucun déclenchement automatique sur PR ou fusion. Les adaptateurs et la portabilité des données sont conservés.
 
 La recette complète historique ci-dessous sert de référence. Pour la phase actuelle, consigner séparément les essais Mac réalisés, les scénarios déjà couverts par les tests automatisés et les gestes restant à confirmer par l'utilisateur (écoute physique, glisser le MP3 dans son logiciel, disque externe). Ces gestes et les scénarios Windows reportés ne doivent pas être présentés comme validés. Éviter de rejouer des contrôles inchangés sans échec ni garantie manquante.
 

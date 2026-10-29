@@ -80,7 +80,7 @@ npm --prefix frontend exec playwright install chromium
 npm --prefix frontend run test:e2e
 ```
 
-Ces contrôles tournent dans GitHub Actions sur Mac. La matrice Windows est suspendue depuis son report du 29 octobre ; ses adaptateurs restent présents. Playwright démarre un moteur isolé sur le port 8767 avec une bibliothèque temporaire, un son synthétique et un téléchargement simulé ; les médias et préférences personnels ne sont pas utilisés. Les parcours couvrent clavier, description non fiable, favoris persistants, import/doublon, recherche pendant la lecture et consultation avec les requêtes Internet bloquées. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
+Ces contrôles se lancent localement sur le Mac. Après une alerte de quota le 29 octobre, GitHub Actions est en déclenchement manuel uniquement (Actions → CI → Run workflow), avec Linux par défaut et Mac en option. Aucun lancement automatique sur PR ou fusion ; les validations locales sont consignées dans la PR. Windows reste reporté, ses adaptateurs restent présents. Playwright démarre un moteur isolé sur le port 8767 avec une bibliothèque temporaire, un son synthétique et un téléchargement simulé ; les médias et préférences personnels ne sont pas utilisés. Les parcours couvrent clavier, description non fiable, favoris persistants, import/doublon, recherche pendant la lecture et consultation avec les requêtes Internet bloquées. Les versions des dépendances sont fixées par `uv.lock` et `frontend/package-lock.json` ; utiliser `--locked` et `npm ci`. Environnement local initial vérifié : Python 3.13.5 et Node 24.11.1.
 
 ## Expérience visée
 
