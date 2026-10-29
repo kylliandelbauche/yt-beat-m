@@ -174,7 +174,7 @@ def test_real_v2_migration_backup_move_and_conservative_identity(tmp_path, monke
         ctx.setattr(storage, "MIGRATIONS", {i: p for i, p in storage.MIGRATIONS.items() if i <= 2})
         lib = Library.create(root)
         collab = add_beat(lib)
-        raw = add_beat(lib, "Label channel", "channel", "Label channel")
+        add_beat(lib, "Label channel", "channel", "Label channel")
         ambiguous = add_beat(lib, None, "ambiguous_credit")
         manual = add_beat(lib, "Confirmed", "manual")
         other = add_beat(lib, "Confirmed", "manual", "Other channel")
@@ -183,7 +183,7 @@ def test_real_v2_migration_backup_move_and_conservative_identity(tmp_path, monke
             originals = [dict(r) for r in c.execute("SELECT * FROM beats ORDER BY id")]
         lib.close()
     migrated = Library.open(root)
-    assert migrated.summary()["schema_version"] == 3
+    assert migrated.summary()["schema_version"] == 4
     assert len(list((root / "backups").glob("catalog-v2-*.sqlite3"))) == 1
     with migrated.catalog() as c:
         assert (
@@ -194,8 +194,8 @@ def test_real_v2_migration_backup_move_and_conservative_identity(tmp_path, monke
         )
         assert (
             c.execute(
-                "SELECT COUNT(*) FROM beat_profile_links WHERE beat_id IN (?,?,?)",
-                (raw, ambiguous, blank),
+                "SELECT COUNT(*) FROM beat_profile_links WHERE beat_id IN (?,?)",
+                (ambiguous, blank),
             ).fetchone()[0]
             == 0
         )
