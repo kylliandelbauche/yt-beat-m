@@ -2,6 +2,10 @@
 
 Date de référence : 24 octobre 2026.
 
+## Priorité actualisée — 29 octobre 2026
+
+L'utilisateur reporte Windows et donne la priorité à une validation essentielle sur Mac, puis aux pages Beatmakers (#62) et Mes sons (#11), développées une à une à partir de Paper. La recette Windows et le lancement à double-clic sont différés et ne bloquent plus ces fonctionnalités. Le lancement documenté existant reste utilisable. Les chemins relatifs et les garanties de conservation des bibliothèques restent nécessaires. Les mentions Mac/Windows ci-dessous décrivent l'objectif initial de portabilité, sans constituer un critère de sortie de la phase Mac actuelle.
+
 ## Problème
 
 Les playlists YouTube rendent la sélection d'une prod trop lente au début d'une session de musique. L'utilisateur reconnaît les pochettes, mais veut aussi rechercher un style et une ambiance, par exemple « R&B mélancolique ». Il utilise un Mac et un Windows et souhaite transporter sa bibliothèque sur un disque externe.

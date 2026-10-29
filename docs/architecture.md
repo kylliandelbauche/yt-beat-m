@@ -2,6 +2,8 @@
 
 Statut : socle moteur/interface (#1), catalogue portable (#2), import YouTube (#3), grille et fiche détaillée (#4), cartes et lecteur de MP3 locaux (#15) disponibles. L’édition locale et les filtres musicaux avancés sont disponibles (#6).
 
+Priorité du 29 octobre 2026 : validation et CI sur Mac pour la phase actuelle ; recette Windows et lanceur à double-clic reportés à la demande de l'utilisateur. Conserver les chemins relatifs, le modèle portable et les adaptateurs existants ; ces choix évitent une réécriture lors d'une reprise future de Windows. Beatmakers puis Mes sons suivent la validation essentielle Mac, sans dépendre d'une recette Windows.
+
 ## Composants
 
 | Composant | Choix proposé | Raison |
