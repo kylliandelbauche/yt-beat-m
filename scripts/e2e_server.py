@@ -15,6 +15,7 @@ from yt_beat_m.library import Library
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIO = base64.b64decode((ROOT / "backend/tests/fixtures/long-tone.mp3.base64").read_text())
+COVER = base64.b64decode((ROOT / "backend/tests/fixtures/mint-cover.jpg.base64").read_text())
 
 
 def simulated_download(self, args, on_line=None, *, timeout=600):
@@ -59,6 +60,7 @@ def simulated_download(self, args, on_line=None, *, timeout=600):
         return '{"format":{"duration":"30.04"}}'
     template = args[args.index("-o") + 1]
     Path(template.replace("%(ext)s", "mp3")).write_bytes(AUDIO)
+    Path(template.replace("%(ext)s", "jpg")).write_bytes(COVER)
     if on_line:
         on_line("BEAT_PROGRESS: 50.0%")
         on_line("BEAT_STAGE:converting")

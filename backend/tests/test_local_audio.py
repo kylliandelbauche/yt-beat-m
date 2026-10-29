@@ -184,6 +184,7 @@ def test_reveal_rejects_tampered_paths_and_symlinks(collection, monkeypatch, tmp
     client.post("/api/library", headers=headers, json={"path": str(root)})
     assert client.post(url, headers=headers).status_code == 400
     assert calls == []
+
     client.post("/api/library/close", headers=headers)
     library = Library.open(root)
     try:
@@ -202,3 +203,33 @@ def test_reveal_rejects_tampered_paths_and_symlinks(collection, monkeypatch, tmp
     client.post("/api/library", headers=headers, json={"path": str(root)})
     assert client.post(url, headers=headers).status_code == 400
     assert calls == []
+
+
+@pytest.mark.parametrize("kind,column", [("audio", "audio_path"), ("artwork", "artwork_path")])
+@pytest.mark.parametrize("symlink", [False, True])
+def test_media_refuses_paths_outside_library(collection, tmp_path, kind, column, symlink):
+    from yt_beat_m.library import Library
+
+    client, headers, audio = collection
+    client.post("/api/library/scan", headers=headers)
+    identity = client.get("/api/beats").json()["beats"][0]["id"]
+    root = audio.parent.parent
+    client.post("/api/library/close", headers=headers)
+    outside = tmp_path / "private.jpg"
+    outside.write_bytes(b"private data")
+    relative = "../private.jpg"
+    if symlink:
+        relative = "artwork/linked.jpg"
+        try:
+            (root / relative).symlink_to(outside)
+        except OSError:
+            pytest.skip("Liens symboliques non autorisés sur ce poste.")
+    library = Library.open(root)
+    try:
+        with library.catalog() as catalog:
+            catalog.execute(f"UPDATE beats SET {column}=? WHERE id=?", (relative, identity))
+    finally:
+        library.close()
+    client.post("/api/library", json={"path": str(root)}, headers=headers)
+    response = client.get(f"/api/beats/{identity}/{kind}")
+    assert response.status_code == 400 and outside.read_bytes() not in response.content

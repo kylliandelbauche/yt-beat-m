@@ -1,5 +1,6 @@
 import base64
 import json
+import socket
 import sqlite3
 import sys
 import threading
@@ -328,6 +329,78 @@ def test_api_remains_responsive_and_worker_stops_before_library_close(tmp_path, 
         assert client.get("/api/beats").json()["total"] == 1
     reopened = Library.open(root)
     reopened.close()
+
+
+def test_imported_media_survives_engine_restart_without_network(tmp_path, monkeypatch):
+    fake = FakeRunner()
+    picture = base64.b64decode(
+        (Path(__file__).parent / "fixtures/mint-cover.jpg.base64").read_text()
+    )
+
+    def download_with_cover(self, args, *rest, **kwargs):
+        result = fake.run(args, *rest, **kwargs)
+        if "-o" in args:
+            Path(args[args.index("-o") + 1].replace("%(ext)s", "jpg")).write_bytes(picture)
+        return result
+
+    monkeypatch.setattr(imports.shutil, "which", lambda name: name)
+    monkeypatch.setattr(ProcessRunner, "run", download_with_cover)
+    preferences = tmp_path / "prefs.json"
+    options = {"frontend": tmp_path / "dist", "preferences": preferences}
+    origin = "http://127.0.0.1:8765"
+    root = tmp_path / "collection"
+    with TestClient(create_app(**options), base_url=origin) as client:
+        headers = {"Origin": origin, "X-Session-Token": client.get("/api/session").json()["token"]}
+        assert (
+            client.post(
+                "/api/library", json={"path": str(root), "create": True}, headers=headers
+            ).status_code
+            == 200
+        )
+        assert client.post("/api/imports", json={"url": URL}, headers=headers).status_code == 200
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            job = client.get("/api/imports").json()["jobs"][0]
+            if job["state"] == "completed":
+                break
+            time.sleep(0.02)
+        assert job["state"] == "completed"
+        beat = client.get("/api/beats").json()["beats"][0]
+        assert beat["artwork_url"]
+        audio = client.get(beat["audio_url"]).content
+        assert client.get(beat["artwork_url"]).content == picture
+
+    # New app + lifespan restores the library and worker from persisted preferences.
+    # Downloader processes and Internet connections fail, even after restart.
+    def offline(*args, **kwargs):
+        raise AssertionError("La consultation locale ne doit pas accéder au réseau.")
+
+    connect = socket.socket.connect
+
+    def local_only(sock, address):
+        # Event-loop wakeup sockets may use loopback TCP on Windows.
+        if isinstance(address, tuple) and address[0] in {"127.0.0.1", "::1"}:
+            return connect(sock, address)
+        offline()
+
+    monkeypatch.setattr(ProcessRunner, "run", offline)
+    monkeypatch.setattr(socket.socket, "connect", local_only)
+    with TestClient(create_app(**options), base_url=origin) as client:
+        assert client.get("/api/beats").json()["beats"] == [beat]
+        assert client.get(beat["audio_url"]).content == audio
+        part = client.get(beat["audio_url"], headers={"Range": "bytes=10-29"})
+        assert part.status_code == 206 and part.content == audio[10:30]
+        assert client.get(beat["artwork_url"]).content == picture
+        assert client.get(f"/api/beats/{beat['id']}").json()["id"] == beat["id"]
+        assert client.get("/api/imports").json()["jobs"][0]["state"] == "completed"
+        manifest = root / "library.json"
+        disconnected = root / "library.disconnected"
+        manifest.rename(disconnected)
+        assert client.get(beat["audio_url"]).status_code == 400
+        assert client.get(beat["artwork_url"]).status_code == 400
+        disconnected.rename(manifest)
+        assert client.get(beat["audio_url"]).content == audio
+        assert client.get(beat["artwork_url"]).content == picture
 
 
 def test_new_import_keeps_channel_id_and_uses_remembered_producer(worker, monkeypatch):

@@ -16,6 +16,7 @@ import type { Filters, FilterOptions } from './filterState'
 type BeatPage = { beats: Beat[]; total: number }
 type Selection = { beat: Beat; play: boolean }
 type Scan = { added: number; skipped: number; errors: { name: string; message: string }[]; library: { beat_count: number } }
+const unavailableAudio = 'Fichier audio indisponible ou illisible. Vérifie le disque.'
 
 export function BeatGallery({ onIndexed, heading, tools, libraryName, connected, onRetry, onDiagnostic, onLibrary }: { onIndexed: (count: number) => void; heading: (count?: number) => ReactNode; tools: ReactNode; libraryName: string; connected: boolean; onRetry: () => void; onDiagnostic: () => void; onLibrary: () => void }) {
   const [layout, setLayout] = useState<'covers' | 'horizontal'>(() => { try { return localStorage.getItem('beat-m-layout') === 'horizontal' ? 'horizontal' : 'covers' } catch { return 'covers' } })
@@ -23,6 +24,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
   const [page, setPage] = useState<BeatPage | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
   const [error, setError] = useState('')
+  const [playbackError, setPlaybackError] = useState<{ id: string; message: string } | null>(null)
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [query, setQuery] = useState('')
@@ -49,6 +51,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
   const [reload, setReload] = useState(0)
   const [favoriteBusy, setFavoriteBusy] = useState(new Set<string>())
   const audio = useRef<HTMLAudioElement>(null)
+  const audioPreferences = useRef({ volume: 1, muted: false })
   const [playingId, setPlayingId] = useState<string | null>(null)
   const [activatedId, setActivatedId] = useState<string | null>(null)
   const stage = useRef<HTMLDivElement>(null)
@@ -111,25 +114,29 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
 
   useEffect(() => {
     const player = audio.current
-    if (selection?.play && player) startPlayback(player)
+    if (!player) return
+    player.volume = audioPreferences.current.volume
+    player.muted = audioPreferences.current.muted
+    if (selection?.play) startPlayback(player, selection.beat.id)
   }, [selection])
 
-  function startPlayback(player: HTMLAudioElement) {
+  function startPlayback(player: HTMLAudioElement, identity: string) {
     void player.play().catch((cause: unknown) => {
       if (cause instanceof DOMException && cause.name === 'AbortError') return
       if (audio.current === player) {
         setPlayingId(null)
-        setError('La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.')
+        setPlaybackError({ id: identity, message: player.error ? unavailableAudio : 'La lecture n’a pas pu démarrer. Utilise le bouton du lecteur.' })
       }
     })
   }
 
   function togglePlayback(beat: Beat) {
     setError('')
+    setPlaybackError(null)
     const player = audio.current
     if (selection?.beat.id === beat.id && player) {
       if (!player.paused && !player.ended) player.pause()
-      else { if (player.ended) player.currentTime = 0; startPlayback(player) }
+      else { if (player.error) player.load(); else if (player.ended) player.currentTime = 0; startPlayback(player, beat.id) }
     } else {
       setPlayingId(null)
       setSelection({ beat, play: true })
@@ -197,7 +204,7 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
         {query && <button className="text-filter-chip" onClick={() => { filtersChanged(); setQuery(''); focusSearch() }}>Recherche : {query} ×</button>}
         {hasFilters && <button onClick={() => { resetFilters(); setQuery('') }}>Effacer les filtres</button>}
       </div>
-      {connected && (error || notice) && <div className="catalog-operation-feedback" role={error ? 'alert' : 'status'}>{error || notice}<button aria-label="Masquer le message" onClick={() => { setError(''); setNotice('') }}>×</button></div>}
+      {connected && (error || playbackError || notice) && <div className="catalog-operation-feedback" role={error || playbackError ? 'alert' : 'status'}>{error || playbackError?.message || notice}<button aria-label="Masquer le message" onClick={() => { setError(''); setPlaybackError(null); setNotice('') }}>×</button></div>}
     </div>
     <div className="catalog-stage" ref={stage} style={{ minHeight: stageHeight }}>
     {!connected && <div onFocusCapture={() => { recoveryFocus.current = true }} onBlurCapture={(event) => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) recoveryFocus.current = false }}><EngineOffline retry={onRetry} diagnostic={onDiagnostic} /></div>}
@@ -239,10 +246,10 @@ export function BeatGallery({ onIndexed, heading, tools, libraryName, connected,
       <p>● Bibliothèque locale · {libraryName}</p>
       <div className="collection-tools"><button disabled={busy || !connected} aria-busy={busy} onClick={() => { void scan() }}><Icon name="refresh" />Actualiser</button>{tools}</div>
     </div>
-    {details && <BeatDetailsPanel key={details} identity={details} playing={playingId === details} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
+    {details && <BeatDetailsPanel key={details} identity={details} playing={playingId === details} playbackError={playbackError?.id === details ? playbackError.message : ''} onDismissPlaybackError={() => setPlaybackError(null)} onTogglePlayback={togglePlayback} onClose={closeDetails} onFavorite={toggleFavorite} onChanged={() => { setReload((value) => value + 1) }} />}
     {selection && activeBeat && createPortal(<aside className="local-player glass" aria-label="Lecteur audio">
       <button type="button" disabled={!connected} className="player-description player-details" aria-label={`Détails depuis le lecteur : ${activeBeat.title}`} aria-haspopup="dialog" onClick={() => setDetails(activeBeat.id)}><Artwork beat={activeBeat} className="player-artwork" /><div><p>{activeBeat.title}</p><span>{activeBeat.beatmaker || 'Audio local'} · {duration(activeBeat.duration_seconds)}</span></div></button>
-      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onPlay={(event) => { if (audio.current === event.currentTarget) { setPlayingId(selection.beat.id); setActivatedId(selection.beat.id) } }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setError('Fichier audio indisponible ou illisible. Vérifie le disque.') } }} />
+      <audio key={selection.beat.id} ref={audio} src={selection.beat.audio_url} controls preload="metadata" aria-label={`Lecteur : ${selection.beat.title}`} onVolumeChange={(event) => { if (audio.current === event.currentTarget) audioPreferences.current = { volume: event.currentTarget.volume, muted: event.currentTarget.muted } }} onPlay={(event) => { if (audio.current === event.currentTarget) { setPlayingId(selection.beat.id); setActivatedId(selection.beat.id); setPlaybackError(null) } }} onPause={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onEnded={(event) => { if (audio.current === event.currentTarget) setPlayingId(null) }} onError={(event) => { if (audio.current === event.currentTarget) { setPlayingId(null); setPlaybackError({ id: selection.beat.id, message: unavailableAudio }) } }} />
     </aside>, document.body)}
     {!selection && createPortal(<aside className="local-player glass empty-player" aria-label="Lecteur audio"><div className="player-description"><span className="player-note" aria-hidden="true" /><div><p>Aucune prod sélectionnée</p><span>{connected ? 'Prêt pour ta première écoute' : 'Moteur déconnecté'}</span></div></div><audio controls aria-label="Lecteur sans prod sélectionnée" inert /></aside>, document.body)}
   </div>

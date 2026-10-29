@@ -33,6 +33,15 @@ Le cadrage initial est un premier commit sur `main`. Le développement applicati
 
 Pas de téléchargement YouTube live dans chaque exécution de CI : tests déterministes avec fixtures, puis essai réel avant recette. Ne pas inclure de prods personnelles dans le dépôt.
 
+## Validation du lecteur (#5, 29 octobre 2026)
+
+- Les tests navigateur vérifient les contrôles natifs au clavier sur un véritable MP3 synthétique : durée, pause/reprise, déplacement et volume. Le remplacement de piste conserve volume et mode muet, avec un seul élément audio. Les tests existants couvrent la continuité pendant recherches, filtres, changements de disposition et consultation/édition de fiches.
+- Des réponses HTTP 404 et un contenu MP3 indécodable provoquent de vraies erreurs du navigateur, sans événement error artificiel. Depuis la carte comme depuis la fiche, Play redevient disponible, le message explique le problème de fichier et un nouveau Play réussit après rétablissement de la source. La fiche affiche l'erreur au-dessus de son contenu, conserve un brouillon en cours et rend le focus à Play après masquage. Les positions et dimensions du lecteur, de la bibliothèque et de la fiche sont comparées à 1280 et 390 px.
+- Un import contrôlé publie un MP3 et une pochette synthétiques ; une nouvelle instance du moteur restaure le catalogue et restitue les mêmes octets, y compris une lecture Range, avec connexions Internet et lancement du téléchargeur interdits. Un manifeste momentanément absent produit une erreur récupérable pour les deux médias. Le navigateur vérifie aussi la pochette, la recherche, la lecture et le déplacement après rechargement, cache désactivé et requêtes Internet bloquées.
+- Les tests API couvrent les réponses audio 200/206/416, le fichier absent et le refus de chemins sortants et de liens symboliques pour l'audio comme pour la pochette. Ces vérifications n'altèrent pas les médias personnels.
+
+Ces contrôles automatisés consolident #5. Le téléchargement YouTube est simulé dans ces scénarios ; la recette avec un import réel, la sortie audio du poste et le débranchement physique du disque restent à consigner dans #8.
+
 ## Recette manuelle de sortie
 
 - [ ] Coller une vraie URL et obtenir une prod lisible avec sa miniature ; contrôler les versions des dépendances utilisées.
