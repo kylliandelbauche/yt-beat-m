@@ -9,6 +9,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
+from yt_beat_m.beatmakers import credit_parts, normalized_name, provenance
 from yt_beat_m.import_process import ImportInterrupted
 from yt_beat_m.library import LibraryError
 from yt_beat_m.profiles import brand, now, photo_bytes, resolve_profile
@@ -55,10 +56,37 @@ def download_avatar(url, stopping=None):
     raise LibraryError("Trop de redirections pour le portrait.")
 
 
-def fetch_channel(channel_id, handle, runner):
+def fetch_channel(channel_id, handle, runner, video_id=None):
+    if not channel_id and video_id and re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+        raw = runner.run(
+            [
+                sys.executable,
+                "-m",
+                "yt_dlp",
+                "--ignore-config",
+                "--no-plugin-dirs",
+                "--no-warnings",
+                "--no-playlist",
+                "--skip-download",
+                "--dump-single-json",
+                "--socket-timeout",
+                "5",
+                "--retries",
+                "0",
+                "https://www.youtube.com/watch?v=" + video_id,
+            ],
+            timeout=15,
+        )
+        source = json.loads(raw)
+        if source.get("id") != video_id or not re.fullmatch(
+            r"UC[A-Za-z0-9_-]{22}", source.get("channel_id", "")
+        ):
+            raise LibraryError("La chaîne de cette vidéo est indisponible.")
+        channel_id = source["channel_id"]
+
     if channel_id and re.fullmatch(r"UC[A-Za-z0-9_-]{22}", channel_id):
         path = "channel/" + channel_id
-    elif handle and re.fullmatch(r"@?[\w.-]{3,40}", handle):
+    elif handle and re.fullmatch(r"@[\w.-]{3,40}", handle):
         path = "@" + handle.lstrip("@")
     else:
         raise LibraryError("Chaîne YouTube à préciser pour récupérer son portrait.")
@@ -111,18 +139,31 @@ def photo_candidate(c, identity=None):
     for p in rows:
         names = {brand(n) for n in [p["name"], *json.loads(p["aliases"])]}
         channels = c.execute(
-            "SELECT DISTINCT b.channel_id,b.channel FROM beats b JOIN beat_profile_links l "
+            "SELECT b.* FROM beats b JOIN beat_profile_links l "
             "ON l.beat_id=b.id WHERE l.profile_id=? AND b.channel IS NOT NULL",
             (p["id"],),
         ).fetchall()
-        own = [r for r in channels if brand(r["channel"]) in names]
+        credited_names = {normalized_name(n) for n in [p["name"], *json.loads(p["aliases"])]}
+
+        def source_owner(row, names=names, credited_names=credited_names):
+            if brand(row["channel"]) in names:
+                return True
+            parts = credit_parts(row["beatmaker"] or "")
+            return (
+                len(parts) == 1
+                and normalized_name(parts[0]) in credited_names
+                and provenance(row).get("beatmaker")
+                in {"explicit_credit", "channel_alias", "manual"}
+            )
+
+        own = [r for r in channels if source_owner(r)]
         ids = {r["channel_id"] for r in own if r["channel_id"]}
         if own and len(ids) <= 1:
             chosen = next((r for r in own if r["channel_id"]), own[0])
-            return p["id"], chosen["channel_id"], chosen["channel"]
+            return p["id"], chosen["channel_id"], chosen["channel"], chosen["youtube_id"]
         if not own and re.fullmatch(r"@[\w.-]{3,40}", p["name"]):
             # An explicit guest handle refers to the guest's own channel, never the uploader.
-            return p["id"], None, p["name"]
+            return p["id"], None, p["name"], None
     return None
 
 
@@ -135,9 +176,9 @@ def enrich_next_photo(library, runner):
             )
     if not candidate:
         return False
-    identity, channel_id, handle = candidate
+    identity, channel_id, handle, video_id = candidate
     try:
-        data, mime = fetch_channel(channel_id, handle, runner)
+        data, mime = fetch_channel(channel_id, handle, runner, video_id)
         with library.catalog() as c:
             # Deletion, merge or a manual photo during extraction always wins.
             c.execute(

@@ -178,3 +178,7 @@ Les variantes corroborées d’un même producteur sur sa chaîne sont des alias
 Dans une fiche beatmaker, Fusionner permet de choisir le profil à conserver, voir le nombre total de prods et les conflits avant confirmation. Les liens sont réunis et l’ancien nom devient un alias ; si les deux portraits diffèrent, celui du profil conservé prime. Supprimer demande confirmation, détache les prods et conserve leurs fichiers, crédits et autres collaborateurs. Les références retirées sont mémorisées pour empêcher une recréation automatique ; une nouvelle association explicite peut les rétablir.
 
 Les portraits de chaînes correspondantes sont récupérés en arrière-plan et copiés dans la bibliothèque. Les imports et la lecture n’attendent pas cette opération. Une photo manuelle ou son retrait volontaire est prioritaire ; Photo YouTube permet une nouvelle demande. Un invité d’une collaboration ne reçoit pas le portrait de la chaîne qui publie la vidéo. Les échecs réseau laissent le repli visuel et permettent une relance.
+
+## Portraits depuis la source YouTube (#74)
+
+Le portrait suit directement la chaîne enregistrée de la prod, même si son nom diffère du crédit unique du beatmaker (Elegance / Elegance isn’t it?). Si l’identifiant manque sur un ancien import, il est récupéré depuis la vidéo d’origine. Aucun moteur de recherche ni handle deviné depuis un nom affiché. Les invités restent distincts et les images locales/manuelles restent prioritaires.
