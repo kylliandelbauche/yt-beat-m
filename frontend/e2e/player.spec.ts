@@ -25,6 +25,9 @@ for (const width of [1280, 390]) {
     await expect(audio).toHaveJSProperty('paused', false)
     await expect(audio).toHaveJSProperty('volume', volume)
     await expect(audio).toHaveJSProperty('muted', true)
+    // play() can clear paused before the new native controls have metadata.
+    await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA)).toBe(true)
+    await expect.poll(() => audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThan(0)
     await audio.evaluate((el: HTMLAudioElement) => { el.muted = false })
     await audio.focus()
     await page.keyboard.press('ArrowUp')
