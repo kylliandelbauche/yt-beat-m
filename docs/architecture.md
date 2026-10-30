@@ -229,3 +229,13 @@ Référence de l’extraction : [yt-dlp — options et métadonnées](https://gi
 ## Liens de chaîne des profils (#76)
 
 GET /api/beatmakers/{UUID} ajoute youtube_channels, liste dédupliquée de liens canoniques construits depuis les identifiants UC des sources associées. La sélection de source est partagée avec les portraits ; un invité ne reçoit pas le lien de l’uploader. Un handle @ explicitement crédité constitue un repli. Le rendu ne déclenche aucun réseau YouTube, aucune migration ni changement de média. Les références anciennes sans identifiant doivent être complétées depuis leur vidéo d’origine ; les liens ne sont pas inventés depuis les libellés.
+
+## Interface Paper Officiel (#78)
+
+`ShellProvider` partage les états des volets, réglages, rubrique de fiche, favoris et thème. Le moteur et le modèle portable restent inchangés. Le catalogue ajoute seulement les tableaux styles/moods à la projection de liste, obtenus par requête groupée pour la page courante ; aucune migration ni réécriture de médias.
+
+La grille principale réserve les colonnes des volets. La fiche est une région non modale, avec nœuds de champs persistants, messages hors flux et garde de brouillon lors d’un changement de prod ou d’un repli. Les sélections d’identités/tags sont locales jusqu’à Save. Les profils et réglages restent des dialogues natifs avec verrouillage et restitution du focus. Changer de bibliothèque rend le focus à la recherche après le commit.
+
+Le lecteur et l’élément audio persistent hors des contenus masqués. Les contrôles sont explicites ; le volume et la tonalité utilisent des popovers natifs dans la couche supérieure, positionnés par rapport au déclencheur. Le panneau d’import reste monté dans son emplacement de navigation même quand celle-ci se replie. La réserve de hauteur du catalogue protège les états asynchrones et se recalcule pour un changement volontaire de disposition ou de largeur.
+
+Les styles actifs sont les tokens de thèmes, la feuille #78 et les styles de profils conservés. Les anciennes feuilles de présentation non importées sont retirées. Les fontes sont locales. Voir [références et vérification #78](design/78-paper.md).

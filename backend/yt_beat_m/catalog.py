@@ -185,8 +185,22 @@ def list_beats(
             [*parameters, limit, offset],
         ).fetchall()
         associations = profiles_for_beats(connection, [row["id"] for row in rows])
+        tags = {row["id"]: {"styles": [], "moods": []} for row in rows}
+        if rows:
+            for tag in connection.execute(
+                "SELECT bt.beat_id,t.kind,t.label FROM beat_tags bt JOIN tags t ON t.id=bt.tag_id "
+                "WHERE bt.beat_id IN (" + ",".join("?" for _ in rows) + ") ORDER BY t.label",
+                [row["id"] for row in rows],
+            ):
+                tags[tag["beat_id"]]["styles" if tag["kind"] == "style" else "moods"].append(
+                    tag["label"]
+                )
+
     return {
-        "beats": [{**beat_view(row), "beatmakers": associations[row["id"]]} for row in rows],
+        "beats": [
+            {**beat_view(row), "beatmakers": associations[row["id"]], **tags[row["id"]]}
+            for row in rows
+        ],
         "total": total,
     }
 
