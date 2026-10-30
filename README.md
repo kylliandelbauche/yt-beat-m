@@ -117,7 +117,7 @@ Les fichiers personnels et les bibliothèques audio restent hors du dépôt Git.
 
 ## Référence visuelle
 
-L’écran principal suit la ligne **Officiel** de [Paper — Beat m](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-1-0) : petit header, import et progression réelle, filtres actifs, dispositions grandes pochettes ou cartes horizontales. Le sélecteur près du tri conserve le lecteur et mémorise la disposition dans ce navigateur. **Bibliothèque** et **Diagnostic** ouvrent des fenêtres centrées. La fiche propose une édition par crayon/Save, une annulation et une description fixe à défilement interne. Les valeurs sources restent distinctes des corrections. Le lecteur affiche la pochette de la piste active.
+L’écran principal suit les pages **Officiel** actuelles de [Paper — Beat m](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-A-0) : navigation repliable, bibliothèque centrale et fiche latérale qui réserve sa place. Les dispositions horizontale HC-04 et grandes pochettes coexistent ; les titres restent sur une ligne. Les réglages regroupent Diagnostic, Bibliothèque et les quatre palettes en clair/sombre, mémorisées localement. Le lecteur, sa position et son volume persistent pendant la navigation. L’édition de la fiche conserve la géométrie, protège les brouillons et enregistre ses champs ensemble. Voir [la référence et la recette #78](docs/design/78-paper.md).
 
 ## Profils Beatmakers
 

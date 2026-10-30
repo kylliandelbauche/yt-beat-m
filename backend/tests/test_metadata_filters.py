@@ -61,6 +61,19 @@ def matching(library, **kwargs):
     return {r["id"] for r in list_beats(library, 100, 0, filters=CatalogFilters(**kwargs))["beats"]}
 
 
+def test_card_tags_are_batched_per_beat_without_changing_pagination(annotated):
+    library, ids = annotated
+    page = list_beats(library, 3, 0, filters=CatalogFilters(sort="added_asc"))
+    assert page["total"] == len(ids)
+    assert [beat["id"] for beat in page["beats"]] == ids[:3]
+    for beat in page["beats"]:
+        detail = beat_details(library, beat["id"])
+        assert beat["styles"] == detail["styles"]
+        assert beat["moods"] == detail["moods"]
+    missing = list_beats(library, 1, 3, filters=CatalogFilters(sort="added_asc"))["beats"][0]
+    assert missing["styles"] == missing["moods"] == []
+
+
 def test_categories_are_and_values_within_category_are_or(annotated):
     library, ids = annotated
     assert matching(

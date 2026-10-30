@@ -1,73 +1,219 @@
-import { useEffect, useState } from 'react'
-import './App.css'
-import { LibraryPanel } from './LibraryPanel'
-import './PaperV1.css'
-import './Official.css'
-import './Refinements.css'
-import './Typography.css'
-import './BeatDetails.css'
-import './CoverCards.css'
-import './Fluid.css'
-import './Dashboard.css'
-import { Icon, Modal } from './Modal'
-import { useEngineConnection } from './useEngineConnection'
-
-type Dependency = { name: string; version: string | null; available: boolean; hint: string }
-type Diagnostic = { ready: boolean; dependencies: Dependency[] }
-
-function App() {
-  const [view, setView] = useState<'prods' | 'beatmakers'>('prods')
-  const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null)
-  const [error, setError] = useState('')
-  const [attempt, setAttempt] = useState(0)
-  const [showDiagnostic, setShowDiagnostic] = useState(false)
-  const engine = useEngineConnection()
-  const connected = engine.state !== 'offline'
-
+import { useShell } from "./shellContext";
+import { useCallback, useEffect, useState } from "react";
+import { LibraryPanel } from "./LibraryPanel";
+import { Icon } from "./Modal";
+import { ShellProvider, PaneIcon } from "./Shell";
+import { useEngineConnection } from "./useEngineConnection";
+import "./Themes.css";
+import "./Redesign.css";
+function Workspace() {
+  const [view, setView] = useState<"prods" | "beatmakers">("prods");
+  const shell = useShell(),
+    engine = useEngineConnection();
+  const { setNavImport, setNavTools } = shell;
+  const updateImport = useCallback(
+    (el: HTMLElement | null) => setNavImport(el),
+    [setNavImport],
+  );
+  const updateTools = useCallback(
+    (el: HTMLElement | null) => setNavTools(el),
+    [setNavTools],
+  );
+  const connected = engine.state !== "offline";
+  const [importOpen, setImportOpen] = useState(false);
   useEffect(() => {
-    if (!connected) return
-    const controller = new AbortController()
-    fetch('/api/diagnostics', { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Le moteur local ne répond pas correctement.')
-        return response.json() as Promise<Diagnostic>
-      })
-      .then((value) => { setError(''); setDiagnostic(value) })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : 'Connexion au moteur impossible.')
-        }
-      })
-    return () => controller.abort()
-  }, [attempt, connected])
-
-  const diagnosticPanel = <>
-    <button onClick={() => setShowDiagnostic(true)}><Icon name="diagnostic" />Diagnostic</button>
-    {showDiagnostic && <Modal label="Diagnostic" title={<h2>Diagnostic</h2>} closeLabel="Fermer la fenêtre Diagnostic" onClose={() => setShowDiagnostic(false)} className="diagnostic-modal">
-      <section className="modal-content diagnostic" aria-label="État du moteur local">
-        <h3>{!connected ? 'Moteur déconnecté' : diagnostic?.ready ? 'Prêt à importer' : 'État du moteur'}</h3>
-        <p role="status">{!connected ? 'Le moteur local ne répond pas. Cette connexion est indépendante de l’accès à Internet.' : error || (diagnostic ? diagnostic.ready ? 'Les dépendances nécessaires à l’import sont disponibles.' : 'Une dépendance doit être configurée avant les imports.' : 'Vérification des dépendances locales…')}</p>
-        {diagnostic && <ul className="dependency-list">{diagnostic.dependencies.map((item) => <li key={item.name}><span>{item.name}</span><span className={item.available ? 'dependency-ok' : 'dependency-missing'}>{item.available ? item.version : item.hint}</span></li>)}</ul>}
-        <button onClick={() => { engine.retry(); setError(''); setDiagnostic(null); setAttempt((value) => value + 1) }}>Vérifier à nouveau</button>
-      </section>
-    </Modal>}
-  </>
+    if (shell.left || !importOpen) return;
+    const close = (e: PointerEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (
+          e.key !== "Escape" ||
+          e.defaultPrevented ||
+          document.querySelector("dialog[open]")
+        )
+          return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setImportOpen(false);
+        document
+          .querySelector<HTMLButtonElement>(".collapsed-import")
+          ?.focus({ preventScroll: true });
+      } else if (
+        !(
+          e.target instanceof Element &&
+          e.target.closest(".navigation-import, .collapsed-import")
+        )
+      )
+        setImportOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close, true);
+    };
+  }, [shell.left, importOpen]);
 
   return (
-    <main className="workspace">
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="YT Beat M, accueil" onClick={(event) => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) { event.preventDefault(); setView('prods') } }}>
-          <span className="brand-mark">b.</span> beat m
+    <main
+      className={`workspace${shell.left ? "" : " left-collapsed"}${shell.right ? " detail-open" : ""}`}
+    >
+      <svg
+        className="workspace-decoration"
+        width="620"
+        height="900"
+        viewBox="0 0 620 900"
+        aria-hidden="true"
+      >
+        <path
+          d="M720 -80C130 120 140 460 440 720C510 790 540 850 560 940"
+          fill="none"
+          stroke="var(--highlight)"
+          strokeWidth="72"
+          opacity="0.4"
+        />
+        <path
+          d="M670 -80C140 180 210 470 470 716C540 790 558 860 576 940"
+          fill="none"
+          stroke="var(--highlight)"
+          strokeWidth="2"
+          opacity="0.9"
+        />
+        <path
+          d="M740 10C270 180 330 530 560 680"
+          fill="none"
+          stroke="var(--selected)"
+          strokeWidth="112"
+          opacity="0.25"
+        />
+      </svg>
+      <aside className="navigation-sidebar" aria-label="Navigation principale">
+        <div className="navigation-surface" />
+        <a
+          className="brand"
+          href="/"
+          aria-label="YT Beat M, accueil"
+          onClick={(e) => {
+            e.preventDefault();
+            shell.setFavorites(false);
+            setView("prods");
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+            <path
+              d="M4 11v6M10 6v16M16 9v10M22 3v22"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>beat m</span>
         </a>
-        <nav className="primary-nav" aria-label="Navigation principale"><button aria-current={view === 'prods' ? 'page' : undefined} onClick={() => setView('prods')}>Prods</button><button aria-current={view === 'beatmakers' ? 'page' : undefined} onClick={() => setView('beatmakers')}>Beatmakers</button></nav>
-        <span className="status" role="status"><span className={!connected ? 'dot warning-dot' : 'dot'} />
-          {!connected ? 'Déconnecté' : engine.state === 'online' ? 'Moteur connecté' : 'Connexion…'}
-        </span>
-      </header>
-      <LibraryPanel view={view} onView={setView} diagnostic={diagnosticPanel} connected={connected} onRetry={engine.retry} onDiagnostic={() => setShowDiagnostic(true)} />
-
+        <button
+          className="icon-button nav-collapse"
+          title={shell.left ? "Replier la navigation" : "Ouvrir la navigation"}
+          aria-label={
+            shell.left ? "Replier la navigation" : "Ouvrir la navigation"
+          }
+          aria-expanded={shell.left}
+          onClick={() => {
+            shell.setLeft(!shell.left);
+            setImportOpen(false);
+          }}
+        >
+          <PaneIcon side="left" open={shell.left} />
+        </button>
+        <nav className="primary-nav">
+          <button
+            aria-label="Prods"
+            aria-current={
+              view === "prods" && !shell.favorites ? "page" : undefined
+            }
+            onClick={() => {
+              shell.setFavorites(false);
+              setView("prods");
+            }}
+          >
+            <Icon name="grid" />
+            <span>Prods</span>
+            <span className="nav-count">{shell.total ?? "—"}</span>
+          </button>
+          <button
+            aria-label="Beatmakers"
+            aria-current={view === "beatmakers" ? "page" : undefined}
+            onClick={() => setView("beatmakers")}
+          >
+            <Icon name="person" />
+            <span>Beatmakers</span>
+          </button>
+          <button
+            aria-label="Mes sons · Bientôt"
+            title="Mes sons · Bientôt"
+            disabled
+          >
+            <Icon name="music" />
+            <span>Mes sons</span>
+            <small>Bientôt</small>
+          </button>
+          <button
+            aria-label="Favoris"
+            aria-current={
+              shell.favorites && view === "prods" ? "page" : undefined
+            }
+            onClick={() => {
+              shell.setFavorites(!shell.favorites);
+              setView("prods");
+            }}
+          >
+            <Icon name="heart" />
+            <span>Favoris</span>
+          </button>
+        </nav>
+        <button
+          className="icon-button collapsed-import"
+          aria-label="Ajouter une prod"
+          aria-expanded={importOpen}
+          onClick={() => setImportOpen(!importOpen)}
+        >
+          <Icon name="plus" />
+        </button>
+        <div
+          className={`navigation-import${importOpen ? " import-open" : ""}`}
+          ref={updateImport}
+        />
+        <div className="navigation-tools">
+          <div ref={updateTools} />
+          <button
+            onClick={() => shell.setSettings("diagnostic")}
+            aria-label="Réglages"
+          >
+            <Icon name="settings" />
+            <span>Réglages</span>
+          </button>
+          <div className="engine-status" role="status">
+            <span className={`dot ${!connected ? "offline" : ""}`} />
+            <span>
+              {!connected
+                ? "Déconnecté"
+                : engine.state === "online"
+                  ? "Moteur connecté"
+                  : "Connexion…"}
+            </span>
+          </div>
+        </div>
+      </aside>
+      <LibraryPanel
+        view={view}
+        onView={setView}
+        connected={connected}
+        onRetry={engine.retry}
+      />
     </main>
-  )
+  );
 }
-
-export default App
+export default function App() {
+  return (
+    <ShellProvider>
+      <Workspace />
+    </ShellProvider>
+  );
+}

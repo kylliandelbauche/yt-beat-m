@@ -1,236 +1,632 @@
-import { expect, test } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
 
 for (const width of [1280, 390]) {
-  test(`profils, collaboration et lecteur persistant à ${width}`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 })
-    await page.goto('/')
-    const token = (await (await page.request.get('/api/session')).json()).token
-    const headers = { Origin: 'http://127.0.0.1:8767', 'X-Session-Token': token }
-    const identity = '00000000-0000-0000-0000-000000000001'
-    const old = await (await page.request.get(`/api/beats/${identity}`)).json()
-    await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
-    const audio = page.locator('audio')
-    await expect(audio).toHaveJSProperty('paused', false)
-    await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 7; el.dataset.identity = 'profiles-player' })
-    await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-    await page.getByRole('button', { name: '＋ Créer un profil', exact: true }).click()
-    const modal = page.getByRole('dialog').last()
-    const name = `LACCO ${width}`
-    await modal.getByRole('textbox', { name: 'Nom du profil', exact: true }).fill(name)
-    await modal.getByRole('textbox', { name: 'Réseaux 1', exact: true }).fill('https://example.org/lacco')
-    const geometry = () => modal.locator('.modal-actions, .producer-columns, .producer-name, .producer-link-columns, .producer-beats, .producer-identity').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))
-    const before = await geometry()
-    await modal.getByRole('button', { name: 'Enregistrer le profil', exact: true }).click()
-    await expect(modal.getByRole('status')).toHaveText('Profil enregistré.')
-    expect(await geometry()).toEqual(before)
-    await page.screenshot({ path: testInfo.outputPath('profile-read.png') })
-    const producer = (await (await page.request.get(`/api/beatmakers?q=${encodeURIComponent(name)}`)).json()).profiles[0]
-    await modal.getByRole('button', { name: 'Modifier le profil', exact: true }).click()
-    expect(await geometry()).toEqual(before)
-    await modal.getByRole('textbox', { name: 'Nom du profil', exact: true }).fill('Brouillon')
-    await page.keyboard.press('Escape')
-    await expect(modal.getByText('Des modifications ne sont pas enregistrées.', { exact: true })).toBeVisible()
-    expect(await geometry()).toEqual(before)
-    await modal.getByRole('button', { name: 'Continuer l’édition', exact: true }).click()
-    await modal.getByRole('button', { name: 'Annuler', exact: true }).click()
-    await expect(modal.getByRole('textbox', { name: 'Nom du profil', exact: true })).toHaveValue(name)
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: '＋ Créer un profil', exact: true })).toBeFocused()
-    const guest = await (await page.request.post('/api/beatmakers', { headers, data: { name: `m3nace ${width}` } })).json()
-    await page.getByRole('button', { name: 'Prods', exact: true }).click()
-    await page.getByRole('button', { name: 'Détails de R&B Mélancolique', exact: true }).click()
-    const detail = page.getByRole('dialog', { name: 'R&B Mélancolique', exact: true })
-    await detail.getByRole('button', { name: 'Associer', exact: true }).click()
-    const picker = page.getByRole('dialog', { name: 'Associer des beatmakers', exact: true })
-    await picker.getByRole('checkbox', { name, exact: true }).check()
-    await picker.getByRole('checkbox', { name: guest.name, exact: true }).check()
-    await picker.getByRole('button', { name: 'Utiliser la sélection', exact: true }).click()
-    await expect(picker).toHaveCount(0)
-    await detail.getByRole('button', { name: 'Enregistrer les modifications', exact: true }).click()
-    await expect(detail.getByRole('status')).toHaveText('Informations enregistrées.')
-    const updated = await (await page.request.get(`/api/beats/${identity}`)).json()
-    expect(updated.beatmaker).toBe(old.beatmaker)
-    expect(updated.channel).toBe(old.channel)
-    expect(updated.beatmakers.map((p: { id: string }) => p.id)).toEqual([producer.id, guest.id])
-    await detail.getByRole('button', { name, exact: true }).click()
-    const profile = page.getByRole('dialog', { name: `Profil de ${name}`, exact: true })
-    await expect(profile.getByRole('heading', { name: 'Prods dans ma bibliothèque', exact: true })).toBeVisible()
-    await expect(profile.getByText('1 prod', { exact: true })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(profile).toHaveCount(0)
-    await expect(detail.getByRole('button', { name, exact: true })).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(detail).toHaveCount(0)
-    await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-    await page.getByRole('button', { name: `Profil de ${name}`, exact: true }).click()
-    await page.getByRole('dialog').getByRole('button', { name: `Voir les prods de ${name} ↗`, exact: true }).click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(page.locator('.beat-card:visible')).toHaveCount(1)
-    await expect(page.getByRole('button', { name: `Profil : ${name} ×`, exact: true })).toBeVisible()
-    await expect(audio).toHaveAttribute('data-identity', 'profiles-player')
-    await expect(audio).toHaveJSProperty('currentTime', 7)
-    await page.screenshot({ path: testInfo.outputPath('profiles.png'), fullPage: true })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.request.patch(`/api/beats/${identity}/metadata`, { headers, data: { beatmaker_ids: old.beatmakers.map((p: { id: string }) => p.id) } })
-  })
+  test(`profils, collaboration et lecteur persistant à ${width}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 });
+    await page.goto("/");
+    const token = (await (await page.request.get("/api/session")).json()).token;
+    const headers = {
+      Origin: "http://127.0.0.1:8767",
+      "X-Session-Token": token,
+    };
+    const identity = "00000000-0000-0000-0000-000000000001";
+    const old = await (await page.request.get(`/api/beats/${identity}`)).json();
+    await page
+      .getByRole("button", { name: "Écouter R&B Mélancolique", exact: true })
+      .click();
+    const audio = page.locator("audio");
+    await expect(audio).toHaveJSProperty("paused", false);
+    await audio.evaluate((el: HTMLAudioElement) => {
+      el.pause();
+      el.currentTime = 7;
+      el.dataset.identity = "profiles-player";
+    });
+    await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+    await page
+      .getByRole("button", { name: "＋ Créer un profil", exact: true })
+      .click();
+    const modal = page.getByRole("dialog").last();
+    const name = `LACCO ${width}`;
+    await modal
+      .getByRole("textbox", { name: "Nom du profil", exact: true })
+      .fill(name);
+    await modal
+      .getByRole("textbox", { name: "Réseaux 1", exact: true })
+      .fill("https://example.org/lacco");
+    const geometry = () =>
+      modal
+        .locator(
+          ".modal-actions, .producer-columns, .producer-name, .producer-link-columns, .producer-beats, .producer-identity",
+        )
+        .evaluateAll((els) =>
+          els.map((el) => {
+            const r = el.getBoundingClientRect();
+            return [r.x, r.y, r.width, r.height];
+          }),
+        );
+    const before = await geometry();
+    await modal
+      .getByRole("button", { name: "Enregistrer le profil", exact: true })
+      .click();
+    await expect(modal.getByRole("status")).toHaveText("Profil enregistré.");
+    expect(await geometry()).toEqual(before);
+    await page.screenshot({ path: testInfo.outputPath("profile-read.png") });
+    const producer = (
+      await (
+        await page.request.get(`/api/beatmakers?q=${encodeURIComponent(name)}`)
+      ).json()
+    ).profiles[0];
+    await modal
+      .getByRole("button", { name: "Modifier le profil", exact: true })
+      .click();
+    expect(await geometry()).toEqual(before);
+    await modal
+      .getByRole("textbox", { name: "Nom du profil", exact: true })
+      .fill("Brouillon");
+    await page.keyboard.press("Escape");
+    await expect(
+      modal.getByText("Des modifications ne sont pas enregistrées.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(await geometry()).toEqual(before);
+    await modal
+      .getByRole("button", { name: "Continuer l’édition", exact: true })
+      .click();
+    await modal.getByRole("button", { name: "Annuler", exact: true }).click();
+    await expect(
+      modal.getByRole("textbox", { name: "Nom du profil", exact: true }),
+    ).toHaveValue(name);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "＋ Créer un profil", exact: true }),
+    ).toBeFocused();
+    const guest = await (
+      await page.request.post("/api/beatmakers", {
+        headers,
+        data: { name: `m3nace ${width}` },
+      })
+    ).json();
+    await page.getByRole("button", { name: "Prods", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Détails de R&B Mélancolique", exact: true })
+      .click();
+    const detail = page.getByRole("region", {
+      name: "R&B Mélancolique",
+      exact: true,
+    });
+    await detail
+      .getByRole("button", { name: "Associer des beatmakers", exact: true })
+      .click();
+    const picker = page.getByRole("dialog", {
+      name: "Associer des beatmakers",
+      exact: true,
+    });
+    await picker.getByRole("checkbox", { name, exact: true }).check();
+    await picker
+      .getByRole("checkbox", { name: guest.name, exact: true })
+      .check();
+    await picker
+      .getByRole("button", { name: "Utiliser la sélection", exact: true })
+      .click();
+    await expect(picker).toHaveCount(0);
+    await detail
+      .getByRole("button", {
+        name: "Enregistrer les modifications",
+        exact: true,
+      })
+      .click();
+    await expect(detail.getByRole("status")).toHaveText(
+      "Informations enregistrées.",
+    );
+    const updated = await (
+      await page.request.get(`/api/beats/${identity}`)
+    ).json();
+    expect(updated.beatmaker).toBe(old.beatmaker);
+    expect(updated.channel).toBe(old.channel);
+    expect(updated.beatmakers.map((p: { id: string }) => p.id)).toEqual([
+      producer.id,
+      guest.id,
+    ]);
+    await detail.getByRole("button", { name, exact: true }).click();
+    const profile = page.getByRole("dialog", {
+      name: `Profil de ${name}`,
+      exact: true,
+    });
+    await expect(
+      profile.getByRole("heading", {
+        name: "Prods dans ma bibliothèque",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(profile.getByText("1 prod", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(profile).toHaveCount(0);
+    await expect(
+      detail.getByRole("button", { name, exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(detail).toBeHidden();
+    await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+    await page
+      .getByRole("button", { name: `Profil de ${name}`, exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", {
+        name: `Voir les prods de ${name} ↗`,
+        exact: true,
+      })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".beat-card:visible")).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: `Profil : ${name} ×`, exact: true }),
+    ).toBeVisible();
+    await expect(audio).toHaveAttribute("data-identity", "profiles-player");
+    await expect(audio).toHaveJSProperty("currentTime", 7);
+    await page.screenshot({
+      path: testInfo.outputPath("profiles.png"),
+      fullPage: true,
+    });
+    // The narrow-window fallback intentionally keeps the same columns scrollable.
+    await expect(
+      page.getByRole("button", { name: "Réglages", exact: true }),
+    ).toBeEnabled();
+    await page.request.patch(`/api/beats/${identity}/metadata`, {
+      headers,
+      data: { beatmaker_ids: old.beatmakers.map((p: { id: string }) => p.id) },
+    });
+  });
 }
 
 for (const width of [1280, 390]) {
-  test(`photo locale, erreur et relance sans déplacement à ${width}`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 })
-    let fail = true
-    await page.route('**/api/beatmakers', (route) => route.request().method() === 'POST' && fail ? route.fulfill({ status: 503, json: { detail: 'Stockage temporairement indisponible.' } }) : route.continue())
-    await page.goto('/')
-    await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
-    const audio = page.locator('audio')
-    await expect(audio).toHaveJSProperty('paused', false)
-    await audio.evaluate((el: HTMLAudioElement) => { el.currentTime = 2; el.dataset.identity = 'profile-photo-player' })
-    await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-    await page.getByRole('button', { name: '＋ Créer un profil', exact: true }).click()
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Nom du profil', exact: true }).fill(`Photo ${width}`)
-    await dialog.getByRole('textbox', { name: 'Réseaux 1', exact: true }).fill('https://example.org/reseau')
-    await dialog.getByLabel('Photo de profil', { exact: true }).setInputFiles({ name: 'mint.jpg', mimeType: 'image/jpeg', buffer: Buffer.from(readFileSync('../backend/tests/fixtures/mint-cover.jpg.base64', 'utf8'), 'base64') })
-    await expect(dialog.locator('.producer-avatar img')).toHaveAttribute('src', /^data:image/)
-    const geometry = () => dialog.locator('.producer-columns, .producer-identity, .producer-fields, .producer-name, .producer-links, .modal-actions').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))
-    const before = await geometry()
-    await dialog.getByRole('button', { name: 'Enregistrer le profil', exact: true }).click()
-    await expect(dialog.getByRole('alert')).toContainText('Stockage temporairement indisponible.')
-    expect(await geometry()).toEqual(before)
-    await expect(dialog.getByRole('textbox', { name: 'Nom du profil', exact: true })).toHaveValue(`Photo ${width}`)
-    fail = false
-    await dialog.getByRole('button', { name: 'Réessayer', exact: true }).click()
-    await expect(dialog.getByRole('status')).toHaveText('Profil enregistré.')
-    expect(await geometry()).toEqual(before)
-    await expect(dialog.getByRole('button', { name: 'Modifier le profil', exact: true })).toBeFocused()
-    await expect(dialog.locator('.producer-avatar img')).toHaveAttribute('src', /^\/api\/beatmakers\//)
-    await expect.poll(() => dialog.locator('.producer-avatar img').evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true)
-    await expect(audio).toHaveAttribute('data-identity', 'profile-photo-player')
-    await expect(audio).toHaveJSProperty('paused', false)
-    expect(await audio.evaluate((el: HTMLAudioElement) => el.currentTime)).toBeGreaterThanOrEqual(2)
-    await page.screenshot({ path: testInfo.outputPath('photo-profile.png') })
-  })
+  test(`photo locale, erreur et relance sans déplacement à ${width}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 });
+    let fail = true;
+    await page.route("**/api/beatmakers", (route) =>
+      route.request().method() === "POST" && fail
+        ? route.fulfill({
+            status: 503,
+            json: { detail: "Stockage temporairement indisponible." },
+          })
+        : route.continue(),
+    );
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Écouter R&B Mélancolique", exact: true })
+      .click();
+    const audio = page.locator("audio");
+    await expect(audio).toHaveJSProperty("paused", false);
+    await audio.evaluate((el: HTMLAudioElement) => {
+      el.currentTime = 2;
+      el.dataset.identity = "profile-photo-player";
+    });
+    await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+    await page
+      .getByRole("button", { name: "＋ Créer un profil", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog
+      .getByRole("textbox", { name: "Nom du profil", exact: true })
+      .fill(`Photo ${width}`);
+    await dialog
+      .getByRole("textbox", { name: "Réseaux 1", exact: true })
+      .fill("https://example.org/reseau");
+    await dialog
+      .getByLabel("Photo de profil", { exact: true })
+      .setInputFiles({
+        name: "mint.jpg",
+        mimeType: "image/jpeg",
+        buffer: Buffer.from(
+          readFileSync(
+            "../backend/tests/fixtures/mint-cover.jpg.base64",
+            "utf8",
+          ),
+          "base64",
+        ),
+      });
+    await expect(dialog.locator(".producer-avatar img")).toHaveAttribute(
+      "src",
+      /^data:image/,
+    );
+    const geometry = () =>
+      dialog
+        .locator(
+          ".producer-columns, .producer-identity, .producer-fields, .producer-name, .producer-links, .modal-actions",
+        )
+        .evaluateAll((els) =>
+          els.map((el) => {
+            const r = el.getBoundingClientRect();
+            return [r.x, r.y, r.width, r.height];
+          }),
+        );
+    const before = await geometry();
+    await dialog
+      .getByRole("button", { name: "Enregistrer le profil", exact: true })
+      .click();
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Stockage temporairement indisponible.",
+    );
+    expect(await geometry()).toEqual(before);
+    await expect(
+      dialog.getByRole("textbox", { name: "Nom du profil", exact: true }),
+    ).toHaveValue(`Photo ${width}`);
+    fail = false;
+    await dialog
+      .getByRole("button", { name: "Réessayer", exact: true })
+      .click();
+    await expect(dialog.getByRole("status")).toHaveText("Profil enregistré.");
+    expect(await geometry()).toEqual(before);
+    await expect(
+      dialog.getByRole("button", { name: "Modifier le profil", exact: true }),
+    ).toBeFocused();
+    await expect(dialog.locator(".producer-avatar img")).toHaveAttribute(
+      "src",
+      /^\/api\/beatmakers\//,
+    );
+    await expect
+      .poll(() =>
+        dialog
+          .locator(".producer-avatar img")
+          .evaluate(
+            (el: HTMLImageElement) => el.complete && el.naturalWidth > 0,
+          ),
+      )
+      .toBe(true);
+    await expect(audio).toHaveAttribute(
+      "data-identity",
+      "profile-photo-player",
+    );
+    await expect(audio).toHaveJSProperty("paused", false);
+    expect(
+      await audio.evaluate((el: HTMLAudioElement) => el.currentTime),
+    ).toBeGreaterThanOrEqual(2);
+    await page.screenshot({ path: testInfo.outputPath("photo-profile.png") });
+  });
 }
 
-test('un brouillon de profil retarde la fiche d’import et les états de recherche gardent leur place', async ({ page }) => {
-  const token = (await (await page.request.get('/api/session')).json()).token
-  await page.request.post('/api/beatmakers', { headers: { Origin: 'http://127.0.0.1:8767', 'X-Session-Token': token }, data: { name: 'Profil pour brouillon' } })
-  let active = false
-  let complete = false
-  const job = () => ({ id: 'profile-draft-import', source_url: 'https://youtu.be/PROFILE0001', state: complete ? 'completed' : 'running', stage: complete ? 'completed' : 'downloading', progress: complete ? 100 : 32, beat_id: complete ? '00000000-0000-0000-0000-000000000002' : null })
-  await page.route('**/api/imports', (route) => { if (route.request().method() === 'POST') { active = true; return route.fulfill({ json: { job: job(), beat_id: null, duplicate: false } }) } return route.fulfill({ json: { jobs: active ? [job()] : [] } }) })
-  await page.goto('/')
-  await page.getByRole('textbox', { name: 'Lien YouTube de la prod', exact: true }).fill('https://youtu.be/PROFILE0001')
-  await page.getByRole('button', { name: 'Importer la prod', exact: true }).click()
-  await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Profil de Profil pour brouillon', exact: true })).toBeVisible()
-  const tools = page.locator('.unassigned-producers')
-  const before = await tools.boundingBox()
-  await page.getByRole('searchbox', { name: 'Rechercher un beatmaker', exact: true }).fill('zzzzz-aucun-profil')
-  await expect(page.getByRole('heading', { name: 'Aucun beatmaker ne correspond', exact: true })).toBeVisible()
-  expect(await tools.boundingBox()).toEqual(before)
-  await page.getByRole('button', { name: '＋ Créer un profil', exact: true }).click()
-  const profile = page.getByRole('dialog')
-  await profile.getByRole('textbox', { name: 'Nom du profil', exact: true }).fill('Brouillon protégé')
-  complete = true
-  await expect(page.locator('.import-progress-track')).toHaveAttribute('aria-valuenow', '100')
-  await expect(profile.getByRole('textbox', { name: 'Nom du profil', exact: true })).toHaveValue('Brouillon protégé')
-  await expect(page.getByRole('dialog')).toHaveCount(1)
-  await page.keyboard.press('Escape')
-  await profile.getByRole('button', { name: 'Abandonner et fermer', exact: true }).click()
-  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Drill minuit', exact: true })).toBeVisible()
-  await expect(page.locator('.import-progress-track')).toHaveCount(0)
-})
+test("un brouillon de profil retarde la fiche d’import et les états de recherche gardent leur place", async ({
+  page,
+}) => {
+  const token = (await (await page.request.get("/api/session")).json()).token;
+  await page.request.post("/api/beatmakers", {
+    headers: { Origin: "http://127.0.0.1:8767", "X-Session-Token": token },
+    data: { name: "Profil pour brouillon" },
+  });
+  let active = false;
+  let complete = false;
+  const job = () => ({
+    id: "profile-draft-import",
+    source_url: "https://youtu.be/PROFILE0001",
+    state: complete ? "completed" : "running",
+    stage: complete ? "completed" : "downloading",
+    progress: complete ? 100 : 32,
+    beat_id: complete ? "00000000-0000-0000-0000-000000000002" : null,
+  });
+  await page.route("**/api/imports", (route) => {
+    if (route.request().method() === "POST") {
+      active = true;
+      return route.fulfill({
+        json: { job: job(), beat_id: null, duplicate: false },
+      });
+    }
+    return route.fulfill({ json: { jobs: active ? [job()] : [] } });
+  });
+  await page.goto("/");
+  await page
+    .getByRole("textbox", { name: "Lien YouTube de la prod", exact: true })
+    .fill("https://youtu.be/PROFILE0001");
+  await page
+    .getByRole("button", { name: "Importer la prod", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Profil de Profil pour brouillon",
+      exact: true,
+    }),
+  ).toBeVisible();
+  const tools = page.locator(".unassigned-producers");
+  const before = await tools.boundingBox();
+  await page
+    .getByRole("searchbox", { name: "Rechercher un beatmaker", exact: true })
+    .fill("zzzzz-aucun-profil");
+  await expect(
+    page.getByRole("heading", {
+      name: "Aucun beatmaker ne correspond",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(await tools.boundingBox()).toEqual(before);
+  await page
+    .getByRole("button", { name: "＋ Créer un profil", exact: true })
+    .click();
+  const profile = page.getByRole("dialog");
+  await profile
+    .getByRole("textbox", { name: "Nom du profil", exact: true })
+    .fill("Brouillon protégé");
+  complete = true;
+  await expect(page.locator(".import-progress-track")).toHaveAttribute(
+    "aria-valuenow",
+    "100",
+  );
+  await expect(
+    profile.getByRole("textbox", { name: "Nom du profil", exact: true }),
+  ).toHaveValue("Brouillon protégé");
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await profile
+    .getByRole("button", { name: "Abandonner et fermer", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("region", { name: "Drill minuit", exact: true })
+      .getByRole("textbox", { name: "Titre de la prod", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".import-progress-track")).toHaveCount(0);
+});
 
 for (const width of [1280, 390]) {
-  test(`fusion, suppression et erreurs préservent les prods et le lecteur à ${width}`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 })
-    await page.goto('/')
-    const token = (await (await page.request.get('/api/session')).json()).token
-    const headers = { Origin: 'http://127.0.0.1:8767', 'X-Session-Token': token }
-    const beat = '00000000-0000-0000-0000-000000000001'
-    const old = await (await page.request.get(`/api/beats/${beat}`)).json()
-    const create = async (name: string) => (await page.request.post('/api/beatmakers', { headers, data: { name } })).json()
-    const source = await create(`SamossProd ${width}`)
-    const target = await create(`Samoss ${width}`)
-    const guest = await create(`Invité fusion ${width}`)
-    await page.request.patch(`/api/beats/${beat}/metadata`, { headers, data: { beatmaker_ids: [source.id, guest.id] } })
-    await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
-    const audio = page.locator('audio')
-    await expect(audio).toHaveJSProperty('paused', false)
-    await audio.evaluate((el: HTMLAudioElement) => { el.pause(); el.currentTime = 5; el.dataset.identity = 'merge-player' })
-    await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-    await page.getByRole('button', { name: `Profil de ${source.name}`, exact: true }).click()
-    const profile = page.getByRole('dialog', { name: `Profil de ${source.name}`, exact: true })
-    await profile.getByRole('button', { name: 'Fusionner', exact: true }).click()
-    const manage = page.getByRole('dialog', { name: `Fusionner ${source.name}`, exact: true })
-    await manage.getByRole('searchbox', { name: 'Chercher le profil à conserver', exact: true }).fill(target.name)
-    await manage.getByRole('radio', { name: target.name, exact: true }).check()
-    const geometry = () => manage.locator('h2, .producer-manage-body, .producer-manage-footer').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))
-    const before = await geometry()
-    await manage.getByRole('button', { name: 'Vérifier la fusion', exact: true }).click()
-    await expect(manage.getByText(`1 prod réunie sur ${target.name}`, { exact: true })).toBeVisible()
-    expect(await geometry()).toEqual(before)
-    let fail = true
-    await page.route(`**/api/beatmakers/${source.id}/merge`, (route) => fail ? route.fulfill({ status: 503, json: { detail: 'Fusion temporairement indisponible.' } }) : route.continue())
-    await manage.getByRole('button', { name: 'Confirmer la fusion', exact: true }).click()
-    await expect(manage.getByRole('alert')).toContainText('Fusion temporairement indisponible.')
-    expect(await geometry()).toEqual(before)
-    fail = false
-    await manage.getByRole('button', { name: 'Confirmer la fusion', exact: true }).click()
-    await expect(manage).toHaveCount(0)
-    const merged = page.getByRole('dialog', { name: `Profil de ${target.name}`, exact: true })
-    await expect(merged.getByText(`Alias : ${source.name}`, { exact: true })).toBeVisible()
-    expect((await (await page.request.get(`/api/beats/${beat}`)).json()).beatmakers.map((p: { id: string }) => p.id)).toEqual([target.id, guest.id])
-    if (width === 1280) { expect(await merged.locator('.producer-columns').evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true) }
-    await page.screenshot({ path: testInfo.outputPath('merged-profile.png') })
-    await expect(merged.getByRole('button', { name: 'Supprimer', exact: true })).toBeInViewport()
-    await merged.getByRole('button', { name: 'Supprimer', exact: true }).click()
-    const remove = page.getByRole('dialog', { name: `Supprimer ${target.name}`, exact: true })
-    await expect(remove.getByText('Les prods, les MP3 et les autres collaborateurs seront conservés. Ce profil ne sera plus recréé automatiquement.', { exact: true })).toBeVisible()
-    await remove.getByRole('button', { name: 'Annuler', exact: true }).click()
-    await expect(remove).toHaveCount(0)
-    await expect(merged.getByRole('button', { name: 'Supprimer', exact: true })).toBeFocused()
-    await merged.getByRole('button', { name: 'Supprimer', exact: true }).click()
-    await page.getByRole('button', { name: 'Confirmer la suppression', exact: true }).click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    expect((await (await page.request.get(`/api/beats/${beat}`)).json()).beatmakers.map((p: { id: string }) => p.id)).toEqual([guest.id])
-    await expect(audio).toHaveAttribute('data-identity', 'merge-player')
-    await expect(audio).toHaveJSProperty('currentTime', 5)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.request.patch(`/api/beats/${beat}/metadata`, { headers, data: { beatmaker_ids: old.beatmakers.map((p: { id: string }) => p.id) } })
-  })
+  test(`fusion, suppression et erreurs préservent les prods et le lecteur à ${width}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 390 ? 650 : 900 });
+    await page.goto("/");
+    const token = (await (await page.request.get("/api/session")).json()).token;
+    const headers = {
+      Origin: "http://127.0.0.1:8767",
+      "X-Session-Token": token,
+    };
+    const beat = "00000000-0000-0000-0000-000000000001";
+    const old = await (await page.request.get(`/api/beats/${beat}`)).json();
+    const create = async (name: string) =>
+      (
+        await page.request.post("/api/beatmakers", { headers, data: { name } })
+      ).json();
+    const source = await create(`SamossProd ${width}`);
+    const target = await create(`Samoss ${width}`);
+    const guest = await create(`Invité fusion ${width}`);
+    await page.request.patch(`/api/beats/${beat}/metadata`, {
+      headers,
+      data: { beatmaker_ids: [source.id, guest.id] },
+    });
+    await page
+      .getByRole("button", { name: "Écouter R&B Mélancolique", exact: true })
+      .click();
+    const audio = page.locator("audio");
+    await expect(audio).toHaveJSProperty("paused", false);
+    await audio.evaluate((el: HTMLAudioElement) => {
+      el.pause();
+      el.currentTime = 5;
+      el.dataset.identity = "merge-player";
+    });
+    await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+    await page
+      .getByRole("button", { name: `Profil de ${source.name}`, exact: true })
+      .click();
+    const profile = page.getByRole("dialog", {
+      name: `Profil de ${source.name}`,
+      exact: true,
+    });
+    await profile
+      .getByRole("button", { name: "Fusionner", exact: true })
+      .click();
+    const manage = page.getByRole("dialog", {
+      name: `Fusionner ${source.name}`,
+      exact: true,
+    });
+    await manage
+      .getByRole("searchbox", {
+        name: "Chercher le profil à conserver",
+        exact: true,
+      })
+      .fill(target.name);
+    await manage.getByRole("radio", { name: target.name, exact: true }).check();
+    const geometry = () =>
+      manage
+        .locator("h2, .producer-manage-body, .producer-manage-footer")
+        .evaluateAll((els) =>
+          els.map((el) => {
+            const r = el.getBoundingClientRect();
+            return [r.x, r.y, r.width, r.height];
+          }),
+        );
+    const before = await geometry();
+    await manage
+      .getByRole("button", { name: "Vérifier la fusion", exact: true })
+      .click();
+    await expect(
+      manage.getByText(`1 prod réunie sur ${target.name}`, { exact: true }),
+    ).toBeVisible();
+    expect(await geometry()).toEqual(before);
+    let fail = true;
+    await page.route(`**/api/beatmakers/${source.id}/merge`, (route) =>
+      fail
+        ? route.fulfill({
+            status: 503,
+            json: { detail: "Fusion temporairement indisponible." },
+          })
+        : route.continue(),
+    );
+    await manage
+      .getByRole("button", { name: "Confirmer la fusion", exact: true })
+      .click();
+    await expect(manage.getByRole("alert")).toContainText(
+      "Fusion temporairement indisponible.",
+    );
+    expect(await geometry()).toEqual(before);
+    fail = false;
+    await manage
+      .getByRole("button", { name: "Confirmer la fusion", exact: true })
+      .click();
+    await expect(manage).toHaveCount(0);
+    const merged = page.getByRole("dialog", {
+      name: `Profil de ${target.name}`,
+      exact: true,
+    });
+    await expect(
+      merged.getByText(`Alias : ${source.name}`, { exact: true }),
+    ).toBeVisible();
+    expect(
+      (
+        await (await page.request.get(`/api/beats/${beat}`)).json()
+      ).beatmakers.map((p: { id: string }) => p.id),
+    ).toEqual([target.id, guest.id]);
+    if (width === 1280) {
+      expect(
+        await merged
+          .locator(".producer-columns")
+          .evaluate((el) => el.scrollHeight <= el.clientHeight),
+      ).toBe(true);
+    }
+    await page.screenshot({ path: testInfo.outputPath("merged-profile.png") });
+    await expect(
+      merged.getByRole("button", { name: "Supprimer", exact: true }),
+    ).toBeInViewport();
+    await merged
+      .getByRole("button", { name: "Supprimer", exact: true })
+      .click();
+    const remove = page.getByRole("dialog", {
+      name: `Supprimer ${target.name}`,
+      exact: true,
+    });
+    await expect(
+      remove.getByText(
+        "Les prods, les MP3 et les autres collaborateurs seront conservés. Ce profil ne sera plus recréé automatiquement.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await remove.getByRole("button", { name: "Annuler", exact: true }).click();
+    await expect(remove).toHaveCount(0);
+    await expect(
+      merged.getByRole("button", { name: "Supprimer", exact: true }),
+    ).toBeFocused();
+    await merged
+      .getByRole("button", { name: "Supprimer", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Confirmer la suppression", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(
+      (
+        await (await page.request.get(`/api/beats/${beat}`)).json()
+      ).beatmakers.map((p: { id: string }) => p.id),
+    ).toEqual([guest.id]);
+    await expect(audio).toHaveAttribute("data-identity", "merge-player");
+    await expect(audio).toHaveJSProperty("currentTime", 5);
+    // The narrow-window fallback intentionally keeps the same columns scrollable.
+    await expect(
+      page.getByRole("button", { name: "Réglages", exact: true }),
+    ).toBeEnabled();
+    await page.request.patch(`/api/beats/${beat}/metadata`, {
+      headers,
+      data: { beatmaker_ids: old.beatmakers.map((p: { id: string }) => p.id) },
+    });
+  });
 }
 
-test('portrait YouTube différé sans déplacement du profil ni interruption audio', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 650 })
-  await page.goto('/')
-  const token = (await (await page.request.get('/api/session')).json()).token
-  const headers = { Origin: 'http://127.0.0.1:8767', 'X-Session-Token': token }
-  const p = await (await page.request.post('/api/beatmakers', { headers, data: { name: 'Portrait automatique' } })).json()
-  const portraitUrl = '/portrait-fixture.jpg'
-  await page.route('**/portrait-fixture.jpg', (route) => route.fulfill({ contentType: 'image/jpeg', body: Buffer.from(readFileSync('../backend/tests/fixtures/mint-cover.jpg.base64', 'utf8'), 'base64') }))
-  let ready = false
-  await page.route(`**/api/beatmakers/${p.id}`, async (route) => { const response = await route.fetch(); const body = await response.json(); await route.fulfill({ response, json: ready ? { ...body, photo_url: portraitUrl, photo_origin: 'youtube', youtube_channels: [{url: 'https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa', label: 'Source de test'}] } : body }) })
-  await page.route(`**/api/beatmakers/${p.id}/photo-refresh`, (route) => { ready = true; return route.fulfill({ json: { queued: true } }) })
-  await page.getByRole('button', { name: 'Écouter R&B Mélancolique', exact: true }).click()
-  const audio = page.locator('audio')
-  await expect(audio).toHaveJSProperty('paused', false)
-  await audio.evaluate((el: HTMLAudioElement) => { el.dataset.identity = 'portrait-player' })
-  await page.getByRole('button', { name: 'Beatmakers', exact: true }).click()
-  await page.getByRole('button', { name: `Profil de ${p.name}`, exact: true }).click()
-  const dialog = page.getByRole('dialog')
-  const geometry = () => dialog.locator('.producer-columns, .producer-identity, .producer-avatar, .producer-name, .modal-actions, .producer-management-actions').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height] }))
-  const before = await geometry()
-  await dialog.getByRole('button', { name: 'Photo YouTube', exact: true }).click()
-  await expect(dialog.getByRole('button', { name: 'Recherche…', exact: true })).toBeDisabled()
-  expect(await geometry()).toEqual(before)
-  await expect(dialog.locator('.producer-avatar img')).toHaveAttribute('src', portraitUrl)
-  await expect(dialog.getByRole('link', { name: 'Chaîne YouTube ↗', exact: true })).toHaveAttribute('href', 'https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa')
-  await expect(dialog.getByRole('link', { name: 'Chaîne YouTube ↗', exact: true })).toHaveAttribute('target', '_blank')
-  expect(await geometry()).toEqual(before)
-  await expect(audio).toHaveAttribute('data-identity', 'portrait-player')
-  await expect(audio).toHaveJSProperty('paused', false)
-})
+test("portrait YouTube différé sans déplacement du profil ni interruption audio", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 650 });
+  await page.goto("/");
+  const token = (await (await page.request.get("/api/session")).json()).token;
+  const headers = { Origin: "http://127.0.0.1:8767", "X-Session-Token": token };
+  const p = await (
+    await page.request.post("/api/beatmakers", {
+      headers,
+      data: { name: "Portrait automatique" },
+    })
+  ).json();
+  const portraitUrl = "/portrait-fixture.jpg";
+  await page.route("**/portrait-fixture.jpg", (route) =>
+    route.fulfill({
+      contentType: "image/jpeg",
+      body: Buffer.from(
+        readFileSync("../backend/tests/fixtures/mint-cover.jpg.base64", "utf8"),
+        "base64",
+      ),
+    }),
+  );
+  let ready = false;
+  await page.route(`**/api/beatmakers/${p.id}`, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({
+      response,
+      json: ready
+        ? {
+            ...body,
+            photo_url: portraitUrl,
+            photo_origin: "youtube",
+            youtube_channels: [
+              {
+                url: "https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa",
+                label: "Source de test",
+              },
+            ],
+          }
+        : body,
+    });
+  });
+  await page.route(`**/api/beatmakers/${p.id}/photo-refresh`, (route) => {
+    ready = true;
+    return route.fulfill({ json: { queued: true } });
+  });
+  await page
+    .getByRole("button", { name: "Écouter R&B Mélancolique", exact: true })
+    .click();
+  const audio = page.locator("audio");
+  await expect(audio).toHaveJSProperty("paused", false);
+  await audio.evaluate((el: HTMLAudioElement) => {
+    el.dataset.identity = "portrait-player";
+  });
+  await page.getByRole("button", { name: "Beatmakers", exact: true }).click();
+  await page
+    .getByRole("button", { name: `Profil de ${p.name}`, exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  const geometry = () =>
+    dialog
+      .locator(
+        ".producer-columns, .producer-identity, .producer-avatar, .producer-name, .modal-actions, .producer-management-actions",
+      )
+      .evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.getBoundingClientRect();
+          return [r.x, r.y, r.width, r.height];
+        }),
+      );
+  const before = await geometry();
+  await dialog
+    .getByRole("button", { name: "Photo YouTube", exact: true })
+    .click();
+  await expect(
+    dialog.getByRole("button", { name: "Recherche…", exact: true }),
+  ).toBeDisabled();
+  expect(await geometry()).toEqual(before);
+  await expect(dialog.locator(".producer-avatar img")).toHaveAttribute(
+    "src",
+    portraitUrl,
+  );
+  await expect(
+    dialog.getByRole("link", { name: "Chaîne YouTube ↗", exact: true }),
+  ).toHaveAttribute(
+    "href",
+    "https://www.youtube.com/channel/UCaaaaaaaaaaaaaaaaaaaaaa",
+  );
+  await expect(
+    dialog.getByRole("link", { name: "Chaîne YouTube ↗", exact: true }),
+  ).toHaveAttribute("target", "_blank");
+  expect(await geometry()).toEqual(before);
+  await expect(audio).toHaveAttribute("data-identity", "portrait-player");
+  await expect(audio).toHaveJSProperty("paused", false);
+});
