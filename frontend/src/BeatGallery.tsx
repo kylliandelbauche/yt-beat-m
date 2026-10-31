@@ -806,14 +806,24 @@ export function BeatGallery({
                         {makerLabel(beat)}
                       </span>
                       <span className="card-tags">
-                        {[...(beat.styles || []), ...(beat.moods || [])].map(
-                          (tag, i) => (
-                            <span className="tag" key={i}>
-                              {tag}
-                            </span>
-                          ),
-                        )}
-                        {!beat.styles?.length && !beat.moods?.length && (
+                        {(
+                          beat.tags ?? [
+                            ...new Set([
+                              ...(beat.styles || []),
+                              ...(beat.moods || []),
+                            ]),
+                          ]
+                        ).map((tag, i) => (
+                          <span className="tag" key={i}>
+                            {tag}
+                          </span>
+                        ))}
+                        {!(
+                          beat.tags ?? [
+                            ...(beat.styles || []),
+                            ...(beat.moods || []),
+                          ]
+                        ).length && (
                           <span className="empty-tags">Aucun tag</span>
                         )}
                       </span>

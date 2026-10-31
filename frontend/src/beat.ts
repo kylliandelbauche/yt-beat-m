@@ -1,5 +1,6 @@
 export type Beat = {
   id: string;
+  tags?: string[];
   styles?: string[];
   moods?: string[];
   title: string;
@@ -34,6 +35,7 @@ export type BeatDetails = Beat & {
   channel_id_known: boolean;
   channel_alias: { beatmaker: string; uses_channel_id: boolean } | null;
   metadata_provenance: Record<string, unknown>;
+  tags: string[];
   styles: string[];
   moods: string[];
   links: { url: string; label: string | null }[];

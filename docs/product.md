@@ -6,6 +6,12 @@ Date de référence : 24 octobre 2026.
 
 L'utilisateur reporte Windows et donne la priorité à une validation essentielle sur Mac, puis aux pages Beatmakers (#62) et Mes sons (#11), développées une à une à partir de Paper. La recette Windows et le lancement à double-clic sont différés et ne bloquent plus ces fonctionnalités. Le lancement documenté existant reste utilisable. Les chemins relatifs et les garanties de conservation des bibliothèques restent nécessaires. Les mentions Mac/Windows ci-dessous décrivent l'objectif initial de portabilité, sans constituer un critère de sortie de la phase Mac actuelle.
 
+## Filtres et vocabulaire commun — #80 (31 octobre 2026)
+
+Style et Ambiance sont regroupés en Tags. Les libellés déjà présents et leurs associations sont conservés ; seuls les libellés strictement identiques partagent une entité commune. Les variantes restent distinctes. Les tonalités de recherche se composent par Mode/Note puis Ajouter, avec plusieurs critères retirables. La tonalité d’une prod reste une valeur unique. Le BPM garde des bornes inclusives et une erreur réservée uniquement sous Maximum.
+
+La création depuis Choisir mes tags sélectionne automatiquement la nouvelle valeur dans le brouillon ; Save valide l’association. Gestion centralisée et nouvelle rubrique Réglages → Tags restent dans #81, finitions/animations dans #82. Voir [référence et conservation #80](design/80-filters-tags.md).
+
 ## Référence active — 30 octobre 2026 (#78)
 
 La refonte suit les pages Officiel actuelles de Paper : navigation latérale, bibliothèque au centre et fiche dans un volet qui réserve sa place. La fiche remplace la pop-up de prod des révisions précédentes. Sobre clair est le défaut ; les quatre palettes existent en clair et sombre. Les titres restent sur une ligne et les changements d’état gardent la géométrie.

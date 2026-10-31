@@ -39,6 +39,7 @@ class MetadataUpdate(BaseModel):
     forget_channel_alias: bool = False
     bpm: float | None = None
     musical_key: str | None = Field(default=None, max_length=80)
+    tags: list[str] = Field(default_factory=list, max_length=120)
     styles: list[str] = Field(default_factory=list, max_length=30)
     moods: list[str] = Field(default_factory=list, max_length=30)
     links: list[PurchaseLink] = Field(default_factory=list, max_length=20)
@@ -59,8 +60,40 @@ def clean_tags(values: list[str], field: str) -> list[str]:
     return list(labels.values())
 
 
+def tag_labels(connection, identity):
+    return [
+        r[0]
+        for r in connection.execute(
+            "SELECT t.label FROM catalog_tags t JOIN beat_catalog_tags b ON b.tag_id=t.id "
+            "WHERE b.beat_id=? ORDER BY b.position,t.label",
+            (identity,),
+        )
+    ]
+
+
+def replace_tags(connection, identity, values):
+    connection.executemany(
+        (
+            "INSERT INTO catalog_tags(label,normalized_label) VALUES(?,?) ON "
+            "CONFLICT(label) DO NOTHING"
+        ),
+        [(label, normalize(label)) for label in values],
+    )
+    connection.execute("DELETE FROM beat_catalog_tags WHERE beat_id=?", (identity,))
+    connection.executemany(
+        (
+            "INSERT INTO beat_catalog_tags(beat_id,tag_id,position) SELECT "
+            "?,id,? FROM catalog_tags WHERE label=?"
+        ),
+        [(identity, pos, label) for pos, label in enumerate(values)],
+    )
+
+
 def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -> bool:
     changes = payload.model_dump(exclude_unset=True)
+    common_tags = changes.pop("tags", None)
+    if common_tags is not None and {"styles", "moods"} & changes.keys():
+        raise LibraryError("Tags : ne mélange pas tags communs et anciennes catégories.")
     profile_ids = changes.pop("beatmaker_ids", None)
     remember = changes.pop("remember_channel", False)
     reset = changes.pop("reset_beatmaker", False)
@@ -144,6 +177,34 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
             ):
                 return False
             row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
+        legacy = [
+            dict(r)
+            for r in connection.execute(
+                (
+                    "SELECT t.id,t.kind,t.label FROM tags t JOIN beat_tags b ON "
+                    "b.tag_id=t.id WHERE b.beat_id=?"
+                ),
+                (identity,),
+            )
+        ]
+        previous_tags = tag_labels(connection, identity)
+        if common_tags is not None:
+            known = {r[0] for r in connection.execute("SELECT label FROM catalog_tags")}
+            labels = []
+            for raw in common_tags:
+                # Keep existing spelling; validate only newly introduced labels.
+                label = raw if raw in known else " ".join(raw.split())
+                if not label:
+                    continue
+                if label not in known and (
+                    len(label) > 80 or any(unicodedata.category(c).startswith("C") for c in label)
+                ):
+                    raise LibraryError(
+                        "Tags : chaque tag doit contenir au maximum 80 caractères lisibles."
+                    )
+                if label not in labels:
+                    labels.append(label)
+            common_tags = labels
         sources = provenance(row)
         originals = sources.setdefault("original_metadata", {})
         for field, value in changes.items():
@@ -201,6 +262,37 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
                         "VALUES(?,?,?,'manual',1)",
                         (identity, link["url"], link["label"]),
                     )
+        if common_tags is not None:
+            originals.setdefault(
+                "tags",
+                {
+                    "value": previous_tags,
+                    "source": {k: sources.get(k) for k in ("styles", "moods", "tags")},
+                    "legacy": legacy,
+                },
+            )
+            sources["tags"] = "manual"
+            replace_tags(connection, identity, common_tags)
+            # Explicit removal unlinks the legacy association too; its origin is archived above.
+            removed = [r["id"] for r in legacy if r["label"] not in common_tags]
+            connection.executemany(
+                "DELETE FROM beat_tags WHERE beat_id=? AND tag_id=?",
+                [(identity, tag) for tag in removed],
+            )
+        elif {"styles", "moods"} & changes.keys():
+            # Compatibility for existing clients; do not discard uncategorised common tags.
+            remaining = {
+                r[0]
+                for r in connection.execute(
+                    (
+                        "SELECT t.label FROM tags t JOIN beat_tags b ON b.tag_id=t.id "
+                        "WHERE b.beat_id=?"
+                    ),
+                    (identity,),
+                )
+            }
+            values = (set(previous_tags) - {r["label"] for r in legacy}) | remaining
+            replace_tags(connection, identity, sorted(values))
         connection.execute(
             "UPDATE beats SET field_provenance=? WHERE id=?",
             (json.dumps(sources, ensure_ascii=False), identity),

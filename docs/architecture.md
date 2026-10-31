@@ -239,3 +239,13 @@ La grille principale réserve les colonnes des volets. La fiche est une région 
 Le lecteur et l’élément audio persistent hors des contenus masqués. Les contrôles sont explicites ; le volume et la tonalité utilisent des popovers natifs dans la couche supérieure, positionnés par rapport au déclencheur. Le panneau d’import reste monté dans son emplacement de navigation même quand celle-ci se replie. La réserve de hauteur du catalogue protège les états asynchrones et se recalcule pour un changement volontaire de disposition ou de largeur.
 
 Les styles actifs sont les tokens de thèmes, la feuille #78 et les styles de profils conservés. Les anciennes feuilles de présentation non importées sont retirées. Les fontes sont locales. Voir [références et vérification #78](design/78-paper.md).
+
+## Vocabulaire commun et filtres (#80)
+
+Le schéma 5 ajoute catalog_tags (libellé unique en comparaison binaire, clé de recherche normalisée) et beat_catalog_tags (prod, entité, position). Les catégories historiques restent dans tags/beat_tags ; aucun déplacement de média. La migration est sauvegardée et transactionnelle, réunit les libellés exactement égaux et préserve les variantes. Les nouvelles associations sont ordonnées pour ne pas permuter au retour de Save.
+
+MetadataUpdate.tags est une liste commune (au plus 120). Les libellés existants sont conservés tels quels ; les nouvelles saisies suivent la validation de texte lisible et les espaces superflus sont nettoyés. Le PATCH archive la valeur précédente et les origines historiques ; retirer une valeur retire aussi ses associations historiques correspondantes. Les anciens PATCH styles/moods restent compatibles, en conservant les valeurs communes non catégorisées. Mélanger les deux conventions dans un PATCH est refusé atomiquement.
+
+Les projections liste/détail/options ajoutent tags ; la liste utilise une requête groupée. Le filtre répété tags sélectionne exactement les entités par leur libellé unique ; tag_missing sélectionne les prods sans association commune. La recherche textuelle et celle des options gardent leur tolérance de casse/accents. Les paramètres historiques restent disponibles. Le moteur de session/origine protège le PATCH inchangé.
+
+Les cadres Paper BPM, tonalités et listes sont fixes ; seules les listes prévues défilent. Le sous-menu musical utilise la couche supérieure native avec focus initial et fermeture prioritaire par Échap. Les modifications des contrôles ne recréent pas l’audio. Le serveur de recette accepte BEAT_M_TEST_FRONTEND pour servir un build isolé avant de publier les fichiers de l’interface locale.

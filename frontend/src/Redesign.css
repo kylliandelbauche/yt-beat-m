@@ -2576,3 +2576,406 @@ button[aria-pressed="true"] {
   top: 14px;
   right: 16px;
 }
+
+/* #80 — native Officiel filters: fixed frames; lists scroll within their reserved areas. */
+.filter-popover {
+  width: 288px;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border-radius: 12px;
+  overflow: visible;
+}
+.filter-menu-heading {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  height: 24px;
+  margin: 0;
+  font-size: 13px;
+}
+.filter-menu-heading strong {
+  font: 600 13px/20px var(--font-heading);
+}
+.filter-menu-heading button {
+  background: transparent;
+  padding: 0;
+  font-size: 13px;
+  height: 24px;
+}
+.filter-option {
+  height: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.filter-option:has(input:checked) {
+  background: var(--selected);
+}
+.filter-option input {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  padding: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.choices-popover {
+  height: 352px;
+}
+.filter-search {
+  position: absolute;
+  top: 44px;
+  left: 12px;
+  right: 12px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 13px;
+}
+.filter-search > svg {
+  position: absolute;
+  left: 10px;
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+  color: var(--muted);
+}
+.filter-search input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px 0 34px;
+  font-size: 13px;
+}
+.choices-popover > .filter-none {
+  position: absolute;
+  top: 88px;
+  left: 12px;
+  right: 12px;
+  height: 36px;
+}
+.filter-choices {
+  position: absolute;
+  top: 128px;
+  left: 12px;
+  right: 12px;
+  height: 180px;
+  max-height: none;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-empty {
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--muted);
+  padding: 8px;
+}
+.filter-menu-hint {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 320px;
+  height: 20px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.manage-tags {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 316px;
+  height: 24px;
+  padding: 0 8px;
+  text-align: left;
+  background: transparent;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.manage-tags small {
+  font-size: 10px;
+}
+.bpm-popover {
+  height: 224px;
+}
+.bpm-range .edit-columns {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 44px;
+  gap: 12px;
+  height: 56px;
+}
+.bpm-range label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 16px;
+}
+.bpm-range input {
+  height: 36px;
+  font-size: 13px;
+  padding: 0 10px;
+}
+.bpm-range input[aria-invalid="true"] {
+  border-color: var(--error, #b73b3b);
+}
+.bpm-range .filter-error-slot {
+  position: absolute;
+  left: 149px;
+  right: 12px;
+  top: 108px;
+  height: 18px;
+  margin: 0;
+  font: 400 12px/18px var(--font-body);
+  white-space: nowrap;
+}
+.range-help {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 108px;
+  height: 18px;
+  font: 400 12px/18px var(--font-body);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.range-apply {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 140px;
+  height: 36px;
+  padding: 0;
+  font-size: 13px;
+}
+.bpm-popover > .filter-none {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 180px;
+}
+.keys-popover {
+  height: 272px;
+}
+.keys-popover .key-composer {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 44px;
+  height: 56px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+.key-composer > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.key-composer > div > span {
+  height: 16px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--muted);
+}
+.key-composer button {
+  height: 36px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  border: 1px solid var(--rule);
+  background: var(--floating);
+}
+.key-composer button svg {
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+}
+.key-add {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 112px;
+  height: 36px;
+  padding: 0;
+  font-size: 13px;
+}
+.key-combinations {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 156px;
+  height: 32px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.key-combination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  height: 28px;
+  padding: 0 12px;
+  background: var(--selected);
+  border-radius: 7px;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.key-combination button {
+  width: 14px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+}
+.keys-popover > .filter-none {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 196px;
+}
+.keys-popover > .filter-menu-hint {
+  top: 236px;
+  height: 24px;
+  align-items: center;
+}
+.filter-select-menu {
+  width: 125px;
+  max-height: 240px;
+  padding: 4px;
+  overflow: auto;
+  border-radius: 12px;
+}
+.filter-select-menu [role="listbox"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-select-menu [role="option"] {
+  text-align: left;
+  padding: 0 8px;
+  min-height: 32px;
+  height: 32px;
+  background: transparent;
+  font-size: 13px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.filter-select-menu [aria-selected="true"],
+.filter-select-menu [role="option"]:hover {
+  background: var(--selected);
+}
+.layout-selector {
+  width: 70px;
+  height: 36px;
+  min-width: 70px;
+  padding: 3px 4px;
+  border: 1px solid var(--rule);
+  gap: 4px;
+  border-radius: 12px;
+}
+.layout-selector .icon-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.maker-name {
+  display: block;
+  min-width: 0;
+  height: 20px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tag-picker .tag-error {
+  overflow: auto;
+  flex-shrink: 0;
+}
+@media (max-height: 520px) {
+  .filter-popover {
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+}
+
+/* Keep one filter capsule reachable next to fixed sort/layout controls in the narrow fallback. */
+.workspace {
+  grid-template-columns: var(--nav-width) minmax(480px, 1fr) var(--detail-width);
+  min-width: calc(var(--nav-width) + 480px + var(--detail-width));
+}
+:root {
+  --error: #b73b3b;
+}
+:root[data-mode="dark"] {
+  --error: #f3b2ac;
+}
+
+.key-combinations {
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.key-combinations:active {
+  cursor: grabbing;
+}
+.key-combination button:focus-visible {
+  outline-offset: -2px;
+}
+
+.tag-filter-footer {
+  top: 316px;
+  height: 24px;
+  align-items: center;
+}
+.tag-filter-footer .manage-tags {
+  position: static;
+  height: 24px;
+  width: auto;
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+  padding: 0;
+}
+.tag-filter-footer > span {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.keys-popover .key-add:disabled {
+  opacity: 1;
+  background: var(--hover);
+  color: var(--muted);
+  filter: none;
+}

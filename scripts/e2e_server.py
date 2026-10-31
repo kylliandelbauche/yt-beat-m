@@ -2,6 +2,7 @@
 
 import base64
 import json
+import os
 import tempfile
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -114,7 +115,11 @@ def main():
         )
         library.close()
         uvicorn.run(
-            create_app(port=8767, preferences=preferences),
+            create_app(
+                port=8767,
+                preferences=preferences,
+                frontend=Path(os.environ.get("BEAT_M_TEST_FRONTEND", ROOT / "frontend" / "dist")),
+            ),
             host="127.0.0.1",
             port=8767,
             log_level="warning",
