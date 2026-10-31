@@ -209,7 +209,7 @@ test("ACC01–08 : les deux volets réservent leur espace, sans sélection ni su
     page.getByText("Aucune prod sélectionnée", { exact: true }),
   ).toBeVisible();
   await expect(right.getByRole("button")).toHaveCount(1);
-  expect((await right.boundingBox())!.x).toBe(1068);
+  await expect.poll(async () => (await right.boundingBox())!.x).toBe(1068);
   expect((await cards.first().boundingBox())!.width).toBe(368);
   expect((await cards.first().boundingBox())!.height).toBe(136);
   const panel = await detail(page);
@@ -527,7 +527,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
 }) => {
   const panel = await detail(page),
     saved = (await (await page.request.get(`/api/beats/${ids[0]}`)).json())
-      .styles;
+      .tags;
   await panel
     .getByRole("button", { name: "Choisir mes tags", exact: true })
     .click();
@@ -541,7 +541,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
     panel.getByRole("button", { name: "Modifier la prod", exact: true }),
   ).toBeVisible();
   expect(
-    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).styles,
+    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).tags,
   ).toEqual(saved);
   await panel
     .getByRole("button", { name: "Choisir mes tags", exact: true })
@@ -558,7 +558,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
     }),
   ).toBeVisible();
   expect(
-    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).styles,
+    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).tags,
   ).toEqual(saved);
   await panel
     .getByRole("button", { name: "Enregistrer les modifications", exact: true })
@@ -574,7 +574,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
     .getByRole("button", { name: "Retirer le tag Drill", exact: true })
     .click();
   expect(
-    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).styles,
+    (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).tags,
   ).toContain("Drill");
   await panel
     .getByRole("button", { name: "Annuler les modifications", exact: true })
@@ -582,7 +582,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
   await expect(
     panel.locator(".tag").filter({ hasText: "Drill" }),
   ).toBeVisible();
-  await patch(page.request, 0, { styles: saved });
+  await patch(page.request, 0, { tags: saved });
 });
 
 test("changer de prod ou replier la fiche protège le brouillon et restaure le focus", async ({
@@ -883,14 +883,7 @@ test("menus de filtre directs, combinables, défilants ; tri et dispositions res
 }) => {
   const panel = await detail(page);
   const fixed = await boxes(page.locator(".catalog-order"));
-  for (const label of [
-    "BPM",
-    "Tonalité",
-    "Beatmaker",
-    "Style",
-    "Ambiance",
-    "Chaîne",
-  ]) {
+  for (const label of ["BPM", "Tonalité", "Beatmaker", "Tags", "Chaîne"]) {
     const menu = page
       .locator(".filter-menu")
       .filter({ has: page.locator("summary", { hasText: label }) });
@@ -904,7 +897,7 @@ test("menus de filtre directs, combinables, défilants ; tri et dispositions res
   }
   const styles = page
     .locator(".filter-menu")
-    .filter({ has: page.locator("summary", { hasText: "Style" }) });
+    .filter({ has: page.locator("summary", { hasText: "Tags" }) });
   await styles.locator("summary").click();
   await styles.getByRole("checkbox", { name: "Drill", exact: true }).check();
   await page.keyboard.press("Escape");
@@ -913,7 +906,13 @@ test("menus de filtre directs, combinables, défilants ; tri et dispositions res
     .locator(".filter-menu")
     .filter({ has: page.locator("summary", { hasText: "Tonalité" }) });
   await keys.locator("summary").click();
-  await keys.getByRole("checkbox", { name: "Ab minor", exact: true }).check();
+  await keys
+    .getByRole("button", { name: "Note du filtre tonalité", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Ab", exact: true }).click();
+  await keys
+    .getByRole("button", { name: "Ajouter cette tonalité", exact: true })
+    .click();
   await page.keyboard.press("Escape");
   await expect(page.locator(".beat-card")).toHaveCount(2);
   await page

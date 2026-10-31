@@ -45,7 +45,13 @@ test("Clé française et Abm contextualisé : import, fiche, filtres et correcti
       .locator(".filter-menu")
       .filter({ has: page.locator("summary", { hasText: "Tonalité" }) });
     await menu.locator("summary").click();
-    await menu.getByRole("checkbox", { name: "Ab minor", exact: true }).check();
+    await menu
+      .getByRole("button", { name: "Note du filtre tonalité", exact: true })
+      .click();
+    await page.getByRole("option", { name: "Ab", exact: true }).click();
+    await menu
+      .getByRole("button", { name: "Ajouter cette tonalité", exact: true })
+      .click();
     await page.keyboard.press("Escape");
     await expect(page.locator(".beat-card")).toHaveCount(1);
     await page
@@ -97,12 +103,10 @@ test("Clé française et Abm contextualisé : import, fiche, filtres et correcti
       .getByRole("button", { name: "Détails de Prod tonalité 2", exact: true })
       .click();
     await expect(
-      page
-        .locator(".beat-details")
-        .getByRole("button", {
-          name: "Tonalité : non renseignée",
-          exact: true,
-        }),
+      page.locator(".beat-details").getByRole("button", {
+        name: "Tonalité : non renseignée",
+        exact: true,
+      }),
     ).toBeVisible();
   } finally {
     expect(

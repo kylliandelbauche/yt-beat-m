@@ -183,7 +183,7 @@ def test_real_v2_migration_backup_move_and_conservative_identity(tmp_path, monke
             originals = [dict(r) for r in c.execute("SELECT * FROM beats ORDER BY id")]
         lib.close()
     migrated = Library.open(root)
-    assert migrated.summary()["schema_version"] == 4
+    assert migrated.summary()["schema_version"] == 5
     assert len(list((root / "backups").glob("catalog-v2-*.sqlite3"))) == 1
     with migrated.catalog() as c:
         assert (

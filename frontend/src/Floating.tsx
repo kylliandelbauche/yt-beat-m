@@ -8,6 +8,7 @@ export function Floating({
   className = "",
   above = false,
   align = "end",
+  initialFocus = false,
 }: {
   anchor: HTMLElement;
   label: string;
@@ -16,6 +17,7 @@ export function Floating({
   className?: string;
   above?: boolean;
   align?: "start" | "end" | "center";
+  initialFocus?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
@@ -32,6 +34,10 @@ export function Floating({
     };
     el.showPopover();
     place();
+    if (initialFocus)
+      el.querySelector<HTMLElement>('[role="option"]')?.focus({
+        preventScroll: true,
+      });
     const outside = (e: PointerEvent) => {
       if (!el.contains(e.target as Node) && !anchor.contains(e.target as Node))
         closeRef.current();
@@ -55,7 +61,7 @@ export function Floating({
       window.removeEventListener("resize", place);
       document.removeEventListener("scroll", place, true);
     };
-  }, [anchor, above, align]);
+  }, [anchor, above, align, initialFocus]);
   return (
     <div
       popover="manual"

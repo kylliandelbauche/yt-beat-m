@@ -16,6 +16,7 @@ MIGRATIONS = {
     2: Path(__file__).parent / "migrations" / "002_beatmakers.sql",
     3: Path(__file__).parent / "migrations" / "003_profiles.sql",
     4: Path(__file__).parent / "migrations" / "004_profile_identity.sql",
+    5: Path(__file__).parent / "migrations" / "005_common_tags.sql",
 }
 
 

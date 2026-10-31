@@ -30,8 +30,7 @@ type Draft = {
   musical_key: string;
   description: string;
   sale_url: string;
-  styles: string[];
-  moods: string[];
+  tags: string[];
 };
 function draftFor(beat: BeatDetails): Draft {
   return {
@@ -41,8 +40,7 @@ function draftFor(beat: BeatDetails): Draft {
     musical_key: beat.musical_key ? musicalKeyLabel(beat.musical_key) : "",
     description: beat.description || "",
     sale_url: beat.links[0]?.url || "",
-    styles: beat.styles,
-    moods: beat.moods,
+    tags: beat.tags ?? [...new Set([...beat.styles, ...beat.moods])],
   };
 }
 function dateLabel(value: string | null, dateOnly = false) {
@@ -339,7 +337,7 @@ export function BeatDetailsPanel({
     }
     if (draft.bpm !== original.bpm)
       patch.bpm = draft.bpm.trim() ? Number(draft.bpm) : null;
-    for (const key of ["styles", "moods"] as const)
+    for (const key of ["tags"] as const)
       if (JSON.stringify(draft[key]) !== JSON.stringify(original[key]))
         patch[key] = draft[key];
     if (draft.sale_url !== original.sale_url)
@@ -726,32 +724,30 @@ export function BeatDetailsPanel({
               </div>
               <div className="detail-tags identity-strip">
                 <div className="strip-scroll">
-                  {(["styles", "moods"] as const).flatMap((kind) =>
-                    draft[kind].map((tag) => (
-                      <span className="tag" key={kind + tag}>
-                        {tag}
-                        <button
-                          type="button"
-                          aria-label={`Retirer le tag ${tag}`}
-                          disabled={busy}
-                          onClick={() => {
-                            beginEdit();
-                            setDraft((d) =>
-                              d
-                                ? {
-                                    ...d,
-                                    [kind]: d[kind].filter((t) => t !== tag),
-                                  }
-                                : d,
-                            );
-                          }}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    )),
-                  )}
-                  {!draft.styles.length && !draft.moods.length && (
+                  {draft.tags.map((tag) => (
+                    <span className="tag" key={tag}>
+                      {tag}
+                      <button
+                        type="button"
+                        aria-label={`Retirer le tag ${tag}`}
+                        disabled={busy}
+                        onClick={() => {
+                          beginEdit();
+                          setDraft((d) =>
+                            d
+                              ? {
+                                  ...d,
+                                  tags: d.tags.filter((t) => t !== tag),
+                                }
+                              : d,
+                          );
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {!draft.tags.length && (
                     <span className="muted">Aucun tag</span>
                   )}
                 </div>
@@ -905,12 +901,11 @@ export function BeatDetailsPanel({
       )}
       {tagging && draft && (
         <TagPicker
-          styles={draft.styles}
-          moods={draft.moods}
+          tags={draft.tags}
           onClose={() => setTagging(false)}
-          onChange={(styles, moods) => {
+          onChange={(tags) => {
             beginEdit();
-            setDraft((d) => (d ? { ...d, styles, moods } : d));
+            setDraft((d) => (d ? { ...d, tags } : d));
             setTagging(false);
           }}
         />

@@ -3,31 +3,26 @@ import { Modal } from "./Modal";
 import { api } from "./api";
 import type { FilterOptions } from "./filterState";
 export function TagPicker({
-  styles,
-  moods,
+  tags,
   onChange,
   onClose,
 }: {
-  styles: string[];
-  moods: string[];
-  onChange: (styles: string[], moods: string[]) => void;
+  tags: string[];
+  onChange: (tags: string[]) => void;
   onClose: () => void;
 }) {
-  const [options, setOptions] = useState<{ styles: string[]; moods: string[] }>(
-      { styles, moods },
-    ),
-    [error, setError] = useState("");
-  const [values, setValues] = useState({ styles, moods }),
+  const [options, setOptions] = useState(tags),
+    [values, setValues] = useState(tags),
     [query, setQuery] = useState(""),
-    [kind, setKind] = useState<"styles" | "moods">("styles");
+    [error, setError] = useState("");
   useEffect(() => {
     const c = new AbortController();
     void api<FilterOptions>("/api/catalog/filters", { signal: c.signal })
-      .then(setOptions)
+      .then((v) => setOptions(v.tags))
       .catch(() => {
         if (!c.signal.aborted)
           setError(
-            "Les tags disponibles n’ont pas pu être chargés. Tu peux réessayer en rouvrant ce sélecteur.",
+            "Chargement des tags impossible. Ferme puis rouvre le sélecteur.",
           );
       });
     return () => c.abort();
@@ -47,35 +42,20 @@ export function TagPicker({
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Chercher ou créer un tag…"
       />
-      <div className="tag-kinds" role="group" aria-label="Catégorie de tag">
-        <button
-          aria-pressed={kind === "styles"}
-          onClick={() => setKind("styles")}
-        >
-          Styles
-        </button>
-        <button
-          aria-pressed={kind === "moods"}
-          onClick={() => setKind("moods")}
-        >
-          Ambiances
-        </button>
-      </div>
       <div className="tag-options">
-        {[...new Set([...options[kind], ...values[kind]])]
-          .filter((v) => v.toLowerCase().includes(query.toLowerCase()))
+        {[...new Set([...options, ...values])]
+          .filter((v) =>
+            v.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+          )
           .map((v) => (
             <label key={v}>
               <input
                 type="checkbox"
-                checked={values[kind].includes(v)}
+                checked={values.includes(v)}
                 onChange={(e) =>
-                  setValues((s) => ({
-                    ...s,
-                    [kind]: e.target.checked
-                      ? [...s[kind], v]
-                      : s[kind].filter((x) => x !== v),
-                  }))
+                  setValues((s) =>
+                    e.target.checked ? [...s, v] : s.filter((t) => t !== v),
+                  )
                 }
               />
               {v}
@@ -84,23 +64,23 @@ export function TagPicker({
       </div>
       <div className="tag-create">
         <button
-          disabled={!query.trim()}
+          disabled={
+            !query.trim() || [...options, ...values].includes(query.trim())
+          }
           onClick={() => {
             const v = query.trim();
             if (v.length > 80) {
               setError("Un tag contient au maximum 80 caractères.");
               return;
             }
-            setValues((s) => ({ ...s, [kind]: [...new Set([...s[kind], v])] }));
+            setValues((s) => [...new Set([...s, v])]);
             setQuery("");
+            setError("");
           }}
         >
           Créer « {query.trim() || "…"} »
         </button>
-        <button
-          className="primary"
-          onClick={() => onChange(values.styles, values.moods)}
-        >
+        <button className="primary" onClick={() => onChange(values)}>
           Utiliser la sélection
         </button>
       </div>
