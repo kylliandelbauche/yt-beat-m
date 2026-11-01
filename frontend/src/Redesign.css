@@ -1508,7 +1508,7 @@ button[aria-pressed="true"] {
   top: 44px;
   left: 0;
   right: 0;
-  max-height: 224px;
+  max-height: 184px;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -3297,4 +3297,261 @@ button[aria-pressed="true"] {
 .prod-tag-search input:focus-visible,
 .catalog-tags-search input:focus-visible {
   outline: none;
+}
+
+/* #82 — FIN01/02: shared animated column widths; CSS retargets from the current value. */
+@property --nav-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 256px;
+}
+@property --detail-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 72px;
+}
+:root {
+  transition:
+    --nav-width 200ms ease,
+    --detail-width 200ms ease;
+}
+.primary-nav button[aria-current="page"] {
+  border-radius: 12px;
+  box-shadow: 0 4px 10px -6px #00000024;
+}
+.navigation-surface {
+  border: 0;
+  box-shadow: 12px 20px 36px -28px var(--shadow);
+}
+.left-collapsed .navigation-sidebar {
+  padding: 20px 10px;
+}
+.left-collapsed .nav-collapse {
+  right: 10px;
+  top: 20px;
+  width: 44px;
+  height: 44px;
+}
+.left-collapsed .collapsed-import {
+  margin-left: 0;
+  width: 44px;
+  height: 44px;
+}
+.left-collapsed .navigation-import.import-open {
+  left: clamp(12px, calc(var(--nav-width) + 4px), calc(100vw - 372px));
+  width: min(360px, calc(100vw - 24px));
+}
+.detail-sidebar {
+  box-shadow:
+    inset 0 0 0 1px var(--rule),
+    -8px 12px 28px -20px var(--shadow);
+}
+.detail-rail {
+  background: var(--floating);
+}
+.beat-card,
+.horizontal-grid .beat-card {
+  border-radius: 28px;
+}
+.detail-header .edit-save[data-editing="true"] {
+  background: var(--accent);
+  color: var(--onaccent);
+}
+.is-editing .music-cell {
+  box-shadow: none;
+}
+.is-editing .music-cell:has(input:not([readonly])),
+.is-editing .key-cell {
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+#detail-bpm[readonly] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+#detail-bpm[readonly]::-webkit-inner-spin-button,
+#detail-bpm[readonly]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.layout-selector {
+  position: relative;
+  isolation: isolate;
+}
+.layout-selector:before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--selected);
+  transition: transform 180ms ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.layout-selector[data-layout="horizontal"]:before {
+  transform: translateX(32px);
+}
+.layout-selector .icon-button[aria-pressed="true"] {
+  background: transparent;
+}
+/* Native inputs are the interaction layer; visual rails stay independent of browser metrics. */
+.range-control {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: 30px;
+  height: 44px;
+}
+.range-rail {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 20px;
+  height: 4px;
+  background: var(--rule);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.range-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: var(--range-level);
+  background: var(--accent);
+  border-radius: 2px;
+}
+.range-thumb {
+  position: absolute;
+  left: var(--range-level);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--floating);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+.audio-controls .range-control > input,
+.volume-popover .range-control > input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+  appearance: none;
+  border: 0;
+  outline: none;
+  cursor: pointer;
+}
+.range-control > input::-webkit-slider-runnable-track {
+  height: 4px;
+  background: transparent;
+}
+.range-control > input::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 0;
+}
+.range-control > input::-moz-range-track {
+  height: 4px;
+  background: transparent;
+}
+.range-control > input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+}
+.range-control:has(input:focus-visible) {
+  outline: 2px solid var(--edge);
+  outline-offset: 1px;
+  border-radius: 7px;
+}
+.volume-popover {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--shadow);
+  padding: 0;
+  display: block;
+  overflow: visible;
+}
+.volume-popover output {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 48px;
+  height: 20px;
+  text-align: center;
+}
+.volume-popover .vertical-range {
+  position: absolute;
+  left: 14px;
+  top: 40px;
+  width: 44px;
+  height: 128px;
+  min-width: 44px;
+}
+.vertical-range .range-rail {
+  left: 20px;
+  right: auto;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  height: auto;
+}
+.vertical-range .range-fill {
+  left: 0;
+  top: auto;
+  bottom: 0;
+  width: 100%;
+  height: var(--range-level);
+}
+.vertical-range .range-thumb {
+  left: 50%;
+  top: calc(100% - var(--range-level));
+}
+.vertical-range > input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+}
+.vertical-range > input::-webkit-slider-runnable-track {
+  width: 4px;
+  height: 100%;
+}
+.vertical-range > input::-moz-range-track {
+  width: 4px;
+  height: 100%;
+}
+.volume-popover > .icon-button {
+  position: absolute;
+  top: 176px;
+  left: 18px;
+  width: 36px;
+  height: 36px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+  .layout-selector:before {
+    transition: none;
+  }
+}
+
+.range-control:has(input:disabled) {
+  opacity: 0.45;
+}
+.range-control > input:disabled {
+  cursor: default;
+}
+
+.key-choice > div button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

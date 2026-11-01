@@ -510,6 +510,7 @@ export function BeatDetailsPanel({
           </button>
           <button
             className="icon-button edit-save"
+            data-editing={editing}
             disabled={busy || !beat}
             aria-busy={busy && editing}
             aria-label={

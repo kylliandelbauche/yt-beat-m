@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefObject, ReactNode } from "react";
+import { RangeControl } from "./RangeControl";
 import { Artwork } from "./Artwork";
 import { Icon } from "./Modal";
 import { Floating } from "./Floating";
@@ -137,15 +138,14 @@ export function Player({
           <Icon name="next" />
         </button>
         <span className="player-time">{duration(time)}</span>
-        <input
-          type="range"
-          aria-label="Position de lecture"
+        <RangeControl
+          label="Position de lecture"
           min={0}
           max={length || 1}
           step={0.01}
           value={Math.min(time, length || 1)}
           disabled={!beat}
-          onChange={(e) => onSeek(Number(e.target.value))}
+          onChange={onSeek}
         />
         <span className="player-time">{duration(length)}</span>
         <button
@@ -169,14 +169,14 @@ export function Player({
           className="volume-popover"
         >
           <output>{muted ? 0 : Math.round(volume * 100)} %</output>
-          <input
-            type="range"
-            aria-label="Volume du lecteur"
+          <RangeControl
+            vertical
+            label="Volume du lecteur"
             min={0}
             max={100}
             step={1}
             value={muted ? 0 : Math.round(volume * 100)}
-            onChange={(e) => setLevel(Number(e.target.value) / 100)}
+            onChange={(v) => setLevel(v / 100)}
           />
           <button
             className="icon-button"

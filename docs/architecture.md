@@ -257,3 +257,11 @@ La migration6 ajoute catalog_tag_names : libellé binaire unique, tag_id référ
 GET /api/catalog/tags retourne les entités et compteurs. PATCH/DELETE par ID reçoivent expected_label pour refuser une mutation concurrente ; les noms réservés/collisions restent explicites (409). Le changement central archive les origines des prods concernées avant renommage/suppression. Une recréation volontaire est autorisée uniquement via MetadataUpdate.recreate_tags, sous-ensemble des tags envoyés avec la fiche. L’entité et les associations sont créées au Save dans la transaction existante ; aucun nouvel endpoint de création immédiate.
 
 Le sélecteur utilise Floating et transmet les choix directement au brouillon parent, sans confirmation intermédiaire. Les changements centraux traversent Shell pour rafraîchir catalogue/filtres et les fiches en lecture ; un brouillon garde ses valeurs jusqu’à Save/Annuler. Les requêtes obsolètes ne recréent pas un tag retiré. La rubrique Tags utilise des zones de dimensions constantes ; les mutations bloquent sa fermeture pendant l’écriture, gardent les erreurs/saisies et restituent le focus. Le lecteur demeure monté.
+
+## Finitions et contrôles de lecture (#82)
+
+Les propriétés CSS enregistrées --nav-width/--detail-width interpolent les colonnes et leurs dépendants sur200 ms. Le navigateur retargete la transition depuis sa valeur calculée courante ; aucune boucle JS ne remonte le lecteur. Le mode réduit supprime ces transitions. Le sélecteur de disposition anime uniquement son fond décoratif sur180 ms.
+
+RangeControl conserve un input range natif transparent pour les interactions et peint une piste/poignée dans un cadre indépendant des métriques natives. Les plages restent contrôlées par le temps/volume réels de l’audio existant ; Home/End choisissent min/max. Les décorations sont exclues de l’arbre accessible et le focus est matérialisé sur le cadre. Le volume utilise des positions fixes qui contiennent toute la poignée et le mute ; aucun overflow caché ne sert à dissimuler des contrôles.
+
+KeyPicker mesure l’espace sous/au-dessus du contrôle pour placer sa liste, plafonnée à184 px. Redimensionnement et défilement repositionnent la liste sans changer le cadre du sélecteur. Aucun changement de données, API, dépendance ou migration.

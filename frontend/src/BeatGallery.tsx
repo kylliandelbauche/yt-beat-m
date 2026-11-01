@@ -522,6 +522,7 @@ export function BeatGallery({
             </label>
             <div
               className="layout-selector"
+              data-layout={layout}
               role="group"
               aria-label="Disposition de la bibliothèque"
             >
