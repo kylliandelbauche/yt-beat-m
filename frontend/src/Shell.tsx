@@ -33,7 +33,7 @@ export function ShellProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.dataset.palette = palette;
     root.dataset.mode = dark ? "dark" : "light";
-    root.style.setProperty("--nav-width", left ? "256px" : "80px");
+    root.style.setProperty("--nav-width", left ? "256px" : "64px");
     root.style.setProperty("--detail-width", right ? "384px" : "72px");
   }, [palette, dark, left, right]);
   useEffect(() => {

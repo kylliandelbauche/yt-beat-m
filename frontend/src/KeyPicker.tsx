@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Floating } from "./Floating";
 import { Icon } from "./Modal";
 const minor = [
@@ -46,6 +46,30 @@ export function KeyPicker({
     [mode, setMode] = useState(match?.[2] || "minor"),
     [note, setNote] = useState(match?.[1] || "");
   const [list, setList] = useState<"mode" | "note" | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const menu = listRef.current;
+    if (!menu) return;
+    const place = () => {
+      const control = menu
+        .parentElement!.querySelector("button")!
+        .getBoundingClientRect();
+      const below = innerHeight - control.bottom - 12,
+        above = control.top - 12;
+      const needed = Math.min(184, menu.scrollHeight + 2);
+      const up = below < needed && above > below;
+      menu.style.top = up ? "auto" : "44px";
+      menu.style.bottom = up ? "44px" : "auto";
+      menu.style.maxHeight = `${Math.min(184, Math.max(40, up ? above : below))}px`;
+    };
+    place();
+    window.addEventListener("resize", place);
+    document.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      document.removeEventListener("scroll", place, true);
+    };
+  }, [list]);
   const close = useCallback(() => onClose(), [onClose]);
   function choose(kind: "mode" | "note", v: string) {
     if (kind === "mode") {
@@ -92,6 +116,7 @@ export function KeyPicker({
           </button>
           {list === kind && (
             <div
+              ref={listRef}
               role="listbox"
               aria-label={kind === "mode" ? "Modes" : "Notes"}
             >
@@ -105,6 +130,7 @@ export function KeyPicker({
                   type="button"
                   key={v}
                   role="option"
+                  title={v || "Non renseignée"}
                   aria-selected={(kind === "mode" ? mode : note) === v}
                   onClick={(e) => {
                     const control = e.currentTarget

@@ -132,3 +132,5 @@ Les anciens crédits explicites sont repris avec sauvegarde du catalogue. Les pr
 Les filtres [Paper #80](docs/design/80-filters-tags.md) utilisent désormais un vocabulaire Tags commun et des combinaisons de tonalités. L’ouverture d’une ancienne bibliothèque produit une sauvegarde puis une migration transactionnelle ; libellés, variantes, anciennes catégories et médias restent conservés. La création de tags depuis la fiche prépare leur association jusqu’à Save.
 
 La [gestion des tags #81](docs/design/81-tags-settings.md) utilise un seul Enregistrer sur la fiche. Réglages → Tags centralise le renommage et la suppression, avec confirmation et protection contre les anciennes fiches.
+
+Les [finitions Paper #82](docs/design/82-paper-finishes.md) harmonisent navigation, cartes, volets et sliders, avec animations réduites et lecteur conservé.

@@ -225,7 +225,7 @@ test("ACC01–08 : les deux volets réservent leur espace, sans sélection ni su
   await page
     .getByRole("button", { name: "Replier la navigation", exact: true })
     .click();
-  await expect.poll(async () => (await center.boundingBox())!.x).toBe(80);
+  await expect.poll(async () => (await center.boundingBox())!.x).toBe(64);
   await page
     .getByRole("button", { name: "Ajouter une prod", exact: true })
     .click();
