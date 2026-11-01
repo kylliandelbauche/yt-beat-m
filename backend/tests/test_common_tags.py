@@ -64,7 +64,7 @@ def test_v4_preserves_all_legacy_rows_variants_links_media_backup_and_portabilit
     root, ids = legacy
     original = {t: rows(root, t) for t in ("beats", "tags", "beat_tags")}
     lib = Library.open(root)
-    assert lib.summary()["schema_version"] == 5
+    assert lib.summary()["schema_version"] == 6
     for table, values in original.items():
         assert rows(root, table) == values
     assert set(beat_details(lib, ids[0])["tags"]) == {"Chill", "DRILL", "Drill", "Sombré", "Sombre"}

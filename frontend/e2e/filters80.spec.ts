@@ -230,6 +230,12 @@ test("tags communs : filtre exact partagé, cases espacées et sélection de fic
       name: "Choisir mes tags",
       exact: true,
     });
+    await expect(
+      create.getByRole("checkbox", { name: "chill", exact: true }),
+    ).toBeChecked();
+    await create
+      .getByRole("checkbox", { name: "chill", exact: true })
+      .uncheck();
     await create
       .getByRole("searchbox", { name: "Rechercher un tag", exact: true })
       .fill("Nouveau80");
@@ -242,9 +248,7 @@ test("tags communs : filtre exact partagé, cases espacées et sélection de fic
     expect(
       (await (await page.request.get("/api/catalog/filters")).json()).tags,
     ).not.toContain("Nouveau80");
-    await create
-      .getByRole("button", { name: "Utiliser la sélection", exact: true })
-      .click();
+    await page.keyboard.press("Escape");
     const detail = page.getByRole("region", {
       name: "R&B Mélancolique",
       exact: true,

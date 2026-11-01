@@ -1,92 +1,114 @@
 import { useEffect, useState } from "react";
-import { Modal } from "./Modal";
+import { Floating } from "./Floating";
+import { Icon } from "./Modal";
 import { api } from "./api";
 import type { FilterOptions } from "./filterState";
+const normalized = (v: string) =>
+  v.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 export function TagPicker({
+  anchor,
   tags,
   onChange,
   onClose,
 }: {
+  anchor: HTMLElement;
   tags: string[];
-  onChange: (tags: string[]) => void;
+  onChange: (tags: string[], created?: string) => void;
   onClose: () => void;
 }) {
   const [options, setOptions] = useState(tags),
-    [values, setValues] = useState(tags),
     [query, setQuery] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const c = new AbortController();
     void api<FilterOptions>("/api/catalog/filters", { signal: c.signal })
-      .then((v) => setOptions(v.tags))
+      .then((v) => {
+        setOptions(v.tags);
+        setError("");
+      })
       .catch(() => {
-        if (!c.signal.aborted)
-          setError(
-            "Chargement des tags impossible. Ferme puis rouvre le sélecteur.",
-          );
+        if (!c.signal.aborted) setError("Chargement impossible.");
       });
     return () => c.abort();
-  }, []);
+  }, [attempt]);
+  const all = [...new Set([...options, ...tags])];
+  const label = query.trim();
+  const canCreate = !!label && !all.includes(label);
+  function create() {
+    if (!canCreate) return;
+    if (label.length > 80 || /\p{C}/u.test(label)) {
+      setError("80 caractères lisibles maximum.");
+      return;
+    }
+    onChange([...tags, label], label);
+    setQuery(label);
+    setError("");
+  }
   return (
-    <Modal
+    <Floating
+      anchor={anchor}
       label="Choisir mes tags"
-      title={<h2>Choisir mes tags</h2>}
-      closeLabel="Fermer les tags"
       onClose={onClose}
-      className="tag-picker"
+      className="prod-tag-picker"
+      initialFocus
     >
-      <input
-        type="search"
-        aria-label="Rechercher un tag"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Chercher ou créer un tag…"
-      />
-      <div className="tag-options">
-        {[...new Set([...options, ...values])]
-          .filter((v) =>
-            v.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-          )
+      <h3>Tags de la prod</h3>
+      <label className="prod-tag-search">
+        <Icon name="search" />
+        <input
+          type="search"
+          aria-label="Rechercher un tag"
+          value={query}
+          placeholder="Rechercher un tag…"
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              create();
+            }
+          }}
+        />
+      </label>
+      <div className="prod-tag-options">
+        {canCreate && (
+          <button
+            className="prod-tag-create"
+            aria-label={`Créer « ${label} »`}
+            onClick={create}
+          >
+            <Icon name="plus" />
+            <span>
+              <span>Créer « {label} »</span>
+              <small>et l’ajouter à cette prod</small>
+            </span>
+          </button>
+        )}
+        {all
+          .filter((v) => normalized(v).includes(normalized(query)))
           .map((v) => (
-            <label key={v}>
+            <label className="filter-option" key={v}>
               <input
                 type="checkbox"
-                checked={values.includes(v)}
+                checked={tags.includes(v)}
                 onChange={(e) =>
-                  setValues((s) =>
-                    e.target.checked ? [...s, v] : s.filter((t) => t !== v),
+                  onChange(
+                    e.target.checked
+                      ? [...tags, v]
+                      : tags.filter((t) => t !== v),
                   )
                 }
               />
-              {v}
+              <span title={v}>{v}</span>
             </label>
           ))}
       </div>
-      <div className="tag-create">
-        <button
-          disabled={
-            !query.trim() || [...options, ...values].includes(query.trim())
-          }
-          onClick={() => {
-            const v = query.trim();
-            if (v.length > 80) {
-              setError("Un tag contient au maximum 80 caractères.");
-              return;
-            }
-            setValues((s) => [...new Set([...s, v])]);
-            setQuery("");
-            setError("");
-          }}
-        >
-          Créer « {query.trim() || "…"} »
-        </button>
-        <button className="primary" onClick={() => onChange(values)}>
-          Utiliser la sélection
-        </button>
-      </div>
-      <div className="tag-error" role="alert">
-        {error}
-      </div>
-    </Modal>
+      {error && (
+        <div className="prod-tag-error" role="alert">
+          {error}
+          <button onClick={() => setAttempt((n) => n + 1)}>Réessayer</button>
+        </div>
+      )}
+    </Floating>
   );
 }

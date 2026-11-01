@@ -522,7 +522,7 @@ test("FP05 : sélecteur de tonalité anglais flottant et utilisable au clavier",
   await patch(page.request, 0, { musical_key: "G# minor" });
 });
 
-test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attendent Save", async ({
+test("tags : sélection directe, fermeture garde le brouillon et seul Save persiste", async ({
   page,
 }) => {
   const panel = await detail(page),
@@ -538,7 +538,10 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
   await picker.getByRole("checkbox", { name: "Drill", exact: true }).check();
   await page.keyboard.press("Escape");
   await expect(
-    panel.getByRole("button", { name: "Modifier la prod", exact: true }),
+    panel.getByRole("button", {
+      name: "Enregistrer les modifications",
+      exact: true,
+    }),
   ).toBeVisible();
   expect(
     (await (await page.request.get(`/api/beats/${ids[0]}`)).json()).tags,
@@ -548,9 +551,7 @@ test("tags : ouvrir et fermer ne modifie rien ; sélection et suppression attend
     .click();
   picker = page.getByRole("dialog", { name: "Choisir mes tags", exact: true });
   await picker.getByRole("checkbox", { name: "Drill", exact: true }).check();
-  await picker
-    .getByRole("button", { name: "Utiliser la sélection", exact: true })
-    .click();
+  await page.keyboard.press("Escape");
   await expect(
     panel.getByRole("button", {
       name: "Enregistrer les modifications",

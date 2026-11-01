@@ -35,7 +35,7 @@ export function Floating({
     el.showPopover();
     place();
     if (initialFocus)
-      el.querySelector<HTMLElement>('[role="option"]')?.focus({
+      el.querySelector<HTMLElement>('[role="option"],input')?.focus({
         preventScroll: true,
       });
     const outside = (e: PointerEvent) => {

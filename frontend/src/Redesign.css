@@ -2979,3 +2979,322 @@ button[aria-pressed="true"] {
   color: var(--muted);
   filter: none;
 }
+
+/* #81 — REG-06: a single draft save; fixed selection and settings regions. */
+.prod-tag-picker.floating {
+  width: 288px;
+  height: 264px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--floating);
+  box-shadow: 0 8px 24px -8px var(--shadow);
+  box-sizing: border-box;
+}
+.prod-tag-picker h3 {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  height: 22px;
+  margin: 0;
+  font: 600 14px/22px var(--font-heading);
+}
+.prod-tag-search {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 44px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.prod-tag-search svg,
+.catalog-tags-search svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.prod-tag-search input,
+.catalog-tags-search input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  font: 400 12px/18px var(--font-body);
+  color: var(--ink);
+}
+.prod-tag-options {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 92px;
+  height: 144px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prod-tag-options .filter-option {
+  height: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  line-height: 20px;
+}
+.prod-tag-options .filter-option:has(:checked) {
+  background: var(--selected);
+}
+.prod-tag-options .filter-option > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prod-tag-create {
+  width: 100%;
+  min-height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--hover);
+  text-align: left;
+  font-size: 13px;
+  line-height: 20px;
+}
+.prod-tag-create > svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.prod-tag-create > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.prod-tag-create > span > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prod-tag-create small {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+.prod-tag-error {
+  position: absolute;
+  bottom: 4px;
+  left: 12px;
+  right: 12px;
+  max-height: 44px;
+  overflow: auto;
+  background: var(--floating);
+  color: var(--error);
+  font-size: 11px;
+}
+.prod-tag-error button {
+  padding: 0 6px;
+  height: 24px;
+  font-size: 11px;
+}
+.catalog-tags {
+  position: relative;
+  height: 520px;
+  min-height: 520px;
+  width: 100%;
+  font-size: 13px;
+  line-height: 20px;
+}
+.catalog-tags h3 {
+  font: 600 20px/28px var(--font-heading);
+  margin: 0;
+}
+.catalog-tags-intro {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+.catalog-tags-search {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  height: 36px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+.catalog-tags-list {
+  position: absolute;
+  top: 128px;
+  left: 0;
+  right: 0;
+  height: 288px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.catalog-tag-row {
+  height: 44px;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px 32px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 7px;
+}
+.catalog-tag-row:nth-child(even) {
+  background: var(--hover);
+}
+.catalog-tag-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.catalog-tag-row > input {
+  height: 36px;
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  padding: 0 4px;
+  border: 1px solid var(--edge);
+  border-radius: 7px;
+  background: var(--hover);
+  color: var(--ink);
+}
+.catalog-tag-row > button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 7px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+}
+.settings-body .catalog-tag-row > button > svg {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+}
+.catalog-tag-row > button.tag-row-save {
+  background: var(--accent);
+  color: var(--onaccent);
+}
+.catalog-tag-row > button:hover {
+  background: var(--selected);
+  color: var(--ink);
+}
+.catalog-tags-feedback {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 432px;
+  height: 80px;
+  overflow: auto;
+  font-size: 12px;
+  line-height: 18px;
+}
+.catalog-tags-feedback > p {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+.catalog-tags-confirm {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+}
+.catalog-tags-confirm > button {
+  height: 32px;
+  min-width: 104px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 12px;
+}
+.catalog-tags-message {
+  color: var(--muted);
+  max-height: 36px;
+  overflow: auto;
+}
+.catalog-tags-message[role="alert"] {
+  color: var(--error);
+}
+.catalog-tags-feedback:has(.catalog-tags-confirm) .catalog-tags-message {
+  max-width: calc(100% - 224px);
+  max-height: 36px;
+  font-size: 11px;
+}
+.catalog-tags-retry {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+@media (max-width: 650px) {
+  .settings-modal > nav {
+    top: 88px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    height: 44px;
+    flex-direction: row;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .settings-modal > nav button {
+    flex-shrink: 0;
+    padding: 0 10px;
+  }
+  .settings-modal:after {
+    display: none;
+  }
+  .settings-body {
+    left: 24px;
+    right: 24px;
+    top: 148px;
+  }
+}
+.catalog-tag-row > input {
+  position: relative;
+  left: -4px;
+  width: calc(100% - 8px);
+  padding: 0 3px;
+}
+.prod-tag-search:has(input:focus-visible),
+.catalog-tags-search:has(input:focus-visible) {
+  outline: 2px solid var(--edge);
+  outline-offset: 2px;
+}
+.prod-tag-search input:focus-visible,
+.catalog-tags-search input:focus-visible {
+  outline: none;
+}

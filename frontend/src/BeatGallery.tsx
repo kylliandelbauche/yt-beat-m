@@ -167,8 +167,24 @@ export function BeatGallery({
         lastTrigger.current.focus({ preventScroll: true });
     }
   }
+  const [observedTagChange, setObservedTagChange] = useState(shell.tagChange);
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
+  if (shell.tagChange !== observedTagChange && shell.tagChange) {
+    setObservedTagChange(shell.tagChange);
+    const { old_label, label } = shell.tagChange;
+    setFilters((f) => ({
+      ...f,
+      tags: [
+        ...new Set(
+          f.tags.flatMap((t) =>
+            t === old_label ? (label ? [label] : []) : [t],
+          ),
+        ),
+      ],
+    }));
+    setReload((n) => n + 1);
+  }
   const [favoriteBusy, setFavoriteBusy] = useState(new Set<string>());
   const audio = useRef<HTMLAudioElement>(null);
   const audioPreferences = useRef(
@@ -936,7 +952,7 @@ export function BeatGallery({
           key={details}
           identity={details}
           navigationRef={detailNavigation}
-          profileRevision={producerRevision}
+          profileRevision={producerRevision + (shell.tagChange?.version || 0)}
           onOpenProfile={openProducer}
           onProfilesChanged={() => {
             setProducerRevision((n) => n + 1);

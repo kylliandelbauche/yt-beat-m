@@ -89,6 +89,8 @@ export function Icon({
   filled = false,
 }: {
   name:
+    | "trash"
+    | "tag"
     | "heart"
     | "edit"
     | "save"
@@ -117,6 +119,8 @@ export function Icon({
   filled?: boolean;
 }) {
   const paths = {
+    tag: "M3 3h8l10 10-8 8L3 11ZM7 7h.01",
+    trash: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7",
     person: "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-3a8 8 0 0 1 16 0v3",
     plus: "M12 5v14M5 12h14",
     settings:
