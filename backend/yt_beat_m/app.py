@@ -19,6 +19,7 @@ from yt_beat_m.beatmakers import (
     reset_beatmaker,
 )
 from yt_beat_m.catalog import CatalogFilters, beat_details, filter_options, list_beats, set_favorite
+from yt_beat_m.catalog_tags import TagConflict, TagExpected, TagRename, change_tag, list_tags
 from yt_beat_m.diagnostics import get_diagnostics
 from yt_beat_m.directory_picker import DirectoryPicker
 from yt_beat_m.key_refresh import refresh_missing_keys
@@ -146,6 +147,27 @@ def create_app(
     @app.get("/api/diagnostics")
     def diagnostics():
         return get_diagnostics()
+
+    @app.get("/api/catalog/tags")
+    def tags_list():
+        with manager.active() as library:
+            return {"tags": list_tags(library)}
+
+    @app.patch("/api/catalog/tags/{identity}")
+    def rename_catalog_tag(identity: int, payload: TagRename):
+        with manager.active() as library:
+            try:
+                return change_tag(library, identity, payload.expected_label, payload.label)
+            except TagConflict as e:
+                raise HTTPException(409, str(e)) from e
+
+    @app.delete("/api/catalog/tags/{identity}")
+    def remove_catalog_tag(identity: int, payload: TagExpected):
+        with manager.active() as library:
+            try:
+                return change_tag(library, identity, payload.expected_label)
+            except TagConflict as e:
+                raise HTTPException(409, str(e)) from e
 
     @app.get("/api/library")
     def library_status():

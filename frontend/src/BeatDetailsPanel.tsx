@@ -31,6 +31,7 @@ type Draft = {
   description: string;
   sale_url: string;
   tags: string[];
+  created_tags: string[];
 };
 function draftFor(beat: BeatDetails): Draft {
   return {
@@ -40,6 +41,7 @@ function draftFor(beat: BeatDetails): Draft {
     musical_key: beat.musical_key ? musicalKeyLabel(beat.musical_key) : "",
     description: beat.description || "",
     sale_url: beat.links[0]?.url || "",
+    created_tags: [],
     tags: beat.tags ?? [...new Set([...beat.styles, ...beat.moods])],
   };
 }
@@ -89,7 +91,7 @@ export function BeatDetailsPanel({
 }) {
   const shell = useShell();
   const [keyAnchor, setKeyAnchor] = useState<HTMLElement | null>(null);
-  const [tagging, setTagging] = useState(false);
+  const [tagging, setTagging] = useState<HTMLElement | null>(null);
   const closeKey = useCallback(() => setKeyAnchor(null), []);
   const form = useRef<HTMLFormElement>(null);
 
@@ -340,6 +342,10 @@ export function BeatDetailsPanel({
     for (const key of ["tags"] as const)
       if (JSON.stringify(draft[key]) !== JSON.stringify(original[key]))
         patch[key] = draft[key];
+    if (draft.created_tags.some((t) => draft.tags.includes(t)))
+      patch.recreate_tags = draft.created_tags.filter((t) =>
+        draft.tags.includes(t),
+      );
     if (draft.sale_url !== original.sale_url)
       patch.links = [
         ...(draft.sale_url.trim()
@@ -738,6 +744,9 @@ export function BeatDetailsPanel({
                               ? {
                                   ...d,
                                   tags: d.tags.filter((t) => t !== tag),
+                                  created_tags: d.created_tags.filter(
+                                    (t) => t !== tag,
+                                  ),
                                 }
                               : d,
                           );
@@ -756,7 +765,11 @@ export function BeatDetailsPanel({
                   type="button"
                   aria-label="Choisir mes tags"
                   disabled={busy}
-                  onClick={() => setTagging(true)}
+                  aria-expanded={!!tagging}
+                  onClick={(e) => {
+                    beginEdit();
+                    setTagging(tagging ? null : e.currentTarget);
+                  }}
                 >
                   <Icon name="plus" />
                 </button>
@@ -901,12 +914,21 @@ export function BeatDetailsPanel({
       )}
       {tagging && draft && (
         <TagPicker
+          anchor={tagging}
           tags={draft.tags}
-          onClose={() => setTagging(false)}
-          onChange={(tags) => {
-            beginEdit();
-            setDraft((d) => (d ? { ...d, tags } : d));
-            setTagging(false);
+          onClose={() => setTagging(null)}
+          onChange={(tags, created) => {
+            setDraft((d) =>
+              d
+                ? {
+                    ...d,
+                    tags,
+                    created_tags: created
+                      ? [...new Set([...d.created_tags, created])]
+                      : d.created_tags.filter((t) => tags.includes(t)),
+                  }
+                : d,
+            );
           }}
         />
       )}

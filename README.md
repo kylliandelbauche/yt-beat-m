@@ -130,3 +130,5 @@ Dans la fiche d'une prod, **Associer** ouvre une sélection multiple. Choisir ch
 Les anciens crédits explicites sont repris avec sauvegarde du catalogue. Les propositions de chaîne et crédits ambigus restent à vérifier via **Voir les prods sans profil**. Aucune fusion automatique de personnes sur le seul nom. Les photos et relations voyagent avec le catalogue ; les MP3 existants ne sont pas renommés. Changer de page ou consulter un profil conserve le lecteur actif.
 
 Les filtres [Paper #80](docs/design/80-filters-tags.md) utilisent désormais un vocabulaire Tags commun et des combinaisons de tonalités. L’ouverture d’une ancienne bibliothèque produit une sauvegarde puis une migration transactionnelle ; libellés, variantes, anciennes catégories et médias restent conservés. La création de tags depuis la fiche prépare leur association jusqu’à Save.
+
+La [gestion des tags #81](docs/design/81-tags-settings.md) utilise un seul Enregistrer sur la fiche. Réglages → Tags centralise le renommage et la suppression, avec confirmation et protection contre les anciennes fiches.

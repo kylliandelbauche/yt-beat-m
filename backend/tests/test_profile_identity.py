@@ -43,7 +43,7 @@ def test_v3_reconciles_samoss_aliases_without_merging_other_channels(tmp_path, m
             ]
         lib.close()
     migrated = Library.open(root)
-    assert migrated.summary()["schema_version"] == 5
+    assert migrated.summary()["schema_version"] == 6
     assert len(list((root / "backups").glob("catalog-v3-*.sqlite3"))) == 1
     with migrated.catalog() as c:
         for before, after in zip(

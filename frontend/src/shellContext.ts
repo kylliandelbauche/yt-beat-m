@@ -1,7 +1,14 @@
 import { createContext, useContext } from "react";
 export type Palette = "sobre" | "lin" | "sauge" | "brume";
-export type SettingsSection = "diagnostic" | "library" | "themes";
+export type SettingsSection = "diagnostic" | "library" | "themes" | "tags";
+export type TagChange = {
+  old_label: string;
+  label: string | null;
+  version: number;
+};
 type Shell = {
+  tagChange: TagChange | null;
+  setTagChange: (change: TagChange) => void;
   total: number | null;
   setTotal: (value: number | null) => void;
   left: boolean;

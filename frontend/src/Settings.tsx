@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { TagsSettings } from "./TagsSettings";
 import { api } from "./api";
 import { Icon, Modal } from "./Modal";
 import type { ModalClose } from "./useModalLifecycle";
@@ -28,6 +29,7 @@ export function Settings({
   retry: () => void;
 }) {
   const shell = useShell();
+  const [tagsBusy, setTagsBusy] = useState(false);
   const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null),
     [error, setError] = useState(""),
     [attempt, setAttempt] = useState(0);
@@ -47,7 +49,7 @@ export function Settings({
       title={<h2>Réglages</h2>}
       closeLabel="Fermer les réglages"
       onClose={onClose}
-      canClose={() => !busy}
+      canClose={() => !busy && !tagsBusy}
       closeRef={closeRef}
       className="settings-modal"
     >
@@ -56,13 +58,14 @@ export function Settings({
           [
             ["diagnostic", "Diagnostic", "diagnostic"],
             ["library", "Bibliothèque", "folder"],
+            ["tags", "Tags", "tag"],
             ["themes", "Thèmes", "grid"],
           ] as const
         ).map(([id, label, icon]) => (
           <button
             key={id}
             aria-current={shell.settings === id ? "page" : undefined}
-            disabled={busy}
+            disabled={busy || tagsBusy}
             onClick={() => shell.setSettings(id)}
           >
             <Icon name={icon} />
@@ -117,6 +120,9 @@ export function Settings({
             Tes fichiers et ton catalogue restent sur ton disque.
           </p>
           {library}
+        </div>
+        <div hidden={shell.settings !== "tags"}>
+          <TagsSettings onBusy={setTagsBusy} />
         </div>
         <div hidden={shell.settings !== "themes"}>
           <h3>Thèmes</h3>

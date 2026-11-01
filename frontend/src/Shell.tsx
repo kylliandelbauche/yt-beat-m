@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Context } from "./shellContext";
-import type { Palette, SettingsSection } from "./shellContext";
+import type { Palette, SettingsSection, TagChange } from "./shellContext";
 export function ShellProvider({ children }: { children: ReactNode }) {
+  const [tagChange, setTagChange] = useState<TagChange | null>(null);
   const [total, setTotal] = useState<number | null>(null);
   const [left, setLeft] = useState(true),
     [right, setRight] = useState(false);
@@ -46,6 +47,8 @@ export function ShellProvider({ children }: { children: ReactNode }) {
   return (
     <Context
       value={{
+        tagChange,
+        setTagChange,
         total,
         setTotal,
         left,

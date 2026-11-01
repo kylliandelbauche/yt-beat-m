@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { bpmError } from "./filterState";
 import type { Filters, FilterOptions } from "./filterState";
 import { Icon } from "./Modal";
+import { useShell } from "./shellContext";
 import { Floating } from "./Floating";
 
 function normalized(value: string) {
@@ -106,6 +107,7 @@ function Choices({
   onMissing: (v: boolean) => void;
   onClear: () => void;
 }) {
+  const shell = useShell();
   const [search, setSearch] = useState("");
   const options = [...new Set([...choices, ...selected])].filter((v) =>
     normalized(v).includes(normalized(search)),
@@ -169,10 +171,16 @@ function Choices({
             </span>
             <button
               className="manage-tags"
-              disabled
-              title="Gestion centralisée prévue dans un prochain lot"
+              onClick={(e) => {
+                const details = e.currentTarget.closest("details");
+                details
+                  ?.querySelector("summary")
+                  ?.focus({ preventScroll: true });
+                details?.removeAttribute("open");
+                shell.setSettings("tags");
+              }}
             >
-              Gérer les tags <small>Bientôt</small>
+              Gérer les tags
             </button>
           </div>
         ) : (

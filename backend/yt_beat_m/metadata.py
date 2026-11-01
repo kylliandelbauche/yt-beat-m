@@ -39,6 +39,7 @@ class MetadataUpdate(BaseModel):
     forget_channel_alias: bool = False
     bpm: float | None = None
     musical_key: str | None = Field(default=None, max_length=80)
+    recreate_tags: list[str] = Field(default_factory=list, max_length=120)
     tags: list[str] = Field(default_factory=list, max_length=120)
     styles: list[str] = Field(default_factory=list, max_length=30)
     moods: list[str] = Field(default_factory=list, max_length=30)
@@ -72,26 +73,24 @@ def tag_labels(connection, identity):
 
 
 def replace_tags(connection, identity, values):
-    connection.executemany(
-        (
-            "INSERT INTO catalog_tags(label,normalized_label) VALUES(?,?) ON "
-            "CONFLICT(label) DO NOTHING"
-        ),
-        [(label, normalize(label)) for label in values],
-    )
+    from yt_beat_m.catalog_tags import ensure_tag
+
+    identities = [ensure_tag(connection, label) for label in values]
     connection.execute("DELETE FROM beat_catalog_tags WHERE beat_id=?", (identity,))
     connection.executemany(
-        (
-            "INSERT INTO beat_catalog_tags(beat_id,tag_id,position) SELECT "
-            "?,id,? FROM catalog_tags WHERE label=?"
-        ),
-        [(identity, pos, label) for pos, label in enumerate(values)],
+        "INSERT INTO beat_catalog_tags(beat_id,tag_id,position) VALUES(?,?,?)",
+        [(identity, tag, pos) for pos, tag in enumerate(identities)],
     )
 
 
 def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -> bool:
     changes = payload.model_dump(exclude_unset=True)
+    from yt_beat_m.catalog_tags import resolve_label
+
     common_tags = changes.pop("tags", None)
+    recreate = set(changes.pop("recreate_tags", []))
+    if recreate and (common_tags is None or not recreate.issubset(common_tags)):
+        raise LibraryError("La recréation doit concerner les tags sélectionnés de la fiche.")
     if common_tags is not None and {"styles", "moods"} & changes.keys():
         raise LibraryError("Tags : ne mélange pas tags communs et anciennes catégories.")
     profile_ids = changes.pop("beatmaker_ids", None)
@@ -189,7 +188,7 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
         ]
         previous_tags = tag_labels(connection, identity)
         if common_tags is not None:
-            known = {r[0] for r in connection.execute("SELECT label FROM catalog_tags")}
+            known = {r[0] for r in connection.execute("SELECT label FROM catalog_tag_names")}
             labels = []
             for raw in common_tags:
                 # Keep existing spelling; validate only newly introduced labels.
@@ -202,6 +201,7 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
                     raise LibraryError(
                         "Tags : chaque tag doit contenir au maximum 80 caractères lisibles."
                     )
+                label = resolve_label(connection, label, recreate=raw in recreate)
                 if label not in labels:
                     labels.append(label)
             common_tags = labels
@@ -240,6 +240,9 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
                     (identity, kind),
                 )
                 for label in value:
+                    resolve_label(
+                        connection, label
+                    )  # Refuse stale legacy references to deleted tags.
                     existing = connection.execute(
                         "SELECT id FROM tags WHERE kind=? AND normalized(label)=? "
                         "ORDER BY id LIMIT 1",
@@ -291,7 +294,9 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
                     (identity,),
                 )
             }
-            values = (set(previous_tags) - {r["label"] for r in legacy}) | remaining
+            values = (
+                set(previous_tags) - {resolve_label(connection, r["label"]) for r in legacy}
+            ) | {resolve_label(connection, v) for v in remaining}
             replace_tags(connection, identity, sorted(values))
         connection.execute(
             "UPDATE beats SET field_provenance=? WHERE id=?",
