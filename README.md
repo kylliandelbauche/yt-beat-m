@@ -11,6 +11,7 @@ Tes prods, au même endroit. Une bibliothèque locale pour importer des beats Yo
 - Écouter avec un lecteur qui reste actif pendant la navigation.
 - Corriger les informations d'une prod et retrouver son fichier dans Finder.
 - Gérer les profils beatmakers, leurs collaborations, liens et portraits.
+- Lier tes morceaux MP3 dans **Mes sons**, suivre leur état et retrouver leur prod.
 - Conserver fichiers et catalogue SQLite dans une bibliothèque transportable.
 
 Deux dispositions, grandes pochettes ou cartes horizontales, et quatre palettes en clair et sombre. Après import, la recherche et l'écoute fonctionnent hors ligne lorsque le moteur local tourne.
@@ -45,7 +46,7 @@ L'application s'exécute sur ton ordinateur ; elle n'héberge pas ta collection.
 
 ## Limites actuelles
 
-Une vidéo par import, de 30 minutes maximum. Les vidéos privées, cookies de navigateur et playlists entières ne sont pas pris en charge. L'analyse des boutiques, la classification audio par IA et **Mes sons** sont prévues, pas encore disponibles. Les métadonnées manquantes peuvent être corrigées manuellement ; les tonalités utilisent la notation anglaise (`Ab minor`, `E major`).
+Une vidéo par import, de 30 minutes maximum. Les vidéos privées, cookies de navigateur et playlists entières ne sont pas pris en charge. L'analyse des boutiques et la classification audio par IA sont prévues, pas encore disponibles. **Mes sons** lie un MP3 existant sans le copier ; ses tags, Notes/Paroles et covers personnelles arrivent dans les prochains lots. Les métadonnées manquantes peuvent être corrigées manuellement ; les tonalités utilisent la notation anglaise (`Ab minor`, `E major`).
 
 Windows et le lanceur à double-clic sont reportés. Le format conserve des chemins relatifs, mais la recette matérielle Windows reste à faire. Une bibliothèque s'utilise sur une seule instance à la fois ; arrête le moteur avant d'éjecter son disque.
 

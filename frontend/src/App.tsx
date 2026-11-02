@@ -6,8 +6,9 @@ import { ShellProvider, PaneIcon } from "./Shell";
 import { useEngineConnection } from "./useEngineConnection";
 import "./Themes.css";
 import "./Redesign.css";
+import "./Songs.css";
 function Workspace() {
-  const [view, setView] = useState<"prods" | "beatmakers">("prods");
+  const [view, setView] = useState<"prods" | "beatmakers" | "songs">("prods");
   const shell = useShell(),
     engine = useEngineConnection();
   const { setNavImport, setNavTools } = shell;
@@ -146,22 +147,24 @@ function Workspace() {
             <span>Beatmakers</span>
           </button>
           <button
-            aria-label="Mes sons · Bientôt"
-            title="Mes sons · Bientôt"
-            disabled
+            aria-label="Mes sons"
+            aria-current={view === "songs" ? "page" : undefined}
+            onClick={() => {
+              shell.setFavorites(false);
+              setView("songs");
+            }}
           >
             <Icon name="music" />
             <span>Mes sons</span>
-            <small>Bientôt</small>
           </button>
           <button
             aria-label="Favoris"
             aria-current={
-              shell.favorites && view === "prods" ? "page" : undefined
+              shell.favorites && view !== "beatmakers" ? "page" : undefined
             }
             onClick={() => {
               shell.setFavorites(!shell.favorites);
-              setView("prods");
+              if (view === "beatmakers") setView("prods");
             }}
           >
             <Icon name="heart" />

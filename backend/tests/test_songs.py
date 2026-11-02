@@ -315,3 +315,41 @@ def test_grant_not_consumed_on_failed_metadata_and_new_binding_not_published(son
         assert db.execute("SELECT count(*) FROM files").fetchone()[0] == 0
     assert c.post("/api/songs", headers=h, json=body).is_success
     assert c.post("/api/songs", headers=h, json=body).status_code == 400
+
+
+def test_song_search_filters_pagination_and_inherited_cover(songs):
+    c, h, beat, file, root, _ = songs
+    a = create(c, h, title="Été calme", beat_id=beat, favorite=True, state="Out").json()
+    b = create(c, h, title="Nuit", state="Mixage").json()
+    assert c.get("/api/songs?q=ete&favorites=true&state=Out&linked=true").json()["songs"] == [a]
+    assert c.get("/api/songs?linked=false&limit=1").json()["songs"] == [b]
+    assert c.get("/api/songs?state=Out&linked=false").json()["total"] == 0
+    assert c.get("/api/songs?sort=unknown").status_code == 400
+    assert c.get("/api/songs?state=unknown").status_code == 422
+    assert c.get("/api/songs?profile_id=not-a-uuid").status_code == 422
+    page = c.get("/api/songs?sort=added_asc&limit=1").json()
+    assert page["total"] == 2 and page["songs"][0]["id"] == a["id"]
+    assert c.get("/api/songs?sort=added_asc&offset=1").json()["songs"][0]["id"] == b["id"]
+    assert a["beat_title"] == "Prod" and a["artwork_url"] is None
+    with sqlite3.connect(root / "catalog.sqlite3") as db:
+        db.execute(
+            "UPDATE beats SET title='Nouvelle prod',artwork_path='artwork/cover.jpg' WHERE id=?",
+            (beat,),
+        )
+    updated = c.get(f"/api/songs/{a['id']}").json()
+    assert updated["beat_title"] == "Nouvelle prod"
+    assert updated["artwork_url"] == f"/api/beats/{beat}/artwork"
+    profile = str(uuid4())
+    with sqlite3.connect(root / "catalog.sqlite3") as db:
+        db.execute(
+            "INSERT INTO beatmaker_profiles(id,name,created_at,updated_at) VALUES(?,?,?,?)",
+            (profile, "Nova", "2026-01-01", "2026-01-01"),
+        )
+        db.execute("INSERT INTO beat_profile_links VALUES(?,?,0)", (beat, profile))
+    assert c.get(f"/api/songs?profile_id={profile}").json()["total"] == 1
+    assert c.get(f"/api/songs?profile_id={uuid4()}").json()["total"] == 0
+    file.unlink()
+    assert c.get("/api/songs?available=true").json()["total"] == 0
+    missing = c.get("/api/songs?available=false&limit=1&offset=1").json()
+    assert missing["total"] == 2 and len(missing["songs"]) == 1
+    assert not missing["songs"][0]["file_available"]

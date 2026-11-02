@@ -131,13 +131,13 @@ test("chargement du catalogue : erreur récupérable et données réelles après
   await expect(page.getByRole("alert")).toContainText(
     "Catalogue indisponible.",
   );
-  const heading = await page.locator(".catalog-heading").boundingBox();
+  const heading = await page.locator(".library-center:not([hidden]) .catalog-heading").boundingBox();
   fail = false;
   await page.getByRole("button", { name: "Réessayer", exact: true }).click();
   await expect(
     page.getByRole("button", { name: `Écouter ${title}`, exact: true }),
   ).toBeVisible();
-  expect(await page.locator(".catalog-heading").boundingBox()).toEqual(heading);
+  expect(await page.locator(".library-center:not([hidden]) .catalog-heading").boundingBox()).toEqual(heading);
 });
 
 for (const entry of ["carte", "fiche", "lecteur"]) {
@@ -270,7 +270,7 @@ test("pagination et recherche lente conservent le catalogue et son défilement j
     .getByRole("button", { name: "Afficher plus de prods", exact: true })
     .click();
   await expect(page.locator(".beat-card")).toHaveCount(49);
-  const center = page.locator(".library-center");
+  const center = page.locator(".library-center:not([hidden])");
   await center.evaluate((el) => {
     el.scrollTop = 600;
   });

@@ -222,3 +222,8 @@ MP3 obligatoire à la création et lié sans copie ; une prod facultative par so
 ## Socle Mes sons — #96
 
 Le moteur conserve désormais les morceaux, leur état/favori/dates et leur lien facultatif vers une prod. Le MP3 existant est choisi nativement sur Mac puis référencé sans copie : chemin relatif interne ou référence opaque vers un registre du poste. Fichier absent ou remplacé demande reconnexion sous la même identité. Les chemins externes ne sont pas exportés par les fiches ni stockés dans le catalogue portable. Les API sont protégées et les modifications vérifient une révision. **L’interface Mes sons reste dans #97** ; tags, textes et cover dans #98–100. Les tests seuls utilisent des bibliothèques migrées ; aucune migration de la collection personnelle dans ce lot.
+
+
+## Mes sons — interface livrée (#97)
+
+Le [lot interface](design/97-mes-sons-interface.md) active la galerie Mes sons, la fiche réservée à droite, les liens inverses et le lecteur partagé. Le moteur #96 est réutilisé sans migration supplémentaire : projection de la pochette/titre de prod et filtres/tri paramétrés ajoutés à GET songs. L'état de carte utilise un PATCH ciblé avec révision ; la fiche garde un Save unique et une garde de brouillon. Les tags, textes et cover personnelle restent dans #98–100, parent #11 ouvert.

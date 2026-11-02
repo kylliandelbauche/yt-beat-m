@@ -1,6 +1,6 @@
 # Mes sons — contrat validé et découpage
 
-Statut au 2 novembre 2026 : **socle moteur #96 livré ; interface et lots #97–100 non implémentés**. Parent [#11](https://github.com/kylliandelbauche/yt-beat-m/issues/11), préparation #95. Les références sont lues dans [Paper / Mes sons](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-H-0), sans modifier les maquettes. Les cadres Officiel sont validés même si la page s'appelle encore Propositions. Aucun visuel, parole illustrative ou donnée personnelle de Paper n'est importé dans le dépôt.
+Statut au 2 novembre 2026 : **socle moteur #96 et interface #97 livrés ; lots #98–100 non implémentés**. Parent [#11](https://github.com/kylliandelbauche/yt-beat-m/issues/11), préparation #95. Les références sont lues dans [Paper / Mes sons](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-H-0), sans modifier les maquettes. Les cadres Officiel sont validés même si la page s'appelle encore Propositions. Aucun visuel, parole illustrative ou donnée personnelle de Paper n'est importé dans le dépôt.
 
 ## Décisions et données
 

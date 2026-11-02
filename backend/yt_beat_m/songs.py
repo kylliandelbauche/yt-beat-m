@@ -16,6 +16,7 @@ from mutagen.mp3 import MP3
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from yt_beat_m.library import LibraryBusyError, LibraryError
+from yt_beat_m.metadata import normalize
 
 State = Literal["Topline", "Maquette", "Mixage", "Master", "Out"]
 
@@ -184,26 +185,81 @@ def song_view(library, files, row):
             "revision",
         )
     }
+    result["beat_title"] = row["beat_title"]
+    result["artwork_url"] = f"/api/beats/{row['beat_id']}/artwork" if row["beat_artwork"] else None
     result["favorite"] = bool(result["favorite"])
     result["file_available"] = files.resolve(library, row) is not None
     result["audio_url"] = f"/api/songs/{row['id']}/audio"
     return result
 
 
+SONG_SELECT = (
+    "SELECT s.*,b.title AS beat_title,b.artwork_path AS beat_artwork "
+    "FROM songs s LEFT JOIN beats b ON b.id=s.beat_id"
+)
+
+
 def get_song(library, files, identity):
     with library.catalog() as c:
-        row = c.execute("SELECT * FROM songs WHERE id=?", (identity,)).fetchone()
+        row = c.execute(SONG_SELECT + " WHERE s.id=?", (identity,)).fetchone()
         return song_view(library, files, row) if row else None
 
 
-def list_songs(library, files, limit=48, offset=0, beat_id=None):
-    where, args = (" WHERE beat_id=?", [str(beat_id)]) if beat_id else ("", [])
+def list_songs(
+    library,
+    files,
+    limit=48,
+    offset=0,
+    beat_id=None,
+    *,
+    q="",
+    favorites=False,
+    state=None,
+    linked=None,
+    available=None,
+    profile_id=None,
+    sort="added_desc",
+):
+    ordering = {"added_desc": "s.added_at DESC", "added_asc": "s.added_at ASC"}
+    if sort not in ordering:
+        raise LibraryError("Tri non reconnu.")
+    clauses, args = [], []
+    if beat_id:
+        clauses.append("s.beat_id=?")
+        args.append(str(beat_id))
+    if favorites:
+        clauses.append("s.favorite=1")
+    if state:
+        clauses.append("s.state=?")
+        args.append(state)
+    if linked is not None:
+        clauses.append("s.beat_id IS NOT NULL" if linked else "s.beat_id IS NULL")
+    if profile_id:
+        clauses.append(
+            "EXISTS(SELECT 1 FROM beat_profile_links l "
+            "WHERE l.beat_id=s.beat_id AND l.profile_id=?)"
+        )
+        args.append(str(profile_id))
+    for term in normalize(q).split():
+        clauses.append("instr(normalized(s.title),?)>0")
+        args.append(term)
+    where = " WHERE " + " AND ".join(clauses) if clauses else ""
     with library.catalog() as c:
-        total = c.execute("SELECT count(*) FROM songs" + where, args).fetchone()[0]
-        rows = c.execute(
-            "SELECT * FROM songs" + where + " ORDER BY added_at DESC,id LIMIT ? OFFSET ?",
-            [*args, limit, offset],
-        ).fetchall()
+        c.create_function("normalized", 1, normalize, deterministic=True)
+        sql = SONG_SELECT + where + " ORDER BY " + ordering[sort] + ",s.id"
+        if available is not None:
+            # Availability belongs to this device, not the portable catalog. Filter
+            # before pagination so page size and total describe the same result.
+            rows = [
+                r
+                for r in c.execute(sql, args)
+                if (files.resolve(library, r) is not None) == available
+            ]
+            total = len(rows)
+            rows = rows[offset : offset + limit]
+        else:
+            total = c.execute("SELECT count(*) FROM songs s" + where, args).fetchone()[0]
+            rows = c.execute(sql + " LIMIT ? OFFSET ?", [*args, limit, offset]).fetchall()
         return {"songs": [song_view(library, files, r) for r in rows], "total": total}
 
 
