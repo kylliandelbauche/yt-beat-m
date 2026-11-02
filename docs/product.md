@@ -212,3 +212,8 @@ Le portrait suit directement la chaîne enregistrée de la prod, même si son no
 ## Accès à la chaîne depuis le profil (#76)
 
 Le profil affiche un lien Chaîne YouTube, ouvert dans un nouvel onglet, issu de l’identifiant connu de la chaîne source ou du handle explicitement crédité d’un invité. Plusieurs chaînes liées sont présentées séparément. Aucun lien n’est construit depuis un nom d’artiste supposé. L’emplacement du lien reste réservé en lecture, édition et chargement ; les profils sans source affichent Chaîne non renseignée.
+
+
+## Mes sons — périmètre Paper validé (#11, 2 novembre 2026)
+
+MP3 obligatoire à la création et lié sans copie ; une prod facultative par son, réutilisable. Cartes et fiche Officiel, états libres enregistrés immédiatement depuis les cartes, dates création/sortie facultatives, tags communs hérités/directs, Notes/Paroles et fenêtre agrandie, cover personnelle avec retour à celle de la prod sont dans le périmètre confirmé. Un seul Enregistrer dans la fiche et géométrie fixe. **Fonctionnalité planifiée, non livrée.** Le [contrat et les cinq lots](design/mes-sons.md) remplacent les anciens points à préciser et tout report de cover personnelle.
