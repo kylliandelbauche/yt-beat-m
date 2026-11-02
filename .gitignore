@@ -20,6 +20,16 @@
 .env.*
 !.env.example
 *.log
+# Clés privées et exports d'identifiants
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+.npmrc
+.pypirc
 .DS_Store
 Thumbs.db
 

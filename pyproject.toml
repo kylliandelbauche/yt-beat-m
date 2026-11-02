@@ -2,6 +2,9 @@
 name = "yt-beat-m"
 version = "0.1.0"
 description = "Local and portable beat library"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi>=0.162.0",

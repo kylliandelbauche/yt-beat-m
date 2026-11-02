@@ -6,6 +6,10 @@ Date de référence : 24 octobre 2026.
 
 L'utilisateur reporte Windows et donne la priorité à une validation essentielle sur Mac, puis aux pages Beatmakers (#62) et Mes sons (#11), développées une à une à partir de Paper. La recette Windows et le lancement à double-clic sont différés et ne bloquent plus ces fonctionnalités. Le lancement documenté existant reste utilisable. Les chemins relatifs et les garanties de conservation des bibliothèques restent nécessaires. Les mentions Mac/Windows ci-dessous décrivent l'objectif initial de portabilité, sans constituer un critère de sortie de la phase Mac actuelle.
 
+## Préparation publique — #86 (2 novembre 2026)
+
+Audit des secrets et des frontières de sécurité, licence MIT et README illustré sur données fictives. Le moteur reste local ; aucune fonctionnalité produit ni migration ajoutée. CI hébergée toujours manuelle. Le passage public dépend de la décision sur la confidentialité de l’historique. Voir [le rapport de préparation](security/public-readiness.md).
+
 ## Finitions Paper — #82 (1 novembre 2026)
 
 Navigation repliée de 64 px, rail de fiche unifié, cartes au rayon28 et édition à géométrie constante. Les volets et le fond du sélecteur de disposition suivent les transitions validées, interrompables et immédiates en mouvement réduit. Volume et progression gardent leurs poignées contenues ; la liste de notes reste accessible en fenêtre basse. Les compromis non validés de l’audit ne sont pas intégrés. Voir [recette #82](design/82-paper-finishes.md).
