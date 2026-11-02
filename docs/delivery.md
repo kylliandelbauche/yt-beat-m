@@ -67,3 +67,8 @@ La compatibilité Windows reste « testée automatiquement avant son report », 
 ## Après le MVP
 
 Playlists complètes ; extraction de métadonnées depuis les marketplaces ; import de MP3 existants ; lien entre prod et morceau avec date d'utilisation ; analyse audio par IA. Ces fonctions ne bloquent pas la première tranche fonctionnelle.
+
+
+## Prochaine feature — Mes sons (#11)
+
+Les cinq lots du [cadrage Paper](design/mes-sons.md) se réalisent dans l’ordre indiqué, un à la fois. #95 livre uniquement les issues et documents, sans implementation. #11 reste le parent d’acceptation ouvert jusqu’à la livraison intégrée : fichier/relations → interface/lecteur → tags → Notes/Paroles → cover personnelle. MP3 obligatoire et état carte immédiat sont confirmés par le propriétaire. Les recettes ciblent Mac/grand écran et la conservation des données, du lecteur et de la géométrie ; pas de nouvelle CI hébergée.

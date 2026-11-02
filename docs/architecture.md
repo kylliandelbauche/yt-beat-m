@@ -270,3 +270,8 @@ KeyPicker mesure l’espace sous/au-dessus du contrôle pour placer sa liste, pl
 ## Préparation à la publication (#86)
 
 Aucun changement de frontière d’exécution, d’API, de schéma ni de média. Licence MIT et métadonnées alignées, secrets et registres locaux exclus de Git, politique SECURITY et audit public documentés. Les actions CI sont fixées par SHA et le checkout ne persiste pas d’identifiants ; Dependabot propose mensuellement leurs mises à jour. Le workflow reste manuel, sans nouvelle exécution hébergée. Voir [audit et limites](security/public-readiness.md).
+
+
+## Mes sons — cadrage avant implémentation (#11 / #95)
+
+Le [contrat validé](design/mes-sons.md) prévoit une entité morceau et une relation facultative vers une seule prod, tags directs vers le catalogue commun et héritage calculé, deux textes distincts, dates et mode de cover propre/hérité. Aucune table ni API ajoutée par ce cadrage. Le lot socle devra définir les références MP3 propres au poste, le contrat atomique et sa migration sauvegardée avant de coder. La galerie/fiche étendra le lecteur persistant aux deux types ; texte, tags et image restent dans l’unique brouillon jusqu’au Save, hors action explicite immédiate de l’état depuis une carte. Cette action doit respecter la garde de brouillon. Les images personnelles seront locales, bornées et portables ; aucun endpoint de média à chemin libre. Aucune infrastructure de compte/cloud ni schéma numéroté prématurément.
