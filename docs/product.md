@@ -8,7 +8,7 @@ L'utilisateur reporte Windows et donne la priorité à une validation essentiell
 
 ## Préparation publique — #86 (2 novembre 2026)
 
-Audit des secrets et des frontières de sécurité, licence MIT et README illustré sur données fictives. Le moteur reste local ; aucune fonctionnalité produit ni migration ajoutée. CI hébergée toujours manuelle. Le passage public dépend de la décision sur la confidentialité de l’historique. Voir [le rapport de préparation](security/public-readiness.md).
+Audit des secrets et des frontières de sécurité, licence MIT et README illustré sur données fictives. Le moteur reste local ; aucune fonctionnalité produit ni migration ajoutée. CI hébergée toujours manuelle. L’utilisateur a confirmé la conservation de l’historique ; la revue de publication inclut les scans #88 à #92. Voir [le rapport de préparation](security/public-readiness.md).
 
 ## Finitions Paper — #82 (1 novembre 2026)
 

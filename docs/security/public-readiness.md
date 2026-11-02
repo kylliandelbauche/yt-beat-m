@@ -47,7 +47,7 @@ Ce moteur n'isole pas un programme malveillant exécuté avec les mêmes droits 
 
 ## Publication et limites
 
-L'historique inclut une ancienne adresse d'auteur non anonymisée. Ce point de confidentialité est signalé au propriétaire avant publication ; aucune réécriture ni suppression d'historique n'est effectuée sans décision. Les dates, compteurs agrégés et identités GitHub déjà inclus dans l'historique restent également consultables si ce dépôt devient public.
+L'historique inclut une ancienne adresse d'auteur non anonymisée. Le propriétaire a explicitement choisi de conserver cet historique le 2 novembre 2026 ; aucune réécriture ni suppression n'est effectuée. Les dates, compteurs agrégés et identités GitHub déjà inclus dans l'historique restent également consultables si ce dépôt devient public.
 
 Les scans ne prouvent pas l'absence de secrets inconnus ou de vulnérabilités. Les détecteurs ne lisent pas le texte contenu dans les pixels ; les captures courantes ont donc aussi été examinées visuellement. Les éditions antérieures de corps d'issues/commentaires, objets Git devenus inaccessibles, caches et clones tiers ne sont pas exhaustivement vérifiables avec ces interfaces. Aucune donnée confidentielle connue n'a été trouvée dans les contenus examinés.
 
@@ -72,3 +72,7 @@ Récupérer au préalable les références Git distantes utiles ; ces commandes 
 ## Vérifications locales de la préparation
 
 267 tests backend réussis ; Ruff et formatage sans erreur. Clone local propre de la branche, installations depuis `uv.lock` et `package-lock.json`, compilation TypeScript/Vite, lint frontend et diagnostic des dépendances réussis. Le frontend et ses assets sont servis par une instance à préférences temporaires ; en-têtes de protection vérifiés. Les fichiers compilés sont identiques à ceux de #82 : aucun code d’interface changé. Les 52 scénarios navigateur de #82 sont réutilisés, pas rejoués sans changement correspondant. Les trois nouvelles captures proviennent d’un navigateur exécutant le vrai frontend sur une bibliothèque temporaire, requêtes externes bloquées. Liens locaux du README/guide/sécurité vérifiés. Aucun média ni préférence de la session courante modifié, aucune CI hébergée lancée.
+
+## Compléments organisés après le brief utilisateur
+
+Les scans sont détaillés dans [les sous-issues #88 à #92](scans.md) : secrets, dépendances, Semgrep/Bandit, workflows et ZAP passif sur une instance isolée. Semgrep remonte cinq alertes triées et une limite de parsing explicitée ; ZAP conserve un point de durcissement CSP de niveau Medium sur les styles intégrés. Ces résultats ne sont pas masqués par le bilan initial et leurs limites restent documentées. L’historique est conservé sur décision explicite du propriétaire.
