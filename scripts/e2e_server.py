@@ -71,6 +71,7 @@ def simulated_download(self, args, on_line=None, *, timeout=600):
 def main():
     # These replacements exist only in this isolated test process, never in the application.
     import yt_beat_m.profile_photos as portraits
+    from yt_beat_m.directory_picker import DirectoryPicker
     from yt_beat_m.library import LibraryError
 
     def no_portrait(*args):
@@ -80,7 +81,13 @@ def main():
     ProcessRunner.run = simulated_download
     imports.shutil.which = lambda name: name
     with tempfile.TemporaryDirectory(prefix="yt-beat-m-e2e-") as folder:
-        root = Path(folder)
+        root = Path(folder).resolve()
+        song_file = root / "Morceau de test.mp3"
+        song_file.write_bytes(AUDIO)
+        original_choose = DirectoryPicker.choose
+        DirectoryPicker.choose = lambda self: (
+            str(song_file) if self.audio else original_choose(self)
+        )
         library = Library.create(root / "collection", "Collection de test")
         for index, (title, maker) in enumerate(
             (("R&B Mélancolique", "Nova"), ("Drill minuit", "Ryo")), 1

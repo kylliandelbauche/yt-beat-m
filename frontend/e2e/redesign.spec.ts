@@ -197,7 +197,7 @@ test("un doublon réel ouvre la prod existante sans nouvel import ni interruptio
 test("ACC01–08 : les deux volets réservent leur espace, sans sélection ni superposition", async ({
   page,
 }, info) => {
-  const center = page.locator(".library-center"),
+  const center = page.locator(".library-center:not([hidden])"),
     cards = page.locator(".beat-card"),
     right = page.getByRole("complementary", { name: "Volet de la prod" });
   expect((await center.boundingBox())!.x).toBe(256);

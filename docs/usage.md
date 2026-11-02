@@ -52,6 +52,16 @@ Les portraits sont récupérés en arrière-plan depuis la chaîne identifiée ;
 
 **Fusionner** réunit un doublon après aperçu. **Supprimer** retire un profil et ses associations sans effacer ses prods ou MP3. Les anciens noms deviennent des alias et les profils supprimés ne sont pas recréés automatiquement. Les associations manuelles sont conservées par Actualiser.
 
+## Mes sons
+
+**Ajouter un son** ouvre le sélecteur Mac : choisis un MP3 existant, puis valide sa fiche avec **Enregistrer**. Le fichier reste à son emplacement, sans copie ni renommage. Titre, favori, état, dates de création/sortie et lien facultatif vers une prod sont modifiables. **Prod** permet de choisir, remplacer ou retirer la prod en édition ; en lecture, ce bouton ouvre sa fiche. **Sons liés** dans la prod retrouve tous les morceaux qui l'utilisent.
+
+L'état est libre : Topline, Maquette, Mixage, Master ou Out. Depuis une carte, changer l'état ou le favori enregistre immédiatement cette seule information. Dans la fiche, un seul Enregistrer valide le brouillon. Quitter avec des modifications demande confirmation ; une erreur les conserve. Après un conflit avec une autre fenêtre, Recharger la fiche propose d'abandonner le brouillon pour relire la version enregistrée.
+
+La recherche porte sur le titre ; les filtres combinent état, prod, beatmaker de la prod et disponibilité du MP3. Favoris s'applique à la page courante. Les deux dispositions et le lecteur sont partagés avec les prods ; cliquer le titre/pochette du lecteur ouvre la bonne fiche sans interrompre l'écoute.
+
+Sans fichier accessible, le morceau reste au catalogue. **Changer le fichier lié**, puis Enregistrer, reconnecte le MP3 sous le même identifiant. Les fichiers hors bibliothèque sont mémorisés dans un registre du Mac : ils ne voyagent pas avec le dossier de bibliothèque et doivent rester à leur emplacement, ou être reconnectés. Un MP3 lié à l'intérieur du dossier utilise un chemin relatif. La pochette vient de la prod ; tags, Notes/Paroles et image personnelle seront complétés par les lots suivants.
+
 ## Données et suivi
 
 Le catalogue, les photos et les relations voyagent avec la bibliothèque. Les imports et portraits contactent YouTube ; la consultation des médias déjà importés reste locale. Aucun compte, service cloud ni clé API n'est nécessaire.

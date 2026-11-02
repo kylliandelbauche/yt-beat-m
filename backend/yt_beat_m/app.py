@@ -38,7 +38,7 @@ from yt_beat_m.profiles import (
     save_profile,
 )
 from yt_beat_m.reveal import reveal_file
-from yt_beat_m.songs import SongCreate, SongFiles, SongPatch, get_song, list_songs, save_song
+from yt_beat_m.songs import SongCreate, SongFiles, SongPatch, State, get_song, list_songs, save_song
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -157,9 +157,29 @@ def create_app(
         limit: int = Query(48, ge=1, le=100),
         offset: int = Query(0, ge=0),
         beat_id: UUID | None = None,
+        q: str = Query("", max_length=500),
+        favorites: bool = False,
+        state: State | None = None,
+        linked: bool | None = None,
+        available: bool | None = None,
+        profile_id: UUID | None = None,
+        sort: str = "added_desc",
     ):
         with manager.active() as library:
-            return list_songs(library, song_files, limit, offset, beat_id)
+            return list_songs(
+                library,
+                song_files,
+                limit,
+                offset,
+                beat_id,
+                q=q,
+                favorites=favorites,
+                state=state,
+                linked=linked,
+                available=available,
+                profile_id=profile_id,
+                sort=sort,
+            )
 
     @app.post("/api/songs")
     def song_create(payload: SongCreate):

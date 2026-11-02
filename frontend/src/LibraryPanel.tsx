@@ -27,8 +27,8 @@ export function LibraryPanel({
   connected,
   onRetry,
 }: {
-  view: "prods" | "beatmakers";
-  onView: (view: "prods" | "beatmakers") => void;
+  view: "prods" | "beatmakers" | "songs";
+  onView: (view: "prods" | "beatmakers" | "songs") => void;
   connected: boolean;
   onRetry: () => void;
 }) {

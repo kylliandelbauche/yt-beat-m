@@ -18,6 +18,11 @@ import type { ModalClose } from "./useModalLifecycle";
 import { ActiveFilters, CatalogFilters } from "./CatalogFilters";
 import { emptyFilters, emptyOptions, filterQuery } from "./filterState";
 import type { Filters, FilterOptions } from "./filterState";
+import { SongsWorkspace } from "./SongsWorkspace";
+import type { SongsController } from "./SongsWorkspace";
+import { LinkedSongs } from "./SongRelations";
+import { songTrack } from "./song";
+import type { Song } from "./song";
 type BeatPage = { beats: Beat[]; total: number };
 type Selection = { beat: Beat; play: boolean };
 type Scan = {
@@ -40,8 +45,8 @@ export function BeatGallery({
   onDiagnostic,
   onLibrary,
 }: {
-  view: "prods" | "beatmakers";
-  onView: (view: "prods" | "beatmakers") => void;
+  view: "prods" | "beatmakers" | "songs";
+  onView: (view: "prods" | "beatmakers" | "songs") => void;
   onIndexed: (count: number) => void;
   heading: (count?: number) => ReactNode;
   tools: ReactNode;
@@ -56,15 +61,39 @@ export function BeatGallery({
   const dirtyDetails = useRef(false);
   const pendingAction = useRef<(() => void) | null>(null);
   const lastTrigger = useRef<HTMLElement | null>(null);
+  const songs = useRef<SongsController | null>(null);
+  const [pane, setPane] = useState<"beat" | "song">("beat");
+  const [linkedSongs, setLinkedSongs] = useState<string | null>(null);
+  const [songQueue, setSongQueue] = useState<Song[]>([]);
+  function activateSong(action: () => void) {
+    const activate = () => {
+      dirtyDetails.current = false;
+      setPane("song");
+      action();
+    };
+    if (pane === "beat" && detailsRef.current) {
+      pendingAction.current = activate;
+      detailNavigation.current?.();
+    } else activate();
+  }
   function openDetails(id: string) {
+    if (pane === "song") {
+      songs.current?.guard(() => {
+        setPane("beat");
+        showBeat(id);
+      });
+    } else showBeat(id);
+  }
+  function showBeat(id: string) {
     const trigger = document.activeElement as HTMLElement;
     const action = () => {
       lastTrigger.current = trigger;
       detailsRef.current = id;
+      setPane("beat");
       setDetails(id);
       shell.setRight(true);
     };
-    if (dirtyDetails.current && detailsRef.current !== id) {
+    if (pane === "beat" && detailsRef.current && detailsRef.current !== id) {
       pendingAction.current = action;
       detailNavigation.current?.();
     } else action();
@@ -128,7 +157,11 @@ export function BeatGallery({
   );
   const showImported = useCallback(
     (identity: string, onShown: () => void) => {
-      if (producerRef.current || dirtyDetails.current) {
+      if (
+        producerRef.current ||
+        dirtyDetails.current ||
+        songs.current?.blocked()
+      ) {
         const queued = pendingDetails.current.find(
           (item) => item.identity === identity,
         );
@@ -141,6 +174,7 @@ export function BeatGallery({
         } else pendingDetails.current.push({ identity, onShown });
       } else {
         detailsRef.current = identity;
+        setPane("beat");
         setDetails(identity);
         setRight(true);
         onShown();
@@ -158,6 +192,7 @@ export function BeatGallery({
     const next = pendingDetails.current.shift();
     if (next) {
       detailsRef.current = next.identity;
+      setPane("beat");
       setDetails(next.identity);
       shell.setRight(true);
       next.onShown();
@@ -316,7 +351,8 @@ export function BeatGallery({
     player.volume = preference.volume;
     player.muted = preference.muted;
     if (selection?.play) startPlayback(player, selection.beat.id);
-  }, [selection]);
+    // Metadata edits do not restart the active media element.
+  }, [selection?.beat.id, selection?.play]);
 
   function startPlayback(player: HTMLAudioElement, identity: string) {
     void player.play().catch((cause: unknown) => {
@@ -435,6 +471,38 @@ export function BeatGallery({
   const activeBeat =
     page?.beats.find((beat) => beat.id === selection?.beat.id) ||
     selection?.beat;
+  const playerQueue = selection?.beat.id.startsWith("song:")
+    ? songQueue.map(songTrack)
+    : page?.beats || [];
+  function songChanged(song: Song, fileChanged: boolean) {
+    setSelection((current) =>
+      current?.beat.id === `song:${song.id}`
+        ? { ...current, beat: songTrack(song) }
+        : current,
+    );
+    if (
+      fileChanged &&
+      selection?.beat.id === `song:${song.id}` &&
+      audio.current
+    ) {
+      const media = audio.current,
+        position = media.currentTime,
+        wasPlaying = !media.paused;
+      media.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (audio.current !== media) return;
+          media.currentTime = Math.min(
+            position,
+            Number.isFinite(media.duration) ? media.duration : position,
+          );
+          if (wasPlaying) startPlayback(media, `song:${song.id}`);
+        },
+        { once: true },
+      );
+      media.load();
+    }
+  }
 
   function filtersChanged() {
     setStageHeight(
@@ -948,10 +1016,45 @@ export function BeatGallery({
           playingId={playingId}
         />
       )}
-      {details && (
+      <SongsWorkspace
+        visible={view === "songs"}
+        detailActive={pane === "song"}
+        controllerRef={songs}
+        onActivate={activateSong}
+        onClosePane={() => {
+          setPane("beat");
+          closeDetails();
+        }}
+        onOpenBeat={openDetails}
+        onPlay={(song) => togglePlayback(songTrack(song))}
+        onChanged={songChanged}
+        playingId={playingId}
+        playbackError={
+          playbackError?.id.startsWith("song:") ? playbackError.message : ""
+        }
+        playbackErrorId={playbackError?.id || null}
+        onDismissPlaybackError={() => setPlaybackError(null)}
+        onRetryPlayback={() => {
+          if (activeBeat) togglePlayback(activeBeat);
+        }}
+        connected={connected}
+        layout={layout}
+        onLayout={setLayout}
+        revision={reload}
+        onQueue={setSongQueue}
+      />
+      {linkedSongs && (
+        <LinkedSongs
+          beatId={linkedSongs}
+          onClose={() => setLinkedSongs(null)}
+          onOpen={(id) => songs.current?.open(id)}
+        />
+      )}
+      {details && pane === "beat" && (
         <BeatDetailsPanel
           key={details}
           identity={details}
+          onOpenSongs={() => setLinkedSongs(details)}
           navigationRef={detailNavigation}
           profileRevision={producerRevision + (shell.tagChange?.version || 0)}
           onOpenProfile={openProducer}
@@ -978,7 +1081,7 @@ export function BeatGallery({
           }}
         />
       )}
-      {!details && (
+      {!details && pane === "beat" && (
         <aside
           className={`detail-sidebar${shell.right ? " expanded" : ""}`}
           aria-label="Volet de la prod"
@@ -1019,26 +1122,29 @@ export function BeatGallery({
             audio={audio}
             playing={playingId === activeBeat.id}
             onToggle={() => togglePlayback(activeBeat)}
-            onDetails={() => openDetails(activeBeat.id)}
+            onDetails={() =>
+              activeBeat.id.startsWith("song:")
+                ? songs.current?.open(activeBeat.id.slice(5))
+                : openDetails(activeBeat.id)
+            }
             previous={
-              page && page.beats.findIndex((b) => b.id === activeBeat.id) > 0
+              playerQueue.findIndex((b) => b.id === activeBeat.id) > 0
                 ? () =>
                     togglePlayback(
-                      page.beats[
-                        page.beats.findIndex((b) => b.id === activeBeat.id) - 1
+                      playerQueue[
+                        playerQueue.findIndex((b) => b.id === activeBeat.id) - 1
                       ],
                     )
                 : undefined
             }
             next={
-              page &&
-              page.beats.findIndex((b) => b.id === activeBeat.id) >= 0 &&
-              page.beats.findIndex((b) => b.id === activeBeat.id) <
-                page.beats.length - 1
+              playerQueue.findIndex((b) => b.id === activeBeat.id) >= 0 &&
+              playerQueue.findIndex((b) => b.id === activeBeat.id) <
+                playerQueue.length - 1
                 ? () =>
                     togglePlayback(
-                      page.beats[
-                        page.beats.findIndex((b) => b.id === activeBeat.id) + 1
+                      playerQueue[
+                        playerQueue.findIndex((b) => b.id === activeBeat.id) + 1
                       ],
                     )
                 : undefined

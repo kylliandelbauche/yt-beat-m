@@ -60,6 +60,7 @@ function dateLabel(value: string | null, dateOnly = false) {
 
 export function BeatDetailsPanel({
   identity,
+  onOpenSongs,
   navigationRef,
   profileRevision,
   onOpenProfile,
@@ -75,6 +76,7 @@ export function BeatDetailsPanel({
   onCancelNavigation,
 }: {
   identity: string;
+  onOpenSongs: () => void;
   navigationRef: { current: ModalClose | null };
   profileRevision: number;
   onOpenProfile: (id: string) => void;
@@ -833,9 +835,13 @@ export function BeatDetailsPanel({
               />
             </div>
             <footer className="detail-links">
-              <button className="future-song" type="button" disabled>
+              <button
+                className="future-song"
+                type="button"
+                onClick={onOpenSongs}
+              >
                 <Icon name="link" />
-                Associer à un son <small>Bientôt</small>
+                Sons liés
               </button>
               <button
                 className="reveal-file"
