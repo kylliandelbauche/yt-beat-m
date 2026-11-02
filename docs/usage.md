@@ -42,7 +42,7 @@ La fiche latérale réserve sa place. Le crayon active l'édition ; **Enregistre
 
 Le **+** des tags ouvre leur sélection et modifie le brouillon. Fermer ce menu conserve les choix jusqu'à Enregistrer ; Annuler ne crée pas de tag. **Réglages → Tags** permet de renommer ou supprimer un tag pour toute la collection, avec confirmation. Cela ne supprime aucune prod ni média.
 
-Un seul lecteur assure lecture/pause, déplacement, volume et mode muet. Recherche, filtres, profils et fiches conservent la piste et sa position. Cliquer sur le titre ou la pochette du lecteur ouvre sa fiche. **Afficher dans le dossier** sélectionne le fichier local pour le glisser dans son logiciel de musique. L'écoute hors ligne nécessite le moteur en fonctionnement.
+Un seul lecteur assure lecture/pause, déplacement, volume et mode muet. Recherche, filtres, profils et fiches conservent la piste et sa position. Cliquer sur le titre ou la pochette du lecteur ouvre sa fiche. **Afficher le fichier** sélectionne le fichier local pour le glisser dans son logiciel de musique. L'écoute hors ligne nécessite le moteur en fonctionnement.
 
 ## Beatmakers
 

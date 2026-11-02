@@ -39,7 +39,7 @@ Le navigateur s'ouvre sur **http://127.0.0.1:8765**. Garde le terminal ouvert ; 
 
 1. Dans **Réglages → Bibliothèque**, crée une bibliothèque dans un dossier vide ou ouvre une bibliothèque existante.
 2. Colle un lien vidéo dans **Importer**. La fiche s'ouvre lorsque la prod est prête.
-3. Filtre, écoute, puis utilise **Afficher dans le dossier** pour retrouver le MP3.
+3. Filtre, écoute, puis utilise **Afficher le fichier** pour retrouver le MP3.
 
 L'application s'exécute sur ton ordinateur ; elle n'héberge pas ta collection. Les imports et portraits YouTube utilisent Internet. Les fichiers et le catalogue restent dans le dossier que tu choisis.
 

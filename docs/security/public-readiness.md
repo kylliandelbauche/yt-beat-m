@@ -68,3 +68,7 @@ uvx zizmor .github/workflows/ci.yml
 ```
 
 Récupérer au préalable les références Git distantes utiles ; ces commandes seules ne couvrent pas les issues, commentaires et journaux GitHub. Ne pas publier leurs sorties brutes. Refaire l'audit sur des changements de dépendances ou de frontières de confiance, pas seulement à chaque changement visuel.
+
+## Vérifications locales de la préparation
+
+267 tests backend réussis ; Ruff et formatage sans erreur. Clone local propre de la branche, installations depuis `uv.lock` et `package-lock.json`, compilation TypeScript/Vite, lint frontend et diagnostic des dépendances réussis. Le frontend et ses assets sont servis par une instance à préférences temporaires ; en-têtes de protection vérifiés. Les fichiers compilés sont identiques à ceux de #82 : aucun code d’interface changé. Les 52 scénarios navigateur de #82 sont réutilisés, pas rejoués sans changement correspondant. Les trois nouvelles captures proviennent d’un navigateur exécutant le vrai frontend sur une bibliothèque temporaire, requêtes externes bloquées. Liens locaux du README/guide/sécurité vérifiés. Aucun média ni préférence de la session courante modifié, aucune CI hébergée lancée.
