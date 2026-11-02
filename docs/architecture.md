@@ -265,3 +265,8 @@ Les propriétés CSS enregistrées --nav-width/--detail-width interpolent les co
 RangeControl conserve un input range natif transparent pour les interactions et peint une piste/poignée dans un cadre indépendant des métriques natives. Les plages restent contrôlées par le temps/volume réels de l’audio existant ; Home/End choisissent min/max. Les décorations sont exclues de l’arbre accessible et le focus est matérialisé sur le cadre. Le volume utilise des positions fixes qui contiennent toute la poignée et le mute ; aucun overflow caché ne sert à dissimuler des contrôles.
 
 KeyPicker mesure l’espace sous/au-dessus du contrôle pour placer sa liste, plafonnée à184 px. Redimensionnement et défilement repositionnent la liste sans changer le cadre du sélecteur. Aucun changement de données, API, dépendance ou migration.
+
+
+## Préparation à la publication (#86)
+
+Aucun changement de frontière d’exécution, d’API, de schéma ni de média. Licence MIT et métadonnées alignées, secrets et registres locaux exclus de Git, politique SECURITY et audit public documentés. Les actions CI sont fixées par SHA et le checkout ne persiste pas d’identifiants ; Dependabot propose mensuellement leurs mises à jour. Le workflow reste manuel, sans nouvelle exécution hébergée. Voir [audit et limites](security/public-readiness.md).
