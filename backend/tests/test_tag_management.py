@@ -141,7 +141,7 @@ def test_v5_migration_is_backed_up_atomic_and_preserves_vocabulary(tmp_path, mon
         ).fetchall()
     with closing(Library.open(root)) as lib:
         assert [(t["id"], t["label"]) for t in list_tags(lib)] == [(7, "A"), (8, "a")]
-        assert lib.summary()["schema_version"] == 6
+        assert lib.summary()["schema_version"] == max(storage.MIGRATIONS)
     backup = next((root / "backups").glob("catalog-v5-*.sqlite3"))
     with sqlite3.connect(backup) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == 5

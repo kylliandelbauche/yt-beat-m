@@ -38,6 +38,7 @@ from yt_beat_m.profiles import (
     save_profile,
 )
 from yt_beat_m.reveal import reveal_file
+from yt_beat_m.songs import SongCreate, SongFiles, SongPatch, get_song, list_songs, save_song
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -73,11 +74,14 @@ def create_app(
     preferences: Path | None = None,
 ) -> FastAPI:
     directory_picker = DirectoryPicker()
+    audio_picker = DirectoryPicker(audio=True)
     manager = LibraryManager(
         preferences
         if preferences is not None
         else user_config_path("yt-beat-m") / "preferences.json"
     )
+
+    song_files = SongFiles(manager.preferences.with_name("song-files.sqlite3"))
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -135,6 +139,77 @@ def create_app(
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response
+
+    @app.post("/api/songs/pick-file")
+    def pick_song_file():
+        with manager.active() as library:
+            library_id = library.manifest["id"]
+        selected = audio_picker.choose()
+        if selected is None:
+            return {"selection": None}
+        with manager.active() as library:
+            if library.manifest["id"] != library_id:
+                raise LibraryError("La bibliothèque a changé ; sélectionner à nouveau le MP3.")
+            return {"selection": song_files.grant(library, selected)}
+
+    @app.get("/api/songs")
+    def songs_list(
+        limit: int = Query(48, ge=1, le=100),
+        offset: int = Query(0, ge=0),
+        beat_id: UUID | None = None,
+    ):
+        with manager.active() as library:
+            return list_songs(library, song_files, limit, offset, beat_id)
+
+    @app.post("/api/songs")
+    def song_create(payload: SongCreate):
+        with manager.active() as library:
+            return save_song(library, song_files, payload)
+
+    @app.get("/api/songs/{identity}")
+    def song_get(identity: UUID):
+        with manager.active() as library:
+            result = get_song(library, song_files, str(identity))
+            if result is None:
+                raise HTTPException(404, "Morceau introuvable.")
+            return result
+
+    @app.patch("/api/songs/{identity}")
+    def song_update(identity: UUID, payload: SongPatch):
+        with manager.active() as library:
+            if get_song(library, song_files, str(identity)) is None:
+                raise HTTPException(404, "Morceau introuvable.")
+            return save_song(library, song_files, payload, str(identity))
+
+    @app.get("/api/songs/{identity}/audio")
+    def song_audio(identity: UUID):
+        with manager.active() as library:
+            with library.catalog() as c:
+                row = c.execute("SELECT * FROM songs WHERE id=?", (str(identity),)).fetchone()
+            path = song_files.resolve(library, row) if row else None
+            if path is None:
+                raise HTTPException(404, "MP3 indisponible ; sélectionner à nouveau le fichier.")
+            return FileResponse(path, media_type="audio/mpeg")
+
+    @app.post("/api/songs/{identity}/reveal")
+    def song_reveal(identity: UUID):
+        with manager.active() as library:
+            with library.catalog() as c:
+                row = c.execute("SELECT * FROM songs WHERE id=?", (str(identity),)).fetchone()
+            path = song_files.resolve(library, row) if row else None
+            if path is None:
+                raise HTTPException(404, "MP3 indisponible ; sélectionner à nouveau le fichier.")
+            reveal_file(path)
+            return {"revealed": True}
+
+    @app.get("/api/beats/{identity}/songs")
+    def beat_songs(
+        identity: UUID, limit: int = Query(48, ge=1, le=100), offset: int = Query(0, ge=0)
+    ):
+        with manager.active() as library:
+            if beat_details(library, str(identity)) is None:
+                raise HTTPException(404, "Prod introuvable.")
+            return list_songs(library, song_files, limit, offset, identity)
 
     @app.get("/api/health")
     def health():

@@ -217,3 +217,8 @@ Le profil affiche un lien Chaîne YouTube, ouvert dans un nouvel onglet, issu de
 ## Mes sons — périmètre Paper validé (#11, 2 novembre 2026)
 
 MP3 obligatoire à la création et lié sans copie ; une prod facultative par son, réutilisable. Cartes et fiche Officiel, états libres enregistrés immédiatement depuis les cartes, dates création/sortie facultatives, tags communs hérités/directs, Notes/Paroles et fenêtre agrandie, cover personnelle avec retour à celle de la prod sont dans le périmètre confirmé. Un seul Enregistrer dans la fiche et géométrie fixe. **Fonctionnalité planifiée, non livrée.** Le [contrat et les cinq lots](design/mes-sons.md) remplacent les anciens points à préciser et tout report de cover personnelle.
+
+
+## Socle Mes sons — #96
+
+Le moteur conserve désormais les morceaux, leur état/favori/dates et leur lien facultatif vers une prod. Le MP3 existant est choisi nativement sur Mac puis référencé sans copie : chemin relatif interne ou référence opaque vers un registre du poste. Fichier absent ou remplacé demande reconnexion sous la même identité. Les chemins externes ne sont pas exportés par les fiches ni stockés dans le catalogue portable. Les API sont protégées et les modifications vérifient une révision. **L’interface Mes sons reste dans #97** ; tags, textes et cover dans #98–100. Les tests seuls utilisent des bibliothèques migrées ; aucune migration de la collection personnelle dans ce lot.

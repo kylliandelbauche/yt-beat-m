@@ -35,8 +35,9 @@ try {
 
 
 class DirectoryPicker:
-    def __init__(self, system: str | None = None):
+    def __init__(self, system: str | None = None, *, audio: bool = False):
         self.system = system or sys.platform
+        self.audio = audio
         self._lock = threading.Lock()
 
     def choose(self) -> str | None:
@@ -44,8 +45,15 @@ class DirectoryPicker:
             raise LibraryBusyError("Une fenêtre de sélection de dossier est déjà ouverte.")
         try:
             if self.system == "darwin":
-                command = ["/usr/bin/osascript", "-e", MAC_SCRIPT]
-            elif self.system == "win32":
+                script = MAC_SCRIPT
+                if self.audio:
+                    script = script.replace(
+                        'choose folder with prompt "Choisir le dossier de bibliothèque Beat m"',
+                        'choose file with prompt "Choisir un MP3 pour le morceau" '
+                        'of type {"public.mp3"}',
+                    )
+                command = ["/usr/bin/osascript", "-e", script]
+            elif self.system == "win32" and not self.audio:
                 command = [
                     "powershell.exe",
                     "-NoLogo",
@@ -56,6 +64,8 @@ class DirectoryPicker:
                     WINDOWS_SCRIPT,
                 ]
             else:
+                if self.audio:
+                    raise LibraryError("Le sélecteur de MP3 est disponible sur Mac.")
                 raise LibraryError(
                     "Sélecteur natif disponible sur Mac et Windows. Tu peux saisir le chemin."
                 )
