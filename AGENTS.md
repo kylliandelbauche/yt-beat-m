@@ -31,6 +31,8 @@ Vérifier les garanties utiles : persistance, chemins portables, migrations, rep
 
 ## Budget GitHub Actions
 
-Après l'alerte de quota du 29 octobre 2026, les validations sont locales par défaut. La CI applicative hébergée est manuelle, sans déclenchement sur push, PR ou fusion, avec Linux par défaut et Mac en option pour un besoin spécifique. Ne pas lancer de CI hébergée sans demande explicite ; publier les vérifications locales dans la PR. Ne pas changer les réglages de facturation à partir d'une simple alerte.
+Décision utilisateur du 3 novembre 2026, qui remplace la restriction manuelle du 29 octobre : le dépôt étant public, la CI applicative est automatique sur les PR vers main (Dependabot compris) et les push sur main, sur un runner standard ubuntu-latest. Le job conserve le nom stable Checks et un runner de repli pour les événements sans inputs. Ne pas remettre ces déclenchements en mode exclusivement manuel.
 
-Exception autorisée par l’utilisateur le 3 novembre 2026 : CodeQL en configuration par défaut, activé par l’utilisateur sur GitHub avec des runners standards. Ses analyses de sécurité automatiques sur les branches concernées, les PR éligibles et le calendrier GitHub sont autorisées. Cette exception ne rend pas automatiques les tests applicatifs et n’autorise ni les autres lancements de CI hébergée ni les changements de facturation.
+Le lancement manuel reste disponible, Linux par défaut et Mac en option pour un besoin spécifique. Garder les validations locales pertinentes et les consigner dans la PR ; éviter les relances hébergées redondantes. Les analyses automatiques CodeQL en configuration par défaut sur runners standards restent autorisées. Aucun changement de facturation ni runner payant n'est autorisé par cette décision.
+
+Pour exiger Checks dans la protection de main : fusionner d'abord la modification du workflow, vérifier une exécution réussie, puis guider l’utilisateur pour ajouter lui-même ce contrôle obligatoire. L'agent vérifie le résultat en lecture seule ; il ne modifie pas cette protection.

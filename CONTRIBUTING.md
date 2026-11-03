@@ -42,4 +42,4 @@ npm --prefix frontend exec playwright install chromium
 npm --prefix frontend run test:e2e
 ```
 
-Les tests navigateur utilisent une bibliothèque temporaire et de l'audio synthétique. Les validations sont locales par défaut ; le workflow de CI applicative reste manuel et ne doit pas être lancé sans demande explicite. Les analyses de sécurité CodeQL automatiques sont autorisées sur les runners standards, conformément à [AGENTS.md](AGENTS.md). Voir [les réglages du dépôt public](docs/security/github-settings.md).
+Les tests navigateur utilisent une bibliothèque temporaire et de l'audio synthétique. Compléter les validations locales pertinentes par la CI automatique sur les PR vers main et les push sur main, y compris les PR Dependabot. Le job Checks utilise Ubuntu par défaut ; le lancement manuel conserve Mac en option si nécessaire. Les analyses de sécurité CodeQL automatiques sont également autorisées sur les runners standards, conformément à [AGENTS.md](AGENTS.md). Voir [les réglages du dépôt public](docs/security/github-settings.md).
