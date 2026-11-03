@@ -1,6 +1,6 @@
 # Utiliser Beat m
 
-L'[installation et les commandes de vérification](../README.md) sont dans le README.
+Ce guide décrit l'utilisation d'une instance déjà lancée. Les commandes de développement et de vérification se trouvent dans [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Lancement
 
@@ -9,8 +9,6 @@ L'[installation et les commandes de vérification](../README.md) sont dans le RE
 - `uv run yt-beat-m doctor` vérifie les dépendances, sans téléchargement.
 - `uv run yt-beat-m serve --no-browser` évite l'ouverture du navigateur.
 - `uv run yt-beat-m serve --port 8766` utilise un autre port.
-
-Pour développer, lancer dans deux terminaux `uv run yt-beat-m serve --dev --no-browser` et `npm --prefix frontend run dev`, puis ouvrir `http://127.0.0.1:5173`.
 
 ## Bibliothèque
 
