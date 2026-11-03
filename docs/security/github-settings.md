@@ -16,7 +16,7 @@
 
 L’utilisateur a autorisé les analyses automatiques CodeQL après explication de leurs déclenchements. Cette exception est inscrite dans [AGENTS.md](../../AGENTS.md). Le workflow CI applicatif reste exclusivement manuel ; aucun test applicatif hébergé n’a été lancé pour cette opération. Aucun workflow du dépôt n’a été modifié.
 
-Le [scan initial CodeQL](https://github.com/kylliandelbauche/yt-beat-m/actions/runs/41631523999) s’est terminé sans erreur d’exécution pour les trois catégories. Il a produit **trois signalements ouverts**, dont un classé élevé par l’outil. Leur exploitabilité reste à vérifier : activer un scanner ne constitue pas une validation de sécurité du code. Les détails restent dans l’onglet Security du dépôt ; aucun rapport brut, donnée personnelle ou scénario d’exploitation n’est publié ici. Leur triage et les éventuelles corrections constituent un travail distinct.
+Le [scan initial CodeQL](https://github.com/kylliandelbauche/yt-beat-m/actions/runs/41631523999) s’est terminé sans erreur d’exécution pour les trois catégories. Il a produit **trois signalements initiaux**, dont un classé élevé par l’outil. Leur [triage ultérieur (#112)](codeql-triage.md) les classe comme faux positifs dans le modèle local documenté, avec revue des flux et tests ciblés. Activer un scanner ne constitue pas une validation de sécurité du code. Les détails restent dans l’onglet Security du dépôt ; aucun rapport brut, donnée personnelle ou scénario d’exploitation n’est publié ici.
 
 ## Dependabot
 
