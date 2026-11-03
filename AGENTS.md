@@ -31,4 +31,6 @@ Vérifier les garanties utiles : persistance, chemins portables, migrations, rep
 
 ## Budget GitHub Actions
 
-Après l'alerte de quota du 29 octobre 2026, les validations sont locales par défaut. La CI hébergée est manuelle, sans déclenchement sur push, PR ou fusion, avec Linux par défaut et Mac en option pour un besoin spécifique. Ne pas lancer de CI hébergée sans demande explicite ; publier les vérifications locales dans la PR. Ne pas changer les réglages de facturation à partir d'une simple alerte.
+Après l'alerte de quota du 29 octobre 2026, les validations sont locales par défaut. La CI applicative hébergée est manuelle, sans déclenchement sur push, PR ou fusion, avec Linux par défaut et Mac en option pour un besoin spécifique. Ne pas lancer de CI hébergée sans demande explicite ; publier les vérifications locales dans la PR. Ne pas changer les réglages de facturation à partir d'une simple alerte.
+
+Exception autorisée par l’utilisateur le 3 novembre 2026 : CodeQL en configuration par défaut, activé par l’utilisateur sur GitHub avec des runners standards. Ses analyses de sécurité automatiques sur les branches concernées, les PR éligibles et le calendrier GitHub sont autorisées. Cette exception ne rend pas automatiques les tests applicatifs et n’autorise ni les autres lancements de CI hébergée ni les changements de facturation.

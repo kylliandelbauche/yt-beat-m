@@ -19,3 +19,5 @@ Décrire la version ou le commit, le système, le comportement attendu et les é
 Les fichiers `.env`, bibliothèques, bases, médias, journaux et rapports locaux ne doivent pas être versionnés. Ne jamais placer un secret dans une variable `VITE_*` : elle serait intégrée à l'interface distribuée.
 
 L'[audit de préparation à la publication](docs/security/public-readiness.md) décrit les contrôles et leurs limites ; un scan sans alerte n'est pas une garantie d'absence de vulnérabilité.
+
+Les [réglages de sécurité du dépôt public](docs/security/github-settings.md) et l’exception CodeQL autorisée sont documentés séparément des audits du code.
