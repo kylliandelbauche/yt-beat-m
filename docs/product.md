@@ -232,3 +232,8 @@ Le [lot interface](design/97-mes-sons-interface.md) active la galerie Mes sons, 
 ## Mes sons — tags communs livrés (#98)
 
 Les morceaux partagent désormais les entités de tags du catalogue. Les tags de la prod actuelle sont hérités dynamiquement, ceux ajoutés au son restent directs ; cartes, recherche et filtre utilisent leur union sans doublon. La fiche distingue les deux origines et indique « Prod + son » lorsqu’elles coïncident. Changer/retirer la prod préserve les tags directs. Le + fixe prépare une sélection/création, validée seulement par le Save commun ; Annuler ne crée rien. Renommer/supprimer dans Réglages agit globalement sans toucher aux morceaux ni aux fichiers. Les anciens brouillons ne recréent pas silencieusement un tag supprimé. Voir [contrat et recette #98](design/98-song-tags.md). Notes/Paroles et cover personnelle restent dans #99–100.
+
+
+## Mes sons — Notes et Paroles livrées (#99)
+
+La rubrique Description propose deux champs indépendants, Notes et Paroles, dans le même brouillon que les informations et tags. Le bloc défile sans agrandir le volet. Agrandir ouvre une fenêtre800×680 adaptée à l’écran et au même mode lecture/édition ; fermer, Échap ou clic extérieur reviennent au volet sans sauvegarde implicite. Un seul Save valide la fiche ; Annuler restaure les deux textes et les autres champs. Texte brut, limite50 000 unités UTF-16 par champ, erreurs sans perte de saisie, focus et audio conservés. Voir [contrat et recette #99](design/99-song-text.md). La cover personnelle reste dans #100.

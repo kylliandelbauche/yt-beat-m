@@ -60,6 +60,11 @@ def create(client, headers, **fields):
     )
 
 
+def summary(song):
+    """Long editable text belongs to song details, not paginated gallery payloads."""
+    return {k: v for k, v in song.items() if k not in {"notes", "lyrics"}}
+
+
 def test_persisted_external_file_relations_and_partial_edits(songs):
     c, h, beat, file, root, prefs = songs
     before = hashlib.sha256(file.read_bytes()).hexdigest()
@@ -321,8 +326,10 @@ def test_song_search_filters_pagination_and_inherited_cover(songs):
     c, h, beat, file, root, _ = songs
     a = create(c, h, title="Été calme", beat_id=beat, favorite=True, state="Out").json()
     b = create(c, h, title="Nuit", state="Mixage").json()
-    assert c.get("/api/songs?q=ete&favorites=true&state=Out&linked=true").json()["songs"] == [a]
-    assert c.get("/api/songs?linked=false&limit=1").json()["songs"] == [b]
+    assert c.get("/api/songs?q=ete&favorites=true&state=Out&linked=true").json()["songs"] == [
+        summary(a)
+    ]
+    assert c.get("/api/songs?linked=false&limit=1").json()["songs"] == [summary(b)]
     assert c.get("/api/songs?state=Out&linked=false").json()["total"] == 0
     assert c.get("/api/songs?sort=unknown").status_code == 400
     assert c.get("/api/songs?state=unknown").status_code == 422

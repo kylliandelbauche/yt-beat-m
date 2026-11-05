@@ -11,6 +11,7 @@ import { useTitleMarquee } from "./useTitleMarquee";
 import type { ModalClose } from "./useModalLifecycle";
 import { ProdPicker } from "./SongRelations";
 import { SongTagPicker } from "./SongTagPicker";
+import { SongDescription, songTextLimit } from "./SongDescription";
 import { songTrack } from "./song";
 import type {
   Song,
@@ -33,6 +34,8 @@ type Draft = {
   file: FileSelection | null;
   direct_tags: TagChoice[];
   inherited_tags: CatalogTag[];
+  notes: string;
+  lyrics: string;
 };
 function draftFor(editor: SongEditor): Draft {
   const s = editor.song;
@@ -52,6 +55,8 @@ function draftFor(editor: SongEditor): Draft {
     inherited_tags: (s?.tags || [])
       .filter((t) => t.inherited)
       .map(({ id, label }) => ({ id, label })),
+    notes: s?.notes || "",
+    lyrics: s?.lyrics || "",
   };
 }
 function dateLabel(value: string) {
@@ -102,6 +107,8 @@ export function SongDetails({
   const [picking, setPicking] = useState(false);
   const [choosingProd, setChoosingProd] = useState(false);
   const [tagging, setTagging] = useState<HTMLElement | null>(null);
+  const [section, setSection] = useState<"info" | "description">("info");
+  const [textExpanded, setTextExpanded] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -116,6 +123,11 @@ export function SongDetails({
     (!editor.song ||
       JSON.stringify(draft) !== JSON.stringify(draftFor(editor)));
   const work = busy || picking || externalBusy;
+  const blocking = work || textExpanded;
+  const textValidation =
+    draft.notes.length > songTextLimit || draft.lyrics.length > songTextLimit
+      ? "Notes et Paroles : 50 000 caractères maximum par champ. Le texte reste dans le brouillon."
+      : "";
   const callbacks = useRef({ onDirtyChange, onBusyChange });
   useLayoutEffect(() => {
     callbacks.current = { onDirtyChange, onBusyChange };
@@ -125,9 +137,9 @@ export function SongDetails({
     return () => callbacks.current.onDirtyChange(false);
   }, [dirty]);
   useLayoutEffect(() => {
-    callbacks.current.onBusyChange(work);
+    callbacks.current.onBusyChange(blocking);
     return () => callbacks.current.onBusyChange(false);
-  }, [work]);
+  }, [blocking]);
   useTitleMarquee(title, !editing, titlePosition);
   useEffect(() => {
     if (saved && !busy) editButton.current?.focus({ preventScroll: true });
@@ -159,7 +171,7 @@ export function SongDetails({
     editButton.current?.focus({ preventScroll: true });
   }
   function requestClose(force = false) {
-    if (work) return;
+    if (blocking) return;
     if (!force && dirty) {
       setConfirm(true);
       return;
@@ -207,6 +219,7 @@ export function SongDetails({
     }
   }
   async function save() {
+    if (textValidation) return;
     if (work || !editing || !form.current?.reportValidity()) return;
     setBusy(true);
     setError("");
@@ -221,6 +234,8 @@ export function SongDetails({
       "created_on",
       "released_on",
       "beat_id",
+      "notes",
+      "lyrics",
     ] as const) {
       const value = ["created_on", "released_on"].includes(key)
         ? draft[key] || null
@@ -288,16 +303,23 @@ export function SongDetails({
         <button
           className="icon-button"
           aria-label="Informations du son"
-          aria-current="page"
-          onClick={() => shell.setRight(true)}
+          aria-current={section === "info" ? "page" : undefined}
+          onClick={() => {
+            setSection("info");
+            shell.setRight(true);
+          }}
         >
           <Icon name="info" />
         </button>
         <button
           className="icon-button"
-          aria-label="Notes et paroles · Bientôt"
-          title="Notes et paroles · Bientôt"
-          disabled
+          aria-label="Description du son"
+          title="Notes et paroles"
+          aria-current={section === "description" ? "page" : undefined}
+          onClick={() => {
+            setSection("description");
+            shell.setRight(true);
+          }}
         >
           <Icon name="description" />
         </button>
@@ -355,6 +377,7 @@ export function SongDetails({
         <form
           ref={form}
           className={`song-detail-form${editing ? " editing" : ""}`}
+          data-section={section}
           onSubmit={(e) => {
             e.preventDefault();
             void save();
@@ -376,222 +399,236 @@ export function SongDetails({
               }}
             />
           </h2>
-          <div className="song-detail-cover">
-            <button
-              type="button"
-              className="song-cover-play"
-              aria-label={`${playing ? "Mettre en pause" : "Écouter"} le son ${editor.song?.title || draft.title}`}
-              disabled={!editor.song?.file_available}
-              onClick={() => editor.song && onPlay(editor.song)}
-            >
-              <Artwork beat={preview} />
-              <span className={`cover-play${playing ? " is-playing" : ""}`}>
-                <Icon name={playing ? "pause" : "play"} filled />
+          <div className="song-info-fields" hidden={section !== "info"}>
+            <div className="song-detail-cover">
+              <button
+                type="button"
+                className="song-cover-play"
+                aria-label={`${playing ? "Mettre en pause" : "Écouter"} le son ${editor.song?.title || draft.title}`}
+                disabled={!editor.song?.file_available}
+                onClick={() => editor.song && onPlay(editor.song)}
+              >
+                <Artwork beat={preview} />
+                <span className={`cover-play${playing ? " is-playing" : ""}`}>
+                  <Icon name={playing ? "pause" : "play"} filled />
+                </span>
+              </button>
+              <span className="cover-duration">
+                {duration(preview.duration_seconds)}
               </span>
-            </button>
-            <span className="cover-duration">
-              {duration(preview.duration_seconds)}
-            </span>
-          </div>
-          <div className="song-detail-controls">
-            <SongStateControl
-              label="État du son dans la fiche"
-              value={draft.state}
-              disabled={!editing || work}
-              onChange={(value) => patch("state", value)}
-            />
-            <button
-              type="button"
-              className="song-prod"
-              aria-label={
-                editing
-                  ? "Choisir ou retirer la prod associée"
-                  : "Ouvrir la prod associée"
-              }
-              title={draft.beat_title || "Aucune prod associée"}
-              disabled={work || (!editing && !draft.beat_id)}
-              onClick={() =>
-                editing
-                  ? setChoosingProd(true)
-                  : draft.beat_id && onOpenBeat(draft.beat_id)
-              }
-            >
-              Prod
-              <Icon name="link" />
-            </button>
-          </div>
-          <div className="song-detail-tags" aria-label="Tags du son">
-            <div>
-              <small>
-                <button
-                  type="button"
-                  className="song-inherited-link"
-                  aria-label="Modifier les tags de la prod associée"
-                  title="Les tags hérités se modifient dans la prod"
-                  disabled={!draft.beat_id || work}
-                  onClick={() => draft.beat_id && onOpenBeat(draft.beat_id)}
-                >
-                  <Icon name="link" />
-                  Liés à la prod
-                </button>
-              </small>
-              <div
-                className="song-tags-line"
-                tabIndex={0}
-                aria-label="Tags liés à la prod"
-              >
-                {draft.inherited_tags.map((tag) => (
-                  <span
-                    className="song-tag inherited"
-                    key={tag.id}
-                    title={tag.label}
-                  >
-                    {tag.label}
-                    {draft.direct_tags.some((t) => t.id === tag.id) && (
-                      <span className="song-tag-origin">Prod + son</span>
-                    )}
-                  </span>
-                ))}
-                {!draft.inherited_tags.length && (
-                  <span className="song-tags-empty">Aucun tag lié</span>
-                )}
-              </div>
             </div>
-            <div className="song-direct-tags">
-              <small>Ajoutés au son</small>
-              <div
-                className="song-tags-line"
-                tabIndex={0}
-                aria-label="Tags ajoutés au son"
+            <div className="song-detail-controls">
+              <SongStateControl
+                label="État du son dans la fiche"
+                value={draft.state}
+                disabled={!editing || work}
+                onChange={(value) => patch("state", value)}
+              />
+              <button
+                type="button"
+                className="song-prod"
+                aria-label={
+                  editing
+                    ? "Choisir ou retirer la prod associée"
+                    : "Ouvrir la prod associée"
+                }
+                title={draft.beat_title || "Aucune prod associée"}
+                disabled={work || (!editing && !draft.beat_id)}
+                onClick={() =>
+                  editing
+                    ? setChoosingProd(true)
+                    : draft.beat_id && onOpenBeat(draft.beat_id)
+                }
               >
-                {draft.direct_tags
-                  .filter(
-                    (tag) =>
-                      !draft.inherited_tags.some(
-                        (t) => t.id === tag.id && tag.id !== null,
-                      ),
-                  )
-                  .map((tag) => (
+                Prod
+                <Icon name="link" />
+              </button>
+            </div>
+            <div className="song-detail-tags" aria-label="Tags du son">
+              <div>
+                <small>
+                  <button
+                    type="button"
+                    className="song-inherited-link"
+                    aria-label="Modifier les tags de la prod associée"
+                    title="Les tags hérités se modifient dans la prod"
+                    disabled={!draft.beat_id || work}
+                    onClick={() => draft.beat_id && onOpenBeat(draft.beat_id)}
+                  >
+                    <Icon name="link" />
+                    Liés à la prod
+                  </button>
+                </small>
+                <div
+                  className="song-tags-line"
+                  tabIndex={0}
+                  aria-label="Tags liés à la prod"
+                >
+                  {draft.inherited_tags.map((tag) => (
                     <span
-                      className="song-tag"
-                      key={tag.id ?? `new:${tag.label}`}
+                      className="song-tag inherited"
+                      key={tag.id}
                       title={tag.label}
                     >
                       {tag.label}
+                      {draft.direct_tags.some((t) => t.id === tag.id) && (
+                        <span className="song-tag-origin">Prod + son</span>
+                      )}
                     </span>
                   ))}
-                {!draft.direct_tags.some(
-                  (tag) => !draft.inherited_tags.some((t) => t.id === tag.id),
-                ) && <span className="song-tags-empty">Aucun autre tag</span>}
+                  {!draft.inherited_tags.length && (
+                    <span className="song-tags-empty">Aucun tag lié</span>
+                  )}
+                </div>
+              </div>
+              <div className="song-direct-tags">
+                <small>Ajoutés au son</small>
+                <div
+                  className="song-tags-line"
+                  tabIndex={0}
+                  aria-label="Tags ajoutés au son"
+                >
+                  {draft.direct_tags
+                    .filter(
+                      (tag) =>
+                        !draft.inherited_tags.some(
+                          (t) => t.id === tag.id && tag.id !== null,
+                        ),
+                    )
+                    .map((tag) => (
+                      <span
+                        className="song-tag"
+                        key={tag.id ?? `new:${tag.label}`}
+                        title={tag.label}
+                      >
+                        {tag.label}
+                      </span>
+                    ))}
+                  {!draft.direct_tags.some(
+                    (tag) => !draft.inherited_tags.some((t) => t.id === tag.id),
+                  ) && <span className="song-tags-empty">Aucun autre tag</span>}
+                </div>
+                <button
+                  type="button"
+                  className="icon-button song-add-tag"
+                  aria-label="Choisir les tags du son"
+                  aria-expanded={!!tagging}
+                  disabled={work}
+                  onClick={(e) => {
+                    setEditing(true);
+                    setSaved(false);
+                    setTagging(tagging ? null : e.currentTarget);
+                  }}
+                >
+                  <Icon name="plus" />
+                </button>
+              </div>
+            </div>
+            <div className="song-dates">
+              {(
+                [
+                  ["created_on", "Date de création"],
+                  ["released_on", "Date de sortie"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key}>
+                  <small>{label}</small>
+                  <span className="song-date-field">
+                    <span
+                      aria-hidden="true"
+                      style={{ visibility: editing ? "hidden" : "visible" }}
+                    >
+                      {dateLabel(draft[key])}
+                    </span>
+                    <input
+                      aria-label={label}
+                      type="date"
+                      min="0001-01-01"
+                      max="9999-12-31"
+                      value={draft[key]}
+                      readOnly={!editing}
+                      disabled={work || !editing}
+                      style={{ visibility: editing ? "visible" : "hidden" }}
+                      onChange={(e) => patch(key, e.target.value)}
+                    />
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="song-added">
+              <span>Ajout à la bibliothèque</span>
+              <span>
+                {editor.song
+                  ? dateLabel(editor.song.added_at)
+                  : "À l’enregistrement"}
+              </span>
+            </div>
+            <div className="song-file-actions">
+              <div className="song-file-status" role="status">
+                {draft.file
+                  ? draft.file.name
+                  : editor.song?.file_available
+                    ? "MP3 lié"
+                    : "Fichier indisponible · reconnecter le MP3"}
               </div>
               <button
                 type="button"
-                className="icon-button song-add-tag"
-                aria-label="Choisir les tags du son"
-                aria-expanded={!!tagging}
-                disabled={work}
-                onClick={(e) => {
-                  setEditing(true);
-                  setSaved(false);
-                  setTagging(tagging ? null : e.currentTarget);
+                disabled={!editor.song?.file_available || work}
+                onClick={() => {
+                  setError("");
+                  setBusy(true);
+                  void api(`/api/songs/${editor.song!.id}/reveal`, {
+                    method: "POST",
+                  })
+                    .catch((e) => setError(e.message))
+                    .finally(() => setBusy(false));
                 }}
               >
-                <Icon name="plus" />
+                <Icon name="folder" />
+                Afficher le fichier
+              </button>
+              <button
+                type="button"
+                disabled={work}
+                onClick={() => void pickFile()}
+                aria-busy={picking}
+              >
+                <Icon name="link" />
+                Changer le fichier lié
               </button>
             </div>
           </div>
-          <div className="song-dates">
-            {(
-              [
-                ["created_on", "Date de création"],
-                ["released_on", "Date de sortie"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key}>
-                <small>{label}</small>
-                <span className="song-date-field">
-                  <span
-                    aria-hidden="true"
-                    style={{ visibility: editing ? "hidden" : "visible" }}
-                  >
-                    {dateLabel(draft[key])}
-                  </span>
-                  <input
-                    aria-label={label}
-                    type="date"
-                    min="0001-01-01"
-                    max="9999-12-31"
-                    value={draft[key]}
-                    readOnly={!editing}
-                    disabled={work || !editing}
-                    style={{ visibility: editing ? "visible" : "hidden" }}
-                    onChange={(e) => patch(key, e.target.value)}
-                  />
-                </span>
-              </label>
-            ))}
-          </div>
-          <div className="song-added">
-            <span>Ajout à la bibliothèque</span>
-            <span>
-              {editor.song
-                ? dateLabel(editor.song.added_at)
-                : "À l’enregistrement"}
-            </span>
-          </div>
-          <div className="song-file-actions">
-            <div className="song-file-status" role="status">
-              {draft.file
-                ? draft.file.name
-                : editor.song?.file_available
-                  ? "MP3 lié"
-                  : "Fichier indisponible · reconnecter le MP3"}
-            </div>
-            <button
-              type="button"
-              disabled={!editor.song?.file_available || work}
-              onClick={() => {
-                setError("");
-                setBusy(true);
-                void api(`/api/songs/${editor.song!.id}/reveal`, {
-                  method: "POST",
-                })
-                  .catch((e) => setError(e.message))
-                  .finally(() => setBusy(false));
-              }}
-            >
-              <Icon name="folder" />
-              Afficher le fichier
-            </button>
-            <button
-              type="button"
-              disabled={work}
-              onClick={() => void pickFile()}
-              aria-busy={picking}
-            >
-              <Icon name="link" />
-              Changer le fichier lié
-            </button>
-          </div>
         </form>
-        {(error || playbackError) && (
+        <SongDescription
+          hidden={section !== "description"}
+          title={draft.title}
+          notes={draft.notes}
+          lyrics={draft.lyrics}
+          editing={editing}
+          busy={work}
+          onChange={(field, value) => patch(field, value)}
+          onExpandedChange={setTextExpanded}
+        />
+        {(error || textValidation || playbackError) && (
           <div className="song-detail-feedback" role="alert">
-            <span>{error || playbackError}</span>
+            <span>{error || textValidation || playbackError}</span>
             {error && editor.song && (
               <button type="button" onClick={onReload} disabled={work}>
                 Recharger la fiche
               </button>
             )}
-            <button
-              className="icon-button"
-              aria-label="Masquer l’erreur du son"
-              onClick={() => {
-                setError("");
-                onDismissPlaybackError();
-              }}
-            >
-              <Icon name="close" />
-            </button>
+            {(error || playbackError) && (
+              <button
+                className="icon-button"
+                aria-label="Masquer l’erreur du son"
+                onClick={() => {
+                  setError("");
+                  onDismissPlaybackError();
+                }}
+              >
+                <Icon name="close" />
+              </button>
+            )}
           </div>
         )}
         <span className="sr-only" role="status">

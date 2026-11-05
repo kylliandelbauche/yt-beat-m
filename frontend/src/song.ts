@@ -27,6 +27,8 @@ export type Song = {
   file_available: boolean;
   audio_url: string;
   tags: SongTag[];
+  notes?: string;
+  lyrics?: string;
 };
 export type SongPage = { songs: Song[]; total: number };
 export type FileSelection = {
