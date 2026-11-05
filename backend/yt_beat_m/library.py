@@ -20,6 +20,7 @@ MIGRATIONS = {
     6: Path(__file__).parent / "migrations" / "006_tag_names.sql",
     7: Path(__file__).parent / "migrations" / "007_songs.sql",
     8: Path(__file__).parent / "migrations" / "008_song_tags.sql",
+    9: Path(__file__).parent / "migrations" / "009_song_text.sql",
 }
 
 

@@ -21,6 +21,7 @@ from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.metadata import normalize
 
 State = Literal["Topline", "Maquette", "Mixage", "Master", "Out"]
+TEXT_LIMIT = 50_000
 
 
 class SongTagFields(BaseModel):
@@ -35,7 +36,27 @@ class SongTagFields(BaseModel):
     )
 
 
-class SongCreate(SongTagFields):
+class SongContentFields(SongTagFields):
+    notes: str = Field(default="", max_length=TEXT_LIMIT)
+    lyrics: str = Field(default="", max_length=TEXT_LIMIT)
+
+    @field_validator("notes", "lyrics")
+    @classmethod
+    def text_content(cls, value):
+        if any(
+            ord(ch) < 32 and ch not in "\t\n\r" or ord(ch) == 127 or 0xD800 <= ord(ch) <= 0xDFFF
+            for ch in value
+        ):
+            raise ValueError(
+                "Texte non valide ; utilise des caractères lisibles et des retours à la ligne."
+            )
+        value = value.replace("\r\n", "\n").replace("\r", "\n")
+        if len(value.encode("utf-16-le")) // 2 > TEXT_LIMIT:
+            raise ValueError("50 000 caractères maximum par champ (notation UTF-16).")
+        return value
+
+
+class SongCreate(SongContentFields):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=500)
     state: State
@@ -53,7 +74,7 @@ class SongCreate(SongTagFields):
         return value.strip()
 
 
-class SongPatch(SongTagFields):
+class SongPatch(SongContentFields):
     model_config = ConfigDict(extra="forbid")
     expected_revision: int = Field(ge=1)
     title: str | None = Field(default=None, min_length=1, max_length=500)
@@ -183,7 +204,7 @@ class SongFiles:
         return None
 
 
-def song_view(library, files, row, tags):
+def song_view(library, files, row, tags, *, detail=False):
     result = {
         k: row[k]
         for k in (
@@ -205,6 +226,8 @@ def song_view(library, files, row, tags):
     result["file_available"] = files.resolve(library, row) is not None
     result["audio_url"] = f"/api/songs/{row['id']}/audio"
     result["tags"] = tags
+    if detail:
+        result.update(notes=row["notes"], lyrics=row["lyrics"])
     return result
 
 
@@ -279,7 +302,9 @@ def get_song(library, files, identity):
     with library.catalog() as c:
         row = c.execute(SONG_SELECT + " WHERE s.id=?", (identity,)).fetchone()
         return (
-            song_view(library, files, row, tags_for_songs(c, [identity])[identity]) if row else None
+            song_view(library, files, row, tags_for_songs(c, [identity])[identity], detail=True)
+            if row
+            else None
         )
 
 
@@ -411,8 +436,8 @@ def save_song(library, files, payload, identity=None):
                 data = {**payload.model_dump(mode="json"), **prepared}
                 c.execute(
                     "INSERT INTO songs(id,title,state,favorite,created_on,released_on,added_at,"
-                    "beat_id,audio_path,external_ref,duration_seconds) "
-                    "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                    "beat_id,audio_path,external_ref,duration_seconds,notes,lyrics) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         identity,
                         data["title"],
@@ -425,6 +450,8 @@ def save_song(library, files, payload, identity=None):
                         data["audio_path"],
                         data["external_ref"],
                         data["duration_seconds"],
+                        data["notes"],
+                        data["lyrics"],
                     ),
                 )
             if tag_ids is not None:

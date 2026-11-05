@@ -115,10 +115,13 @@ export function Icon({
     | "volume"
     | "mute"
     | "previous"
-    | "next";
+    | "next"
+    | "expand";
   filled?: boolean;
 }) {
   const paths = {
+    expand:
+      "M8 3H3V8M16 3H21V8M21 16V21H16M8 21H3V16M3 3L9 9M21 3L15 9M21 21L15 15M3 21L9 15",
     tag: "M3 3h8l10 10-8 8L3 11ZM7 7h.01",
     trash: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7",
     person: "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-3a8 8 0 0 1 16 0v3",

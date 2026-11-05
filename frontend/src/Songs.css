@@ -854,3 +854,201 @@ button.song-filter {
     transition: none !important;
   }
 }
+
+/* SON-DESC-01/02 and PAR-01: shared draft, independently scrolling text surfaces. */
+.song-sidebar .detail-rail > button:nth-child(2) {
+  background: transparent;
+}
+.song-sidebar .detail-rail > button[aria-current="page"] {
+  background: var(--selected);
+}
+.song-detail-form[data-section="description"]::after {
+  display: none;
+}
+.song-description[hidden],
+.song-text-block[hidden] {
+  display: none;
+}
+.song-description {
+  position: absolute;
+  top: 124px;
+  bottom: 44px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.song-text-tabs {
+  position: relative;
+  display: flex;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+.song-text-tabs > button {
+  position: relative;
+  width: 50%;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font: 400 12px/18px var(--font-body);
+}
+.song-text-tabs > button[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 500;
+}
+.song-text-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 2);
+  height: 28px;
+  background: var(--floating);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  pointer-events: none;
+  transition: transform 160ms ease;
+}
+.song-text-tabs[data-field="lyrics"] .song-text-indicator {
+  transform: translateX(100%);
+}
+.song-text-block {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 12px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.song-text-block.editing {
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.song-text-block > textarea,
+.song-text-modal > textarea {
+  position: absolute;
+  left: 16px;
+  top: 56px;
+  width: calc(100% - 32px);
+  height: calc(100% - 72px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  resize: none;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  color: var(--ink);
+  font: 400 13px/22px var(--font-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.song-text-block > textarea:disabled,
+.song-text-modal > textarea:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: var(--ink);
+}
+.song-text-expand.icon-button {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  border-radius: 7px;
+  background: var(--floating);
+}
+.song-text-expand > svg {
+  width: 16px;
+  height: 16px;
+}
+.song-text-modal.app-modal {
+  width: 800px;
+  height: 680px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px var(--shadow);
+}
+.song-text-modal .modal-header {
+  position: absolute;
+  left: 32px;
+  right: 24px;
+  top: 24px;
+  height: 40px;
+  margin: 0;
+}
+.song-text-modal .modal-title {
+  position: absolute;
+  left: 0;
+  right: 56px;
+  top: 4px;
+}
+.song-text-modal .modal-title h2 {
+  margin: 0;
+  font: 600 24px/32px var(--font-heading);
+}
+.song-text-modal .modal-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.song-text-modal > textarea {
+  left: 56px;
+  top: 104px;
+  width: calc(100% - 112px);
+  height: calc(100% - 144px);
+  font-size: 16px;
+  line-height: 28px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .song-text-indicator {
+    transition: none;
+  }
+}
+
+/* A narrow center column must not let player controls paint over the song text. */
+.local-player {
+  container-type: inline-size;
+  container-name: beat-player;
+}
+@container beat-player (max-width: 480px) {
+  .audio-controls {
+    gap: 4px;
+  }
+  .audio-controls .player-time {
+    display: none;
+  }
+}
+@container beat-player (max-width: 360px) {
+  .player-description {
+    flex: 0 0 44px;
+    min-width: 44px;
+    max-width: 44px;
+  }
+  .player-description > span:last-child {
+    display: none;
+  }
+}
+.song-text-limit {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  bottom: 12px;
+  height: 20px;
+  overflow: auto;
+  font: 12px/20px var(--font-body);
+  color: var(--error);
+}

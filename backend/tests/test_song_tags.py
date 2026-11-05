@@ -6,7 +6,7 @@ from contextlib import closing
 from uuid import uuid4
 
 import pytest
-from test_songs import AUDIO, create
+from test_songs import AUDIO, create, summary
 from test_songs import songs as songs
 from yt_beat_m import library as storage
 from yt_beat_m.library import Library, LibraryError
@@ -41,7 +41,7 @@ def test_dynamic_union_preserves_direct_identity_across_prod_changes_and_reopen(
         ("Été", False, True),
         ("Direct", True, False),
     ]
-    assert c.get("/api/songs").json()["songs"] == [song]
+    assert c.get("/api/songs").json()["songs"] == [summary(song)]
     prod_tags(c, h, beat, ["Nouveau"])
     changed = c.get(f"/api/songs/{song['id']}").json()
     assert {t["label"] for t in changed["tags"]} == {"Nouveau", "Chill", "Direct"}
@@ -98,16 +98,16 @@ def test_search_filters_union_before_pagination_and_honest_counts(songs):
     current = tags(c)
     assert current["Été"]["beat_count"] == 1 and current["Été"]["song_count"] == 1
     assert current["Voix"]["beat_count"] == 0 and current["Voix"]["song_count"] == 1
-    assert c.get("/api/songs?q=ete").json()["songs"] == [a]
-    assert c.get("/api/songs?q=alpha%20ete&favorites=true").json()["songs"] == [a]
-    assert c.get("/api/songs?q=VOIX").json()["songs"] == [b]
+    assert c.get("/api/songs?q=ete").json()["songs"] == [summary(a)]
+    assert c.get("/api/songs?q=alpha%20ete&favorites=true").json()["songs"] == [summary(a)]
+    assert c.get("/api/songs?q=VOIX").json()["songs"] == [summary(b)]
     q = [("tag_ids", identities["Été"]["id"]), ("tag_ids", current["Voix"]["id"])]
     result = c.get(
         "/api/songs", params=[*q, ("sort", "added_asc"), ("limit", 1), ("offset", 1)]
     ).json()
-    assert result["total"] == 2 and result["songs"] == [b]
-    assert c.get("/api/songs", params=[*q, ("linked", "true")]).json()["songs"] == [a]
-    assert c.get("/api/songs?tag_missing=true").json()["songs"] == [empty]
+    assert result["total"] == 2 and result["songs"] == [summary(b)]
+    assert c.get("/api/songs", params=[*q, ("linked", "true")]).json()["songs"] == [summary(a)]
+    assert c.get("/api/songs?tag_missing=true").json()["songs"] == [summary(empty)]
     assert (
         c.get(
             "/api/songs", params=[("tag_ids", current["Voix"]["id"]), ("tag_missing", "true")]
@@ -222,7 +222,7 @@ def test_v7_migration_backup_failure_and_portable_media(tmp_path, monkeypatch):
         song = get_song(lib, SongFiles(tmp_path / "registry.sqlite3"), identity)
         assert song["title"] == "Kept" and song["tags"] == [] and song["file_available"]
         assert lib.safe_path("audio/kept.mp3").read_bytes() == AUDIO
-        assert lib.summary()["schema_version"] == 8
+        assert lib.summary()["schema_version"] == max(storage.MIGRATIONS)
         backups = list((moved / "backups").glob("catalog-v7-*.sqlite3"))
         assert backups
         with sqlite3.connect(backups[0]) as c:

@@ -7,6 +7,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from platformdirs import user_config_path
@@ -94,6 +95,30 @@ def create_app(
     app = FastAPI(
         title="YT Beat M", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
     )
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request: Request, error: RequestValidationError):
+        # Retain actionable field errors without reflecting raw drafts (including
+        # escaped unpaired surrogates which cannot be encoded in a JSON response).
+        def readable(value):
+            return str(value).encode("utf-8", errors="replace").decode("utf-8")
+
+        return JSONResponse(
+            {
+                "detail": [
+                    {
+                        "loc": [
+                            part if isinstance(part, int) else readable(part)
+                            for part in item["loc"]
+                        ],
+                        "msg": readable(item["msg"]),
+                        "type": readable(item["type"]),
+                    }
+                    for item in error.errors()
+                ]
+            },
+            status_code=422,
+        )
 
     @app.exception_handler(LibraryError)
     async def library_error(request: Request, error: LibraryError):
