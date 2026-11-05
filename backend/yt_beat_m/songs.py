@@ -5,23 +5,37 @@ import secrets
 import sqlite3
 import threading
 import time
+import unicodedata
 from contextlib import closing
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from mutagen import MutagenError
 from mutagen.mp3 import MP3
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from yt_beat_m.catalog_tags import TagConflict, ensure_tag, resolve_label
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.metadata import normalize
 
 State = Literal["Topline", "Maquette", "Mixage", "Master", "Out"]
 
 
-class SongCreate(BaseModel):
+class SongTagFields(BaseModel):
+    tag_ids: list[Annotated[int, Field(strict=True, gt=0)]] = Field(
+        default_factory=list, max_length=120
+    )
+    new_tags: list[Annotated[str, Field(max_length=500)]] = Field(
+        default_factory=list, max_length=120
+    )
+    recreate_tags: list[Annotated[str, Field(max_length=500)]] = Field(
+        default_factory=list, max_length=120
+    )
+
+
+class SongCreate(SongTagFields):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=500)
     state: State
@@ -39,7 +53,7 @@ class SongCreate(BaseModel):
         return value.strip()
 
 
-class SongPatch(BaseModel):
+class SongPatch(SongTagFields):
     model_config = ConfigDict(extra="forbid")
     expected_revision: int = Field(ge=1)
     title: str | None = Field(default=None, min_length=1, max_length=500)
@@ -169,7 +183,7 @@ class SongFiles:
         return None
 
 
-def song_view(library, files, row):
+def song_view(library, files, row, tags):
     result = {
         k: row[k]
         for k in (
@@ -190,7 +204,69 @@ def song_view(library, files, row):
     result["favorite"] = bool(result["favorite"])
     result["file_available"] = files.resolve(library, row) is not None
     result["audio_url"] = f"/api/songs/{row['id']}/audio"
+    result["tags"] = tags
     return result
+
+
+def tags_for_songs(c, identities):
+    result = {identity: {} for identity in identities}
+    if not identities:
+        return result
+    placeholders = ",".join("?" for _ in identities)
+    for row in c.execute(
+        "SELECT s.id AS song_id,t.id,t.label,1 AS inherited,l.position FROM songs s "
+        "JOIN beat_catalog_tags l ON l.beat_id=s.beat_id JOIN catalog_tags t ON t.id=l.tag_id "
+        f"WHERE s.id IN ({placeholders}) UNION ALL "
+        "SELECT l.song_id,t.id,t.label,0 AS inherited,l.position FROM song_catalog_tags l "
+        f"JOIN catalog_tags t ON t.id=l.tag_id WHERE l.song_id IN ({placeholders}) "
+        "ORDER BY inherited DESC,position,id",
+        [*identities, *identities],
+    ):
+        tag = result[row["song_id"]].setdefault(
+            row["id"],
+            {"id": row["id"], "label": row["label"], "direct": False, "inherited": False},
+        )
+        tag["inherited" if row["inherited"] else "direct"] = True
+    return {identity: list(tags.values()) for identity, tags in result.items()}
+
+
+# Used with songs s and catalog_tags t; each origin is resolved by entity ID.
+TAG_MEMBERSHIP = (
+    "(EXISTS(SELECT 1 FROM song_catalog_tags st WHERE st.song_id=s.id AND st.tag_id=t.id) "
+    "OR EXISTS(SELECT 1 FROM beat_catalog_tags bt "
+    "WHERE bt.beat_id=s.beat_id AND bt.tag_id=t.id))"
+)
+
+
+def replace_song_tags(c, identity, tag_ids, new_tags, recreate):
+    if not set(recreate).issubset(new_tags):
+        raise LibraryError("La recréation doit concerner les nouveaux tags sélectionnés.")
+    identities = list(dict.fromkeys(tag_ids))
+    for tag in identities:
+        if not c.execute("SELECT 1 FROM catalog_tags WHERE id=?", (tag,)).fetchone():
+            raise TagConflict(
+                "Un tag a été supprimé. Actualise la fiche ou retire-le du brouillon."
+            )
+    known = {r[0] for r in c.execute("SELECT label FROM catalog_tag_names")}
+    for raw in new_tags:
+        label = raw if raw in known else " ".join(raw.split())
+        if (
+            not label
+            or label not in known
+            and (len(label) > 80 or any(unicodedata.category(ch).startswith("C") for ch in label))
+        ):
+            raise LibraryError("Tags : 80 caractères lisibles maximum par nouveau tag.")
+        label = resolve_label(c, label, recreate=raw in recreate)
+        tag = ensure_tag(c, label)
+        if tag not in identities:
+            identities.append(tag)
+    if len(identities) > 120:
+        raise LibraryError("120 tags directs maximum par son.")
+    c.execute("DELETE FROM song_catalog_tags WHERE song_id=?", (identity,))
+    c.executemany(
+        "INSERT INTO song_catalog_tags VALUES(?,?,?)",
+        [(identity, tag, pos) for pos, tag in enumerate(identities)],
+    )
 
 
 SONG_SELECT = (
@@ -202,7 +278,9 @@ SONG_SELECT = (
 def get_song(library, files, identity):
     with library.catalog() as c:
         row = c.execute(SONG_SELECT + " WHERE s.id=?", (identity,)).fetchone()
-        return song_view(library, files, row) if row else None
+        return (
+            song_view(library, files, row, tags_for_songs(c, [identity])[identity]) if row else None
+        )
 
 
 def list_songs(
@@ -218,6 +296,8 @@ def list_songs(
     linked=None,
     available=None,
     profile_id=None,
+    tag_ids=None,
+    tag_missing=False,
     sort="added_desc",
 ):
     ordering = {"added_desc": "s.added_at DESC", "added_asc": "s.added_at ASC"}
@@ -241,8 +321,26 @@ def list_songs(
         )
         args.append(str(profile_id))
     for term in normalize(q).split():
-        clauses.append("instr(normalized(s.title),?)>0")
-        args.append(term)
+        clauses.append(
+            "(instr(normalized(s.title),?)>0 OR EXISTS(SELECT 1 FROM catalog_tags t WHERE "
+            + TAG_MEMBERSHIP
+            + " AND instr(t.normalized_label,?)>0))"
+        )
+        args.extend([term, term])
+    tag_clauses = []
+    if tag_ids:
+        tag_clauses.append(
+            "EXISTS(SELECT 1 FROM catalog_tags t WHERE "
+            + TAG_MEMBERSHIP
+            + " AND t.id IN ("
+            + ",".join("?" for _ in tag_ids)
+            + "))"
+        )
+        args.extend(tag_ids)
+    if tag_missing:
+        tag_clauses.append("NOT EXISTS(SELECT 1 FROM catalog_tags t WHERE " + TAG_MEMBERSHIP + ")")
+    if tag_clauses:
+        clauses.append("(" + " OR ".join(tag_clauses) + ")")
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
     with library.catalog() as c:
         c.create_function("normalized", 1, normalize, deterministic=True)
@@ -260,13 +358,24 @@ def list_songs(
         else:
             total = c.execute("SELECT count(*) FROM songs s" + where, args).fetchone()[0]
             rows = c.execute(sql + " LIMIT ? OFFSET ?", [*args, limit, offset]).fetchall()
-        return {"songs": [song_view(library, files, r) for r in rows], "total": total}
+        tags = tags_for_songs(c, [r["id"] for r in rows])
+        return {
+            "songs": [song_view(library, files, r, tags[r["id"]]) for r in rows],
+            "total": total,
+        }
 
 
 def save_song(library, files, payload, identity=None):
     values = payload.model_dump(mode="json", exclude_unset=True)
     selection = values.pop("selection_id", None)
     expected = values.pop("expected_revision", None)
+    tag_ids = values.pop("tag_ids", None)
+    new_tags = values.pop("new_tags", [])
+    recreate = values.pop("recreate_tags", [])
+    if (new_tags or recreate) and tag_ids is None:
+        if identity:
+            raise LibraryError("Fournis les tags directs avec les nouvelles sélections.")
+        tag_ids = []
     if identity and any(values.get(k, True) is None for k in ("title", "state", "favorite")):
         raise LibraryError("Titre, état et favori ne peuvent pas être vides.")
     if "selection_id" in payload.model_fields_set and selection is None:
@@ -318,6 +427,8 @@ def save_song(library, files, payload, identity=None):
                         data["duration_seconds"],
                     ),
                 )
+            if tag_ids is not None:
+                replace_song_tags(c, identity, tag_ids, new_tags, recreate)
     except Exception:
         if prepared:
             files.discard(prepared["external_ref"])

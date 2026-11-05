@@ -1,6 +1,6 @@
 # Mes sons — contrat validé et découpage
 
-Statut au 2 novembre 2026 : **socle moteur #96 et interface #97 livrés ; lots #98–100 non implémentés**. Parent [#11](https://github.com/kylliandelbauche/yt-beat-m/issues/11), préparation #95. Les références sont lues dans [Paper / Mes sons](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-H-0), sans modifier les maquettes. Les cadres Officiel sont validés même si la page s'appelle encore Propositions. Aucun visuel, parole illustrative ou donnée personnelle de Paper n'est importé dans le dépôt.
+Statut au 5 novembre 2026 : **socle moteur #96, interface #97 et tags #98 livrés ; Notes/Paroles #99 et cover personnelle #100 restent à implémenter**. Parent [#11](https://github.com/kylliandelbauche/yt-beat-m/issues/11), préparation #95. Les références sont lues dans [Paper / Mes sons](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-H-0), sans modifier les maquettes. Les cadres Officiel sont validés même si la page s'appelle encore Propositions. Aucun visuel, parole illustrative ou donnée personnelle de Paper n'est importé dans le dépôt.
 
 ## Décisions et données
 
@@ -42,6 +42,6 @@ Le lecteur unique s'étend aux deux types d'entités ; il reste monté et conser
 
 Le socle #96 livre modèle, API, sélection native et médias ; aucun écran Mes sons n’est activé avant #97. Les autres lots restent Open sans démarrage implicite. Le cadrage est mesuré sous #95 et le développement du socle sous #96. Chaque lot décrit ses dépendances et recettes ; #11 se ferme après intégration des cinq.
 
-Recette utile : migration/réouverture sans perte, deux sons sur une prod, remplacement/retrait et retour inverse, fichier extérieur absent puis reconnecté, empreintes conservées ; union des tags et anciens brouillons ; état carte immédiat sans écraser la fiche ; Notes/Paroles et agrandi au même brouillon ; cover personnelle/héritée, annulation et échec atomique ; dimensions/textes/actions, clavier/focus et audio. Réutiliser les tests déjà valides, ajouter seulement les garanties affectées. Aucun média personnel ni CI hébergée. Écoute physique et logiciel musical restent des gestes utilisateur.
+Recette utile : migration/réouverture sans perte, deux sons sur une prod, remplacement/retrait et retour inverse, fichier extérieur absent puis reconnecté, empreintes conservées ; union des tags et anciens brouillons ; état carte immédiat sans écraser la fiche ; Notes/Paroles et agrandi au même brouillon ; cover personnelle/héritée, annulation et échec atomique ; dimensions/textes/actions, clavier/focus et audio. Réutiliser les tests déjà valides, ajouter seulement les garanties affectées. Aucun média personnel dans les tests. La CI automatique sur PR/main est désormais autorisée par la décision #114 du 3 novembre 2026. Écoute physique et logiciel musical restent des gestes utilisateur.
 
 Hors périmètre : plusieurs prods par son, comptes/cloud/partage, synchronisation, DAW et mixage navigateur, copie automatique des MP3, publication musicale, chantier Windows et lanceur.

@@ -6,13 +6,14 @@ import { Icon } from "./Modal";
 import { PaneIcon } from "./Shell";
 import { ScrollingTitle } from "./ScrollingTitle";
 import { SongDetails } from "./SongDetails";
+import { SongTagPicker } from "./SongTagPicker";
 import type { SongEditor } from "./SongDetails";
 import { duration } from "./beat";
 import type { ModalClose } from "./useModalLifecycle";
 import type { Producer } from "./Beatmakers";
 import { useShell } from "./shellContext";
 import { songTrack, songStates } from "./song";
-import type { FileSelection, Song, SongPage } from "./song";
+import type { FileSelection, Song, SongPage, TagChoice } from "./song";
 
 export type SongsController = {
   open: (id: string) => void;
@@ -65,6 +66,12 @@ export function SongsWorkspace({
   const [linked, setLinked] = useState("");
   const [available, setAvailable] = useState("");
   const [profile, setProfile] = useState("");
+  const [tagFilters, setTagFilters] = useState<TagChoice[]>([]);
+  const [tagMissing, setTagMissing] = useState(false);
+  const [tagFilterAnchor, setTagFilterAnchor] = useState<HTMLElement | null>(
+    null,
+  );
+  const [editorDirty, setEditorDirty] = useState(false);
   const [profiles, setProfiles] = useState<Producer[]>([]);
   const [sort, setSort] = useState("added_desc");
   const [reload, setReload] = useState(0);
@@ -92,6 +99,10 @@ export function SongsWorkspace({
   if (linked) params.set("linked", linked);
   if (available) params.set("available", available);
   if (profile) params.set("profile_id", profile);
+  tagFilters.forEach((tag) => {
+    if (tag.id !== null) params.append("tag_ids", String(tag.id));
+  });
+  if (tagMissing) params.set("tag_missing", "true");
   const key = params.toString();
   const latest = useRef(key);
   useLayoutEffect(() => {
@@ -104,6 +115,36 @@ export function SongsWorkspace({
   useEffect(() => {
     queueCallback.current(page?.songs || []);
   }, [page]);
+  const [observedTagChange, setObservedTagChange] = useState(shell.tagChange);
+  if (shell.tagChange !== observedTagChange && shell.tagChange) {
+    const change = shell.tagChange;
+    setObservedTagChange(change);
+    setTagFilters((tags) =>
+      tags.flatMap((t) =>
+        t.label === change.old_label
+          ? change.label
+            ? [{ ...t, label: change.label }]
+            : []
+          : [t],
+      ),
+    );
+  }
+  const editorId = editor?.song?.id;
+  useEffect(() => {
+    if (!connected || !editorId || editorDirty || busyEditor.current) return;
+    const c = new AbortController();
+    void api<Song>(`/api/songs/${editorId}`, { signal: c.signal })
+      .then((song) => {
+        if (!c.signal.aborted && !dirty.current && !busyEditor.current)
+          setEditor((current) =>
+            current?.song?.id === editorId ? { song, file: null } : current,
+          );
+      })
+      .catch(() => {
+        /* Keep the existing fiche; explicit reload remains available. */
+      });
+    return () => c.abort();
+  }, [connected, revision, editorId, editorDirty]);
   useEffect(() => {
     if (!connected) return;
     const c = new AbortController();
@@ -359,8 +400,17 @@ export function SongsWorkspace({
               </select>
               <Icon name="chevron" />
             </label>
-            <button disabled className="song-filter" title="Tags · Bientôt">
-              Tags <small className="sr-only">Bientôt</small>
+            <button
+              className="song-filter song-tag-filter"
+              aria-label="Filtrer les sons par tags"
+              aria-expanded={!!tagFilterAnchor}
+              aria-pressed={!!tagFilters.length || tagMissing}
+              onClick={(e) =>
+                setTagFilterAnchor(tagFilterAnchor ? null : e.currentTarget)
+              }
+            >
+              Tags <span>{tagFilters.length + Number(tagMissing) || ""}</span>
+              <Icon name="chevron" />
             </button>
             <label className="song-filter">
               <select
@@ -541,7 +591,16 @@ export function SongsWorkspace({
                 aria-label={`Informations du son ${song.title}`}
                 onClick={() => open(song.id)}
               >
-                <span>Tags · Bientôt</span>
+                {(song.tags || []).map((tag) => (
+                  <span
+                    className={`song-tag${tag.inherited ? " inherited" : ""}`}
+                    key={tag.id}
+                    title={`${tag.label} · ${tag.direct && tag.inherited ? "Prod + son" : tag.inherited ? "Lié à la prod" : "Ajouté au son"}`}
+                  >
+                    {tag.label}
+                  </span>
+                ))}
+                {!song.tags?.length && <span>Aucun tag</span>}
               </button>
             </article>
           ))}
@@ -555,6 +614,8 @@ export function SongsWorkspace({
               linked ||
               available ||
               profile ||
+              tagFilters.length ||
+              tagMissing ||
               shell.favorites
                 ? "Aucun son ne correspond"
                 : "Ton premier son t’attend"}
@@ -605,6 +666,7 @@ export function SongsWorkspace({
           navigationRef={navigation}
           onDirtyChange={(value) => {
             dirty.current = value;
+            setEditorDirty(value);
           }}
           onBusyChange={(value) => {
             busyEditor.current = value;
@@ -623,6 +685,17 @@ export function SongsWorkspace({
               : ""
           }
           onDismissPlaybackError={onDismissPlaybackError}
+        />
+      )}
+      {tagFilterAnchor && visible && (
+        <SongTagPicker
+          anchor={tagFilterAnchor}
+          selected={tagFilters}
+          filter
+          missing={tagMissing}
+          onMissing={setTagMissing}
+          onChange={setTagFilters}
+          onClose={() => setTagFilterAnchor(null)}
         />
       )}
     </>

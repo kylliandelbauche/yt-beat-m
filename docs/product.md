@@ -227,3 +227,8 @@ Le moteur conserve désormais les morceaux, leur état/favori/dates et leur lien
 ## Mes sons — interface livrée (#97)
 
 Le [lot interface](design/97-mes-sons-interface.md) active la galerie Mes sons, la fiche réservée à droite, les liens inverses et le lecteur partagé. Le moteur #96 est réutilisé sans migration supplémentaire : projection de la pochette/titre de prod et filtres/tri paramétrés ajoutés à GET songs. L'état de carte utilise un PATCH ciblé avec révision ; la fiche garde un Save unique et une garde de brouillon. Les tags, textes et cover personnelle restent dans #98–100, parent #11 ouvert.
+
+
+## Mes sons — tags communs livrés (#98)
+
+Les morceaux partagent désormais les entités de tags du catalogue. Les tags de la prod actuelle sont hérités dynamiquement, ceux ajoutés au son restent directs ; cartes, recherche et filtre utilisent leur union sans doublon. La fiche distingue les deux origines et indique « Prod + son » lorsqu’elles coïncident. Changer/retirer la prod préserve les tags directs. Le + fixe prépare une sélection/création, validée seulement par le Save commun ; Annuler ne crée rien. Renommer/supprimer dans Réglages agit globalement sans toucher aux morceaux ni aux fichiers. Les anciens brouillons ne recréent pas silencieusement un tag supprimé. Voir [contrat et recette #98](design/98-song-tags.md). Notes/Paroles et cover personnelle restent dans #99–100.

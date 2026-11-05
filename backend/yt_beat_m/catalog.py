@@ -298,6 +298,15 @@ def beat_details(library: Library, identity: str) -> dict | None:
             "channel_id_known": bool(row["channel_id"]),
             "channel_alias": channel_alias(connection, dict(row)),
             "tags": tag_labels(connection, identity),
+            "catalog_tags": [
+                dict(t)
+                for t in connection.execute(
+                    "SELECT t.id,t.label FROM catalog_tags t "
+                    "JOIN beat_catalog_tags b ON b.tag_id=t.id "
+                    "WHERE b.beat_id=? ORDER BY b.position,t.id",
+                    (identity,),
+                )
+            ],
             "styles": [tag["label"] for tag in tags if tag["kind"] == "style"],
             "moods": [tag["label"] for tag in tags if tag["kind"] == "mood"],
             "links": [dict(link) for link in links],

@@ -98,7 +98,8 @@ def create_app(
     @app.exception_handler(LibraryError)
     async def library_error(request: Request, error: LibraryError):
         return JSONResponse(
-            {"detail": str(error)}, status_code=409 if isinstance(error, LibraryBusyError) else 400
+            {"detail": str(error)},
+            status_code=409 if isinstance(error, (LibraryBusyError, TagConflict)) else 400,
         )
 
     @app.exception_handler(OSError)
@@ -163,6 +164,8 @@ def create_app(
         linked: bool | None = None,
         available: bool | None = None,
         profile_id: UUID | None = None,
+        tag_ids: Annotated[list[Annotated[int, Field(gt=0)]] | None, Query(max_length=120)] = None,
+        tag_missing: bool = False,
         sort: str = "added_desc",
     ):
         with manager.active() as library:
@@ -178,6 +181,8 @@ def create_app(
                 linked=linked,
                 available=available,
                 profile_id=profile_id,
+                tag_ids=tag_ids or [],
+                tag_missing=tag_missing,
                 sort=sort,
             )
 

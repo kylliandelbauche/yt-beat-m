@@ -288,3 +288,12 @@ Les anciens bindings externes restent disponibles pour les sauvegardes du catalo
 ## Mes sons — interface livrée (#97)
 
 Le [lot interface](design/97-mes-sons-interface.md) active la galerie Mes sons, la fiche réservée à droite, les liens inverses et le lecteur partagé. Le moteur #96 est réutilisé sans migration supplémentaire : projection de la pochette/titre de prod et filtres/tri paramétrés ajoutés à GET songs. L'état de carte utilise un PATCH ciblé avec révision ; la fiche garde un Save unique et une garde de brouillon. Les tags, textes et cover personnelle restent dans #98–100, parent #11 ouvert.
+
+
+## Mes sons — catalogue commun et héritage (#98)
+
+Le schéma8 ajoute song_catalog_tags, relations directes par identifiants avec position et suppression des associations en cascade. La migration sauvegardée ne déplace aucun média. Les tags hérités sont calculés depuis la relation songs.beat_id actuelle. Les projections liste/détail exposent une union dédupliquée {id,label,direct,inherited}, chargée par lot pour la page. La fiche de prod ajoute catalog_tags par identifiants pour l’aperçu d’un changement de prod.
+
+Créer/modifier un son reçoit tag_ids, new_tags et recreate_tags dans la transaction de sauvegarde existante. Les champs omis restent intacts. Un identifiant supprimé déclenche un conflit, même si le libellé a été recréé ; nouveaux libellés et alias utilisent le registre commun de #81. La validation tardive annule aussi titre, révision, créations et associations ; une référence de fichier préparée est nettoyée et la sélection reste réutilisable. Les protections de session/Origin et la concurrence optimiste restent appliquées.
+
+GET songs recherche titre et tags normalisés ; tag_ids répétés se combinent en OU (avec tag_missing), les autres catégories en ET, avant pagination. GET catalog/tags conserve beat_count et ajoute song_count distinct, calculé par union directe/héritée. Aucun compteur implicite tous objets. Le sélecteur de la fiche ne persiste rien avant Save. Renommages/suppressions globaux rechargent les vues en lecture ; les brouillons en édition restent protégés. Le cadre des groupes et du + demeure fixe, et le lecteur reste monté. Le repli de largeur de Mes sons évite un défilement horizontal automatique au focus à1024 px sans changer le repli de la bibliothèque Prods. Voir [contrat et vérifications](design/98-song-tags.md).

@@ -10,8 +10,15 @@ import { useShell } from "./shellContext";
 import { useTitleMarquee } from "./useTitleMarquee";
 import type { ModalClose } from "./useModalLifecycle";
 import { ProdPicker } from "./SongRelations";
+import { SongTagPicker } from "./SongTagPicker";
 import { songTrack } from "./song";
-import type { Song, FileSelection, SongState } from "./song";
+import type {
+  Song,
+  FileSelection,
+  SongState,
+  CatalogTag,
+  TagChoice,
+} from "./song";
 
 export type SongEditor = { song: Song | null; file: FileSelection | null };
 type Draft = {
@@ -24,6 +31,8 @@ type Draft = {
   beat_title: string | null;
   artwork_url: string | null;
   file: FileSelection | null;
+  direct_tags: TagChoice[];
+  inherited_tags: CatalogTag[];
 };
 function draftFor(editor: SongEditor): Draft {
   const s = editor.song;
@@ -37,6 +46,12 @@ function draftFor(editor: SongEditor): Draft {
     beat_title: s?.beat_title || null,
     artwork_url: s?.artwork_url || null,
     file: editor.file,
+    direct_tags: (s?.tags || [])
+      .filter((t) => t.direct)
+      .map(({ id, label }) => ({ id, label })),
+    inherited_tags: (s?.tags || [])
+      .filter((t) => t.inherited)
+      .map(({ id, label }) => ({ id, label })),
   };
 }
 function dateLabel(value: string) {
@@ -86,6 +101,7 @@ export function SongDetails({
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
   const [choosingProd, setChoosingProd] = useState(false);
+  const [tagging, setTagging] = useState<HTMLElement | null>(null);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -135,6 +151,7 @@ export function SongDetails({
     setSaved(false);
   }
   function cancel() {
+    setTagging(null);
     setDraft(draftFor(editor));
     setEditing(false);
     setError("");
@@ -211,12 +228,26 @@ export function SongDetails({
       if (!previous || value !== previous[key]) payload[key] = value;
     }
     if (draft.file) payload.selection_id = draft.file.selection_id;
+    if (
+      !previous ||
+      JSON.stringify(draft.direct_tags) !==
+        JSON.stringify(draftFor(editor).direct_tags)
+    ) {
+      payload.tag_ids = draft.direct_tags
+        .filter((t) => t.id !== null)
+        .map((t) => t.id);
+      payload.new_tags = draft.direct_tags
+        .filter((t) => t.id === null)
+        .map((t) => t.label);
+      payload.recreate_tags = payload.new_tags;
+    }
     try {
       const result = await api<Song>(
         previous ? `/api/songs/${previous.id}` : "/api/songs",
         { method: previous ? "PATCH" : "POST", body: JSON.stringify(payload) },
       );
       setEditing(false);
+      setTagging(null);
       setSaved(true);
       onSaved(result, !!draft.file);
     } catch (e) {
@@ -232,6 +263,7 @@ export function SongDetails({
       revision: 0,
       audio_url: "",
       file_available: false,
+      tags: [],
     }),
     ...draft,
     duration_seconds:
@@ -391,13 +423,81 @@ export function SongDetails({
           <div className="song-detail-tags" aria-label="Tags du son">
             <div>
               <small>
-                <Icon name="link" /> Liés à la prod
+                <button
+                  type="button"
+                  className="song-inherited-link"
+                  aria-label="Modifier les tags de la prod associée"
+                  title="Les tags hérités se modifient dans la prod"
+                  disabled={!draft.beat_id || work}
+                  onClick={() => draft.beat_id && onOpenBeat(draft.beat_id)}
+                >
+                  <Icon name="link" />
+                  Liés à la prod
+                </button>
               </small>
-              <span>Tags · Bientôt</span>
+              <div
+                className="song-tags-line"
+                tabIndex={0}
+                aria-label="Tags liés à la prod"
+              >
+                {draft.inherited_tags.map((tag) => (
+                  <span
+                    className="song-tag inherited"
+                    key={tag.id}
+                    title={tag.label}
+                  >
+                    {tag.label}
+                    {draft.direct_tags.some((t) => t.id === tag.id) && (
+                      <span className="song-tag-origin">Prod + son</span>
+                    )}
+                  </span>
+                ))}
+                {!draft.inherited_tags.length && (
+                  <span className="song-tags-empty">Aucun tag lié</span>
+                )}
+              </div>
             </div>
-            <div>
+            <div className="song-direct-tags">
               <small>Ajoutés au son</small>
-              <span>Tags · Bientôt</span>
+              <div
+                className="song-tags-line"
+                tabIndex={0}
+                aria-label="Tags ajoutés au son"
+              >
+                {draft.direct_tags
+                  .filter(
+                    (tag) =>
+                      !draft.inherited_tags.some(
+                        (t) => t.id === tag.id && tag.id !== null,
+                      ),
+                  )
+                  .map((tag) => (
+                    <span
+                      className="song-tag"
+                      key={tag.id ?? `new:${tag.label}`}
+                      title={tag.label}
+                    >
+                      {tag.label}
+                    </span>
+                  ))}
+                {!draft.direct_tags.some(
+                  (tag) => !draft.inherited_tags.some((t) => t.id === tag.id),
+                ) && <span className="song-tags-empty">Aucun autre tag</span>}
+              </div>
+              <button
+                type="button"
+                className="icon-button song-add-tag"
+                aria-label="Choisir les tags du son"
+                aria-expanded={!!tagging}
+                disabled={work}
+                onClick={(e) => {
+                  setEditing(true);
+                  setSaved(false);
+                  setTagging(tagging ? null : e.currentTarget);
+                }}
+              >
+                <Icon name="plus" />
+              </button>
             </div>
           </div>
           <div className="song-dates">
@@ -503,14 +603,34 @@ export function SongDetails({
           selected={draft.beat_id}
           onClose={() => setChoosingProd(false)}
           onSelect={(beat) => {
-            setDraft((d) => ({
-              ...d,
-              beat_id: beat?.id || null,
-              beat_title: beat?.title || null,
-              artwork_url: beat?.artwork_url || null,
-            }));
-            setError("");
+            const apply = (tags: CatalogTag[]) => {
+              setDraft((d) => ({
+                ...d,
+                beat_id: beat?.id || null,
+                beat_title: beat?.title || null,
+                artwork_url: beat?.artwork_url || null,
+                inherited_tags: tags,
+              }));
+              setError("");
+            };
+            if (!beat) {
+              apply([]);
+              return;
+            }
+            setBusy(true);
+            void api<{ catalog_tags: CatalogTag[] }>(`/api/beats/${beat.id}`)
+              .then((details) => apply(details.catalog_tags))
+              .catch((e) => setError(e.message))
+              .finally(() => setBusy(false));
           }}
+        />
+      )}
+      {tagging && (
+        <SongTagPicker
+          anchor={tagging}
+          selected={draft.direct_tags}
+          onClose={() => setTagging(null)}
+          onChange={(tags) => patch("direct_tags", tags)}
         />
       )}
       {confirm && (

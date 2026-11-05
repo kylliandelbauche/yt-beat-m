@@ -8,6 +8,9 @@ export const songStates = [
   "Out",
 ] as const;
 export type SongState = (typeof songStates)[number];
+export type CatalogTag = { id: number; label: string };
+export type TagChoice = { id: number | null; label: string };
+export type SongTag = CatalogTag & { direct: boolean; inherited: boolean };
 export type Song = {
   id: string;
   title: string;
@@ -23,6 +26,7 @@ export type Song = {
   revision: number;
   file_available: boolean;
   audio_url: string;
+  tags: SongTag[];
 };
 export type SongPage = { songs: Song[]; total: number };
 export type FileSelection = {

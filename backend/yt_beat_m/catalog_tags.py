@@ -56,8 +56,15 @@ def list_tags(library):
         return [
             dict(r)
             for r in c.execute(
-                "SELECT t.id,t.label,count(b.beat_id) AS beat_count FROM catalog_tags t "
-                "LEFT JOIN beat_catalog_tags b ON b.tag_id=t.id GROUP BY t.id "
+                "WITH song_usage AS (SELECT tag_id,song_id FROM song_catalog_tags UNION "
+                "SELECT bt.tag_id,s.id FROM songs s "
+                "JOIN beat_catalog_tags bt ON bt.beat_id=s.beat_id),"
+                " song_counts AS (SELECT tag_id,count(*) AS n FROM song_usage GROUP BY tag_id),"
+                " beat_counts AS (SELECT tag_id,count(*) AS n "
+                "FROM beat_catalog_tags GROUP BY tag_id)"
+                " SELECT t.id,t.label,coalesce(b.n,0) AS beat_count,coalesce(s.n,0) AS song_count "
+                "FROM catalog_tags t LEFT JOIN beat_counts b ON b.tag_id=t.id "
+                "LEFT JOIN song_counts s ON s.tag_id=t.id "
                 "ORDER BY t.normalized_label,t.label"
             )
         ]

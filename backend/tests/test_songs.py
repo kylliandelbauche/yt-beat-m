@@ -261,7 +261,7 @@ def test_schema6_migration_backup_and_failure(tmp_path, monkeypatch):
         assert c.execute("PRAGMA user_version").fetchone()[0] == 6
         assert not c.execute("SELECT 1 FROM sqlite_master WHERE name='songs'").fetchone()
     reopened = Library.open(lib.root)
-    assert reopened.summary()["schema_version"] == 7
+    assert reopened.summary()["schema_version"] == max(storage.MIGRATIONS)
     assert reopened.safe_path("audio/kept.mp3").read_bytes() == AUDIO
     assert reopened.summary()["beat_count"] == 1
     backups = list((lib.root / "backups").glob("*.sqlite3"))

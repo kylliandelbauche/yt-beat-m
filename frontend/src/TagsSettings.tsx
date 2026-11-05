@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { Icon } from "./Modal";
 import { useShell } from "./shellContext";
-type Tag = { id: number; label: string; beat_count: number };
+type Tag = {
+  id: number;
+  label: string;
+  beat_count: number;
+  song_count: number;
+};
 export function TagsSettings({ onBusy }: { onBusy: (busy: boolean) => void }) {
   const shell = useShell();
   const [tags, setTags] = useState<Tag[]>([]),
@@ -165,7 +170,7 @@ export function TagsSettings({ onBusy }: { onBusy: (busy: boolean) => void }) {
             ) : (
               <span
                 className="catalog-tag-label"
-                title={`${t.label} · ${t.beat_count} prod${t.beat_count > 1 ? "s" : ""}`}
+                title={`${t.label} · ${t.beat_count} prod${t.beat_count > 1 ? "s" : ""} · ${t.song_count} son${t.song_count > 1 ? "s" : ""}`}
               >
                 {t.label}
               </span>
@@ -229,7 +234,7 @@ export function TagsSettings({ onBusy }: { onBusy: (busy: boolean) => void }) {
         {removing && (
           <>
             <strong>Supprimer « {removing.label} » ?</strong>
-            <p>Retire le tag des associations, jamais les prods.</p>
+            <p>Retire le tag des associations, jamais les prods ni les sons.</p>
             <div className="catalog-tags-confirm">
               <button disabled={busy} onClick={cancel}>
                 Annuler
