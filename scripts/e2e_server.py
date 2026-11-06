@@ -84,9 +84,17 @@ def main():
         root = Path(folder).resolve()
         song_file = root / "Morceau de test.mp3"
         song_file.write_bytes(AUDIO)
+        from PIL import Image
+
+        song_cover = root / "Pochette synthétique.png"
+        Image.new("RGB", (240, 160), "#b34664").save(song_cover)
         original_choose = DirectoryPicker.choose
         DirectoryPicker.choose = lambda self: (
-            str(song_file) if self.audio else original_choose(self)
+            str(song_cover)
+            if self.image
+            else str(song_file)
+            if self.audio
+            else original_choose(self)
         )
         library = Library.create(root / "collection", "Collection de test")
         for index, (title, maker) in enumerate(

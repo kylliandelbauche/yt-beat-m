@@ -39,6 +39,7 @@ from yt_beat_m.profiles import (
     save_profile,
 )
 from yt_beat_m.reveal import reveal_file
+from yt_beat_m.song_artwork import select_image
 from yt_beat_m.songs import SongCreate, SongFiles, SongPatch, State, get_song, list_songs, save_song
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,6 +77,7 @@ def create_app(
 ) -> FastAPI:
     directory_picker = DirectoryPicker()
     audio_picker = DirectoryPicker(audio=True)
+    image_picker = DirectoryPicker(image=True)
     manager = LibraryManager(
         preferences
         if preferences is not None
@@ -177,6 +179,28 @@ def create_app(
             if library.manifest["id"] != library_id:
                 raise LibraryError("La bibliothèque a changé ; sélectionner à nouveau le MP3.")
             return {"selection": song_files.grant(library, selected)}
+
+    @app.post("/api/songs/pick-cover")
+    def pick_song_cover():
+        with manager.active() as library:
+            library_id = library.manifest["id"]
+        selected = image_picker.choose()
+        if selected is None:
+            return {"image": None}
+        with manager.active() as library:
+            if library.manifest["id"] != library_id:
+                raise LibraryError("La bibliothèque a changé ; sélectionner à nouveau la pochette.")
+            return {"image": select_image(selected)}
+
+    @app.get("/api/songs/{identity}/artwork")
+    def song_artwork(identity: UUID):
+        with manager.active() as library, library.catalog() as c:
+            row = c.execute(
+                "SELECT data FROM song_artwork WHERE song_id=?", (str(identity),)
+            ).fetchone()
+            if not row:
+                raise HTTPException(404, "Pochette personnelle introuvable.")
+            return Response(bytes(row["data"]), media_type="image/png")
 
     @app.get("/api/songs")
     def songs_list(

@@ -12,6 +12,7 @@ import type { ModalClose } from "./useModalLifecycle";
 import { ProdPicker } from "./SongRelations";
 import { SongTagPicker } from "./SongTagPicker";
 import { SongDescription, songTextLimit } from "./SongDescription";
+import { SongCoverMenu } from "./SongCoverMenu";
 import { songTrack } from "./song";
 import type {
   Song,
@@ -31,6 +32,8 @@ type Draft = {
   beat_id: string | null;
   beat_title: string | null;
   artwork_url: string | null;
+  beat_artwork_url: string | null;
+  cover: string | null | undefined;
   file: FileSelection | null;
   direct_tags: TagChoice[];
   inherited_tags: CatalogTag[];
@@ -48,6 +51,8 @@ function draftFor(editor: SongEditor): Draft {
     beat_id: s?.beat_id || null,
     beat_title: s?.beat_title || null,
     artwork_url: s?.artwork_url || null,
+    beat_artwork_url: s?.beat_artwork_url || null,
+    cover: undefined,
     file: editor.file,
     direct_tags: (s?.tags || [])
       .filter((t) => t.direct)
@@ -105,6 +110,10 @@ export function SongDetails({
   const [editing, setEditing] = useState(!editor.song);
   const [busy, setBusy] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [pickingCover, setPickingCover] = useState(false);
+  const [coverMenu, setCoverMenu] = useState<HTMLElement | null>(null);
+  const coverButton = useRef<HTMLButtonElement>(null);
+  const restoreCoverFocus = useRef(false);
   const [choosingProd, setChoosingProd] = useState(false);
   const [tagging, setTagging] = useState<HTMLElement | null>(null);
   const [section, setSection] = useState<"info" | "description">("info");
@@ -122,7 +131,7 @@ export function SongDetails({
     editing &&
     (!editor.song ||
       JSON.stringify(draft) !== JSON.stringify(draftFor(editor)));
-  const work = busy || picking || externalBusy;
+  const work = busy || picking || pickingCover || externalBusy;
   const blocking = work || textExpanded;
   const textValidation =
     draft.notes.length > songTextLimit || draft.lyrics.length > songTextLimit
@@ -141,6 +150,12 @@ export function SongDetails({
     return () => callbacks.current.onBusyChange(false);
   }, [blocking]);
   useTitleMarquee(title, !editing, titlePosition);
+  useLayoutEffect(() => {
+    if (!pickingCover && restoreCoverFocus.current) {
+      restoreCoverFocus.current = false;
+      coverButton.current?.focus({ preventScroll: true });
+    }
+  }, [pickingCover]);
   useEffect(() => {
     if (saved && !busy) editButton.current?.focus({ preventScroll: true });
   }, [saved, busy]);
@@ -164,6 +179,7 @@ export function SongDetails({
   }
   function cancel() {
     setTagging(null);
+    setCoverMenu(null);
     setDraft(draftFor(editor));
     setEditing(false);
     setError("");
@@ -243,6 +259,7 @@ export function SongDetails({
       if (!previous || value !== previous[key]) payload[key] = value;
     }
     if (draft.file) payload.selection_id = draft.file.selection_id;
+    if (draft.cover !== undefined) payload.cover = draft.cover;
     if (
       !previous ||
       JSON.stringify(draft.direct_tags) !==
@@ -263,12 +280,37 @@ export function SongDetails({
       );
       setEditing(false);
       setTagging(null);
+      setCoverMenu(null);
       setSaved(true);
       onSaved(result, !!draft.file);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  }
+  async function pickCover() {
+    if (work) return;
+    restoreCoverFocus.current = true;
+    setPickingCover(true);
+    setError("");
+    try {
+      const { image } = await api<{
+        image: { data: string; media_type: string } | null;
+      }>("/api/songs/pick-cover", { method: "POST" });
+      if (image) {
+        setDraft((d) => ({
+          ...d,
+          cover: image.data,
+          artwork_url: `data:${image.media_type};base64,${image.data}`,
+        }));
+        setEditing(true);
+        setSaved(false);
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPickingCover(false);
     }
   }
   const preview: Beat = songTrack({
@@ -279,6 +321,7 @@ export function SongDetails({
       audio_url: "",
       file_available: false,
       tags: [],
+      cover_source: "prod",
     }),
     ...draft,
     duration_seconds:
@@ -412,6 +455,21 @@ export function SongDetails({
                 <span className={`cover-play${playing ? " is-playing" : ""}`}>
                   <Icon name={playing ? "pause" : "play"} filled />
                 </span>
+              </button>
+              <button
+                type="button"
+                ref={coverButton}
+                className="icon-button song-cover-change"
+                aria-label="Changer la pochette du son"
+                aria-haspopup="menu"
+                aria-expanded={!!coverMenu}
+                aria-busy={pickingCover}
+                disabled={work}
+                onClick={(e) =>
+                  setCoverMenu(coverMenu ? null : e.currentTarget)
+                }
+              >
+                <Icon name={pickingCover ? "refresh" : "image"} />
               </button>
               <span className="cover-duration">
                 {duration(preview.duration_seconds)}
@@ -635,6 +693,28 @@ export function SongDetails({
           {saved ? "Son enregistré" : ""}
         </span>
       </section>
+      {coverMenu && (
+        <SongCoverMenu
+          anchor={coverMenu}
+          personal={
+            draft.cover !== undefined
+              ? draft.cover !== null
+              : editor.song?.cover_source === "personal"
+          }
+          onClose={() => setCoverMenu(null)}
+          onPick={() => void pickCover()}
+          onInherit={() => {
+            setDraft((d) => ({
+              ...d,
+              cover: null,
+              artwork_url: d.beat_artwork_url,
+            }));
+            setEditing(true);
+            setSaved(false);
+            setError("");
+          }}
+        />
+      )}
       {choosingProd && (
         <ProdPicker
           selected={draft.beat_id}
@@ -645,7 +725,14 @@ export function SongDetails({
                 ...d,
                 beat_id: beat?.id || null,
                 beat_title: beat?.title || null,
-                artwork_url: beat?.artwork_url || null,
+                beat_artwork_url: beat?.artwork_url || null,
+                artwork_url: (
+                  d.cover !== undefined
+                    ? d.cover !== null
+                    : editor.song?.cover_source === "personal"
+                )
+                  ? d.artwork_url
+                  : beat?.artwork_url || null,
                 inherited_tags: tags,
               }));
               setError("");

@@ -35,9 +35,10 @@ try {
 
 
 class DirectoryPicker:
-    def __init__(self, system: str | None = None, *, audio: bool = False):
+    def __init__(self, system: str | None = None, *, audio: bool = False, image: bool = False):
         self.system = system or sys.platform
         self.audio = audio
+        self.image = image
         self._lock = threading.Lock()
 
     def choose(self) -> str | None:
@@ -52,8 +53,14 @@ class DirectoryPicker:
                         'choose file with prompt "Choisir un MP3 pour le morceau" '
                         'of type {"public.mp3"}',
                     )
+                if self.image:
+                    script = script.replace(
+                        'choose folder with prompt "Choisir le dossier de bibliothèque Beat m"',
+                        'choose file with prompt "Choisir une pochette pour le son" '
+                        'of type {"public.jpeg", "public.png"}',
+                    )
                 command = ["/usr/bin/osascript", "-e", script]
-            elif self.system == "win32" and not self.audio:
+            elif self.system == "win32" and not self.audio and not self.image:
                 command = [
                     "powershell.exe",
                     "-NoLogo",
@@ -64,6 +71,8 @@ class DirectoryPicker:
                     WINDOWS_SCRIPT,
                 ]
             else:
+                if self.image:
+                    raise LibraryError("Le sélecteur de pochette est disponible sur Mac.")
                 if self.audio:
                     raise LibraryError("Le sélecteur de MP3 est disponible sur Mac.")
                 raise LibraryError(

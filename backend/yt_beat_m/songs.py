@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from yt_beat_m.catalog_tags import TagConflict, ensure_tag, resolve_label
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.metadata import normalize
+from yt_beat_m.song_artwork import image_from_payload
 
 State = Literal["Topline", "Maquette", "Mixage", "Master", "Out"]
 TEXT_LIMIT = 50_000
@@ -37,6 +38,8 @@ class SongTagFields(BaseModel):
 
 
 class SongContentFields(SongTagFields):
+    # Omitted = preserve; null = inherit current prod; base64 = personal cover.
+    cover: str | None = Field(default=None, max_length=2_800_000)
     notes: str = Field(default="", max_length=TEXT_LIMIT)
     lyrics: str = Field(default="", max_length=TEXT_LIMIT)
 
@@ -221,7 +224,15 @@ def song_view(library, files, row, tags, *, detail=False):
         )
     }
     result["beat_title"] = row["beat_title"]
-    result["artwork_url"] = f"/api/beats/{row['beat_id']}/artwork" if row["beat_artwork"] else None
+    result["beat_artwork_url"] = (
+        f"/api/beats/{row['beat_id']}/artwork" if row["beat_artwork"] else None
+    )
+    result["cover_source"] = "personal" if row["personal_artwork"] else "prod"
+    result["artwork_url"] = (
+        f"/api/songs/{row['id']}/artwork?v={row['revision']}"
+        if row["personal_artwork"]
+        else result["beat_artwork_url"]
+    )
     result["favorite"] = bool(result["favorite"])
     result["file_available"] = files.resolve(library, row) is not None
     result["audio_url"] = f"/api/songs/{row['id']}/audio"
@@ -293,7 +304,8 @@ def replace_song_tags(c, identity, tag_ids, new_tags, recreate):
 
 
 SONG_SELECT = (
-    "SELECT s.*,b.title AS beat_title,b.artwork_path AS beat_artwork "
+    "SELECT s.*,b.title AS beat_title,b.artwork_path AS beat_artwork,"
+    "EXISTS(SELECT 1 FROM song_artwork a WHERE a.song_id=s.id) AS personal_artwork "
     "FROM songs s LEFT JOIN beats b ON b.id=s.beat_id"
 )
 
@@ -392,6 +404,9 @@ def list_songs(
 
 def save_song(library, files, payload, identity=None):
     values = payload.model_dump(mode="json", exclude_unset=True)
+    cover_supplied = "cover" in values
+    cover = values.pop("cover", None)
+    image = image_from_payload(cover) if cover is not None else None
     selection = values.pop("selection_id", None)
     expected = values.pop("expected_revision", None)
     tag_ids = values.pop("tag_ids", None)
@@ -456,6 +471,15 @@ def save_song(library, files, payload, identity=None):
                 )
             if tag_ids is not None:
                 replace_song_tags(c, identity, tag_ids, new_tags, recreate)
+            if cover_supplied:
+                if image is None:
+                    c.execute("DELETE FROM song_artwork WHERE song_id=?", (identity,))
+                else:
+                    c.execute(
+                        "INSERT INTO song_artwork VALUES(?,?) "
+                        "ON CONFLICT(song_id) DO UPDATE SET data=excluded.data",
+                        (identity, image),
+                    )
     except Exception:
         if prepared:
             files.discard(prepared["external_ref"])

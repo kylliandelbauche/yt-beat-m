@@ -116,10 +116,13 @@ export function Icon({
     | "mute"
     | "previous"
     | "next"
-    | "expand";
+    | "expand"
+    | "image";
   filled?: boolean;
 }) {
   const paths = {
+    image:
+      "M6 3H18Q21 3 21 6V18Q21 21 18 21H6Q3 21 3 18V6Q3 3 6 3ZM9.5 8a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0M3 16L8 11L12 15L16 10L21 16",
     expand:
       "M8 3H3V8M16 3H21V8M21 16V21H16M8 21H3V16M3 3L9 9M21 3L15 9M21 21L15 15M3 21L9 15",
     tag: "M3 3h8l10 10-8 8L3 11ZM7 7h.01",

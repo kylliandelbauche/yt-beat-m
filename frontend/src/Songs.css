@@ -445,6 +445,72 @@ button.song-filter {
   height: 100%;
   object-fit: cover;
 }
+.song-cover-change {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: var(--floating);
+  box-shadow: 0 4px 12px -4px var(--shadow);
+}
+.song-cover-change svg {
+  width: 16px;
+  height: 16px;
+}
+.song-cover-menu {
+  width: 248px;
+  height: 80px;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--floating);
+  color: var(--ink);
+  box-shadow: 0 8px 20px -8px var(--shadow);
+}
+.song-cover-menu [role="menu"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.song-cover-menu button {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: left;
+}
+.song-cover-menu button:hover,
+.song-cover-menu button:focus-visible {
+  background: var(--hover);
+}
+.song-cover-menu button > svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.song-cover-menu button > span:not(.song-cover-check) {
+  flex: 1;
+}
+.song-cover-check {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.song-cover-check svg {
+  width: 14px;
+  height: 14px;
+}
 .song-detail-controls {
   position: absolute;
   top: 288px;
