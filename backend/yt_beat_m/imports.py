@@ -35,7 +35,14 @@ class ImportWorker:
         self.photo_runner = ProcessRunner(self.stopping)
         self._photo_thread: threading.Thread | None = None
         self._thread: threading.Thread | None = None
+        self._market_thread: threading.Thread | None = None
         self._recover()
+        with library.catalog() as c:
+            c.execute(
+                "UPDATE marketplace_enrichments SET state='failed',error_message=? "
+                "WHERE state='running'",
+                ("Lecture interrompue au dernier arrêt. Réessaie.",),
+            )
 
     def start(self):
         self._thread = threading.Thread(target=self._loop, daemon=True, name="beat-import")
@@ -44,11 +51,21 @@ class ImportWorker:
             target=self._photos, daemon=True, name="beat-portraits"
         )
         self._photo_thread.start()
+        self._market_thread = threading.Thread(
+            target=self._markets, daemon=True, name="beat-marketplace"
+        )
+        self._market_thread.start()
 
     def stop(self):
         self.stopping.set()
         self.runner.cancel()
         self.photo_runner.cancel()
+        if self._market_thread:
+            self._market_thread.join(timeout=12)
+            if self._market_thread.is_alive():
+                raise LibraryError(
+                    "Une page de vente se termine encore ; attends avant de fermer le disque."
+                )
         if self._photo_thread:
             self._photo_thread.join(timeout=12)
             if self._photo_thread.is_alive():
@@ -130,6 +147,16 @@ class ImportWorker:
                 enrich_next_photo(self.library, self.photo_runner)
             except ImportInterrupted:
                 return
+            except (LibraryError, OSError):
+                if self.stopping.wait(1):
+                    return
+
+    def _markets(self):
+        from yt_beat_m.marketplace import enrich_next
+
+        while not self.stopping.wait(1):
+            try:
+                enrich_next(self.library, self.stopping)
             except (LibraryError, OSError):
                 if self.stopping.wait(1):
                     return
@@ -408,3 +435,6 @@ class ImportWorker:
                 "beat_id=?, updated_at=? WHERE id=?",
                 (job_id, now(), job_id),
             )
+            from yt_beat_m.marketplace import queue
+
+            queue(catalog, job_id, automatic=True)

@@ -10,3 +10,4 @@ def no_channel_network(monkeypatch):
         raise LibraryError("Offline fixture")
 
     monkeypatch.setattr("yt_beat_m.profile_photos.fetch_channel", unavailable)
+    monkeypatch.setattr("yt_beat_m.marketplace_pages.fetch_product", unavailable)
