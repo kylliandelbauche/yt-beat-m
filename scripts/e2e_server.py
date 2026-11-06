@@ -22,6 +22,18 @@ COVER = base64.b64decode((ROOT / "backend/tests/fixtures/mint-cover.jpg.base64")
 def simulated_download(self, args, on_line=None, *, timeout=600):
     if "--dump-single-json" in args:
         identity = parse_qs(urlsplit(args[-1]).query)["v"][0]
+        if identity.startswith("MARKETTEST"):
+            return json.dumps(
+                {
+                    "id": identity,
+                    "title": "Prod marché de test",
+                    "duration": 30,
+                    "channel": "Chaîne de recette",
+                    "channel_id": "UC-e2e-producer",
+                    "upload_date": "20260101",
+                    "description": "Purchase: https://jakebmusic.com/produit/prod-marche-de-test/",
+                }
+            )
         if identity.startswith("SELFCREDIT"):
             return json.dumps(
                 {
@@ -78,6 +90,23 @@ def main():
         raise LibraryError("Portrait indisponible dans la recette isolée.")
 
     portraits.fetch_channel = no_portrait
+    import yt_beat_m.marketplace_pages as shop
+
+    def shop_page(url, **kwargs):
+        if url == "https://jakebmusic.com/produit/prod-marche-de-test/":
+            return url, (
+                '<link rel="canonical" href="' + url + '">'
+                '<script type="application/ld+json">'
+                '{"@type":"Product","name":"Prod marché de test"}</script>'
+                '<div class="qce-block-info__bpm">BPM : 150</div>'
+                '<div class="qce-block-info__gamme">Gamme : F mineur</div>'
+                '<div class="qce-block-info__date">Date de publication : 24/06/2026</div>'
+                '<div class="qce-block-tracks-taxo__terms">'
+                "<span>Triste</span><span>Piano</span></div>"
+            ).encode()
+        raise LibraryError("Page indisponible dans la recette isolée.")
+
+    shop.fetch_product = shop_page
     ProcessRunner.run = simulated_download
     imports.shutil.which = lambda name: name
     with tempfile.TemporaryDirectory(prefix="yt-beat-m-e2e-") as folder:

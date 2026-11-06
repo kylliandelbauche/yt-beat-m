@@ -265,13 +265,22 @@ def legacy_sync_profiles(c, row):
     parts = credit_parts(raw)
     if source in {"channel_self_credit", "unresolved_self_credit"}:
         parts = parts[1:]  # The owner is still only a suggestion; guests are explicit.
-    elif source not in {"explicit_credit", "channel_alias", "channel_alias_self_credit", "manual"}:
+    elif source not in {
+        "explicit_credit",
+        "channel_alias",
+        "channel_alias_self_credit",
+        "manual",
+        "marketplace",
+    }:
         parts = []
     elif source == "manual" and len(parts) > 1:
         # A manual name can itself contain '&' or 'x'. Do not split it without evidence.
         from yt_beat_m.beatmakers import credit_candidates, source_text
 
         credited = credit_candidates(*source_text(row))
+        evidence = provenance(row).get("marketplace_accepted", {}).get("beatmaker", {})
+        if evidence.get("value") == raw:
+            credited += evidence.get("names", [])
         known = {
             normalized_name(p) for name in credited for p in credit_parts(name) if not is_self(p)
         }
@@ -484,6 +493,7 @@ def sync_profiles(c, row):
         "manual",
         "channel",
         "channel_self_credit",
+        "marketplace",
     }:
         parts = []
     elif origin == "manual" and len(parts) > 1:
@@ -495,6 +505,9 @@ def sync_profiles(c, row):
             for p in credit_parts(n)
             if not is_self(p)
         }
+        evidence = provenance(row).get("marketplace_accepted", {}).get("beatmaker", {})
+        if evidence.get("value") == row["beatmaker"]:
+            known.update(normalized_name(n) for n in evidence.get("names", []))
         if not known or not known.issubset({normalized_name(p) for p in parts}):
             parts = []
     c.execute("DELETE FROM beat_profile_links WHERE beat_id=?", (row["id"],))

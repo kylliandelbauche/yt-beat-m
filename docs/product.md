@@ -242,3 +242,8 @@ La rubrique Description propose deux champs indépendants, Notes et Paroles, dan
 ## Mes sons — pochette personnelle livrée (#100)
 
 Un son peut avoir sa propre image choisie sur le Mac, avec aperçu dans le brouillon et enregistrement commun aux autres champs. Annuler restaure la version enregistrée ; une image personnelle reste liée au son si sa prod change. Le menu Image de la prod rétablit l’héritage. Fiche, cartes et lecteur suivent Save sans interrompre l’audio. Images JPEG/PNG bornées, normalisées sans métadonnées et stockées dans le catalogue portable ; originaux intacts. Le dernier lot de #11 est livré. Voir [contrat et recette](design/100-song-cover.md).
+
+
+## Métadonnées des boutiques — #10
+
+BeatStars et les pages produit Jake B peuvent compléter les champs vides après import, sans retarder le MP3. Une action de fiche recherche aussi les prods existantes et conserve les résultats hors ligne. BPM/tonalité/crédit existants ou corrigés restent prioritaires ; conflits et tags se sélectionnent dans le brouillon, puis se valident avec Save. La publication boutique reste distincte de YouTube. Les liens d’achat explicitement étiquetés sont reconnus et les corrections préservées. Compatibilité limitée à ces deux adaptateurs publics, avec repli manuel ; voir [contrat et limites](design/10-marketplace-metadata.md).

@@ -22,6 +22,8 @@ import { Artwork } from "./Artwork";
 import { Icon, Modal } from "./Modal";
 import { useTitleMarquee } from "./useTitleMarquee";
 import type { ModalClose } from "./useModalLifecycle";
+import { MarketplaceDialog } from "./MarketplaceDialog";
+import type { MarketField, MarketStatus } from "./MarketplaceDialog";
 
 type Draft = {
   title: string;
@@ -32,6 +34,7 @@ type Draft = {
   sale_url: string;
   tags: string[];
   created_tags: string[];
+  marketplace_fields: MarketField[];
 };
 function draftFor(beat: BeatDetails): Draft {
   return {
@@ -42,6 +45,7 @@ function draftFor(beat: BeatDetails): Draft {
     description: beat.description || "",
     sale_url: beat.links[0]?.url || "",
     created_tags: [],
+    marketplace_fields: [],
     tags: beat.tags ?? [...new Set([...beat.styles, ...beat.moods])],
   };
 }
@@ -118,6 +122,22 @@ export function BeatDetailsPanel({
   const [busy, setBusy] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [marketOpen, setMarketOpen] = useState(false);
+  const marketTrigger = useRef<HTMLButtonElement>(null);
+  const restoreMarketFocus = useRef(false);
+  const deferredMarketRefresh = useRef(false);
+  const changeCallback = useRef(onChanged);
+  useLayoutEffect(() => {
+    changeCallback.current = onChanged;
+  });
+  useLayoutEffect(() => {
+    if (!marketOpen && restoreMarketFocus.current) {
+      restoreMarketFocus.current = false;
+      queueMicrotask(() =>
+        marketTrigger.current?.focus({ preventScroll: true }),
+      );
+    }
+  }, [marketOpen]);
   const editingRef = useRef(false);
   useLayoutEffect(() => {
     editingRef.current = editing;
@@ -194,6 +214,47 @@ export function BeatDetailsPanel({
     const timer = setTimeout(() => setNotice(""), 4000);
     return () => clearTimeout(timer);
   }, [notice]);
+  function marketResolved() {
+    if (editingRef.current) {
+      deferredMarketRefresh.current = true;
+      return;
+    }
+    setAttempt((n) => n + 1);
+    changeCallback.current();
+  }
+  useEffect(() => {
+    if (!editing && deferredMarketRefresh.current) {
+      deferredMarketRefresh.current = false;
+      setAttempt((n) => n + 1);
+      changeCallback.current();
+    }
+  }, [editing]);
+  const marketState = beat?.marketplace?.state;
+  useEffect(() => {
+    if (!marketState || !["queued", "running"].includes(marketState)) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const result = await api<MarketStatus>(
+          `/api/beats/${identity}/enrichment`,
+          { signal: controller.signal },
+        );
+        if (controller.signal.aborted) return;
+        if (["queued", "running"].includes(result.state))
+          timer = setTimeout(() => void poll(), 750);
+        else marketResolved();
+      } catch {
+        if (!controller.signal.aborted)
+          timer = setTimeout(() => void poll(), 3000);
+      }
+    }
+    timer = setTimeout(() => void poll(), 750);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [identity, marketState]);
   const dirty = !!(
     editing &&
     beat &&
@@ -232,7 +293,17 @@ export function BeatDetailsPanel({
     setError("");
     setSaveError(false);
     setInvalid([]);
-    setDraft((current) => (current ? { ...current, [field]: value } : current));
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            [field]: value,
+            marketplace_fields: current.marketplace_fields.filter(
+              (f) => f !== field,
+            ),
+          }
+        : current,
+    );
   }
   function canClose() {
     if (busy) return false;
@@ -360,6 +431,10 @@ export function BeatDetailsPanel({
           : []),
         ...beat.links.slice(1),
       ];
+    if (draft.marketplace_fields.some((f) => f in patch))
+      patch.marketplace_fields = draft.marketplace_fields.filter(
+        (f) => f in patch,
+      );
     try {
       const result = await api<BeatDetails>(`/api/beats/${beat.id}/metadata`, {
         method: "PATCH",
@@ -488,6 +563,20 @@ export function BeatDetailsPanel({
             <Icon name="link" />
           </a>
         )}
+        <button
+          className="icon-button"
+          type="button"
+          title="Compléter depuis la page de vente"
+          aria-label="Compléter depuis la page de vente"
+          ref={marketTrigger}
+          disabled={!beat || busy}
+          onClick={() => {
+            restoreMarketFocus.current = true;
+            setMarketOpen(true);
+          }}
+        >
+          <Icon name="refresh" />
+        </button>
       </nav>
       <section
         role="region"
@@ -886,6 +975,40 @@ export function BeatDetailsPanel({
           </form>
         )}
       </section>
+      {marketOpen && beat && draft && (
+        <MarketplaceDialog
+          identity={identity}
+          values={{
+            bpm: draft.bpm || null,
+            musical_key: draft.musical_key || null,
+            beatmaker: draft.beatmaker || null,
+            tags: draft.tags,
+          }}
+          onResolved={marketResolved}
+          onClose={() => setMarketOpen(false)}
+          onUse={(proposals) => {
+            beginEdit();
+            setDraft((current) => {
+              if (!current) return current;
+              const next = {
+                ...current,
+                marketplace_fields: [...current.marketplace_fields],
+              };
+              for (const proposal of proposals) {
+                if (proposal.field === "tags")
+                  next.tags = [
+                    ...new Set([...next.tags, ...(proposal.value as string[])]),
+                  ];
+                else next[proposal.field] = String(proposal.value);
+                if (!next.marketplace_fields.includes(proposal.field))
+                  next.marketplace_fields.push(proposal.field);
+              }
+              return next;
+            });
+            setError("");
+          }}
+        />
+      )}
       {keyAnchor && draft && (
         <KeyPicker
           value={draft.musical_key}

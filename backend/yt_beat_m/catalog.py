@@ -5,6 +5,7 @@ from math import isfinite
 
 from yt_beat_m.beatmakers import channel_alias, channel_key, provenance
 from yt_beat_m.library import Library, LibraryError
+from yt_beat_m.marketplace import view as marketplace_view
 from yt_beat_m.metadata import canonical_key, normalize, tag_labels
 from yt_beat_m.profiles import profiles_for_beats
 
@@ -294,6 +295,7 @@ def beat_details(library: Library, identity: str) -> dict | None:
             "added_at": row["added_at"],
             "description": row["description"],
             "metadata_provenance": provenance(row),
+            "marketplace": marketplace_view(connection, identity),
             "can_remember_channel": channel_key(dict(row)) is not None,
             "channel_id_known": bool(row["channel_id"]),
             "channel_alias": channel_alias(connection, dict(row)),
