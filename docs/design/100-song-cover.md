@@ -1,0 +1,23 @@
+# Mes sons — pochette personnelle (#100)
+
+Référence [Paper Officiel](https://app.paper.design/file/01M5QR97GBV3NSMTMD9TXHX51N/p-H-0), « Cover du son · Changer et revenir à la prod », relue le 6 novembre 2026 ; tokens `9da92004`. Dimensions/styles exportés directement, sans reprendre de média ou donnée illustrative.
+
+Sur le cadre existant272×152 : bouton Image32×32, rayon7, inset12 en haut à droite, icône16. Menu flottant248×80, padding6, bordure1/rayon12, deux lignes32 séparées de4 ; texte12/18. Les surfaces utilisent les tokens du thème. Coche de source réservée14×14 ; aucune barre flottante ni nouvelle section. Clavier : ouverture, flèches/Haut/Bas/Home/End, activation, Échap prioritaire et retour au bouton. Le focus revient après le sélecteur lorsque le bouton est de nouveau activé.
+
+« Choisir une image… » lance le sélecteur natif Mac. Annuler le dialogue conserve le mode et le brouillon. Un choix valide affiche un aperçu et active l’édition ; le lecteur et les cartes gardent la version enregistrée. L’unique Save applique image, informations, tags et textes ensemble. Annuler restaure tout ; un rejet conserve l’aperçu et permet le réessai. Le mode personnel survit à un changement/retrait de prod ; « Image de la prod » rétablit l’héritage dynamique et le repli neutre sans prod. La navigation protège aussi un brouillon de pochette seule.
+
+## Contrat local et portable
+
+Migration10 sauvegardée/transactionnelle : `song_artwork(song_id,data)` contient un BLOB PNG borné à2 Mio, lié au son avec suppression en cascade. Le catalogue n’enregistre ni chemin d’image externe ni URL distante. Aucune image temporaire n’est écrite : sélection et brouillon en mémoire, BLOB écrit dans la transaction de Save. Échec/annulation ne laissent aucun fichier orphelin ; le MP3 et la pochette de prod restent intacts. Les sauvegardes SQLite incluent naturellement l’image personnelle.
+
+`POST /api/songs/pick-cover` n’accepte aucun chemin ; commande macOS fixe sans shell, bibliothèque revérifiée après le dialogue. Réponse : image PNG encodée en base64 ou null, sans nom/chemin d’origine. Session et Origin exigés comme pour les autres mutations. Le PATCH/POST du son reçoit `cover` : omis = conserver, null = hériter, chaîne base64 = image personnelle. Révision optimiste et transaction commune aux autres champs ; la réponse n’embarque jamais les octets de l’image. Les vues ajoutent `cover_source` et `beat_artwork_url`, en conservant `artwork_url` comme source effective pour fiche/cartes/lecteur.
+
+JPEG/PNG fixes uniquement, source ≤2 Mio et dimensions ≤4096×4096. Décodage/validation par Pillow13 verrouillé dans uv.lock ; fichiers illisibles/tronqués, animation et liens symboliques refusés. L’orientation EXIF est appliquée puis seuls les pixels sont réencodés : suppression des métadonnées EXIF/GPS/commentaires/profils, conservation de la transparence. Réduction proportionnelle au maximum1600×1600, puis par moitiés si nécessaire pour respecter2 Mio ; l’original reste inchangé. La borne et la validation sont répétées au Save, y compris pour un appel direct à l’API. Voir [Image et validation Pillow](https://pillow.readthedocs.io/en/stable/reference/Image.html).
+
+`GET /api/songs/{UUID}/artwork` sert uniquement le BLOB associé à cet identifiant, MIME PNG fixe, `nosniff` et `no-store`. Les listes projettent une existence et une URL, sans charger les BLOB. Le lecteur existant reçoit la nouvelle URL sans recréer l’élément audio ni réassigner sa source ; temps et volume conservés. La sélection Mac reste la priorité actuelle ; aucun chantier Windows ajouté.
+
+## Vérifications
+
+Tests synthétiques : sélection/cancellation sans écriture, validation types/taille/dimensions, EXIF/orientation/transparence et réduction, PNG animé refusé, autorisation/session/Origin, chemins/URLs arbitraires refusés, héritage/changement/retrait de prod, partiels et concurrence, échec tardif de transaction avec image/textes/tags/fichier puis réessai, migration9→10/rollback/sauvegarde/déplacement et empreintes des originaux.
+
+Navigateur : menu accessible, source cochée, aperçu/Annuler/Save/réouverture, annulation native simulée, erreur de sélection et de Save, garde de brouillon, deux cartes et lecteur synchronisés, audio/temps/volume inchangés. Géométrie lecture/édition/attente/erreur/succès à1440×900 et1024×620 et inspection visuelle des captures ; les tests existants des textes, tags, relations et lecteur sont réutilisés. Les dialogues natifs sont simulés dans la recette automatisée ; leur commande fixe est testée séparément. Écoute physique et utilisation dans le logiciel musical restent à confirmer par l’utilisateur.

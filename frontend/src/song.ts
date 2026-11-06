@@ -22,6 +22,8 @@ export type Song = {
   beat_id: string | null;
   beat_title: string | null;
   artwork_url: string | null;
+  beat_artwork_url: string | null;
+  cover_source: "personal" | "prod";
   duration_seconds: number;
   revision: number;
   file_available: boolean;

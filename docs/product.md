@@ -237,3 +237,8 @@ Les morceaux partagent désormais les entités de tags du catalogue. Les tags de
 ## Mes sons — Notes et Paroles livrées (#99)
 
 La rubrique Description propose deux champs indépendants, Notes et Paroles, dans le même brouillon que les informations et tags. Le bloc défile sans agrandir le volet. Agrandir ouvre une fenêtre800×680 adaptée à l’écran et au même mode lecture/édition ; fermer, Échap ou clic extérieur reviennent au volet sans sauvegarde implicite. Un seul Save valide la fiche ; Annuler restaure les deux textes et les autres champs. Texte brut, limite50 000 unités UTF-16 par champ, erreurs sans perte de saisie, focus et audio conservés. Voir [contrat et recette #99](design/99-song-text.md). La cover personnelle reste dans #100.
+
+
+## Mes sons — pochette personnelle livrée (#100)
+
+Un son peut avoir sa propre image choisie sur le Mac, avec aperçu dans le brouillon et enregistrement commun aux autres champs. Annuler restaure la version enregistrée ; une image personnelle reste liée au son si sa prod change. Le menu Image de la prod rétablit l’héritage. Fiche, cartes et lecteur suivent Save sans interrompre l’audio. Images JPEG/PNG bornées, normalisées sans métadonnées et stockées dans le catalogue portable ; originaux intacts. Le dernier lot de #11 est livré. Voir [contrat et recette](design/100-song-cover.md).
