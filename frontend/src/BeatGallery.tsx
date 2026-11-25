@@ -207,7 +207,13 @@ export function BeatGallery({
       next.onShown();
     } else {
       shell.setRight(false);
-      if (lastTrigger.current?.isConnected)
+      if (
+        lastTrigger.current?.isConnected &&
+        !(
+          document.activeElement instanceof Element &&
+          document.activeElement.matches(".detail-rail .pane-toggle")
+        )
+      )
         lastTrigger.current.focus({ preventScroll: true });
     }
   }
@@ -289,10 +295,10 @@ export function BeatGallery({
   }, [catalogQuery]);
   const hasFilters = Boolean(
     query ||
-      favoritesOnly ||
-      profileFilter ||
-      unassigned ||
-      filterQuery(filters).size,
+    favoritesOnly ||
+    profileFilter ||
+    unassigned ||
+    filterQuery(filters).size,
   );
   const refreshImported = useCallback(async () => {
     setReload((value) => value + 1);

@@ -382,7 +382,9 @@ export function BeatDetailsPanel({
     setError("");
     setInvalid([]);
     setSaveError(false);
-    focusEditor();
+    // Folding keeps focus on the persistent rail, outside the hidden editor.
+    if (!document.activeElement?.matches(".detail-rail .pane-toggle"))
+      focusEditor();
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
