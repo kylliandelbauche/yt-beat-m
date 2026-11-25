@@ -25,6 +25,14 @@ L'application s'installe sur chaque machine, le dossier de données voyage. Les 
 
 Ce choix évite un hébergement distant pour les fichiers personnels. Il demande néanmoins un moteur en fonctionnement pendant l'utilisation et une installation sur chaque poste. La future distribution pourra être réévaluée sans changer le format de la bibliothèque.
 
+## Évolution desktop — #122 (25 novembre 2026)
+
+Tauri 2 devient le candidat desktop validé par l’utilisateur, sans remplacer le mode navigateur ni réécrire Python dans ce lot. Rust possède un sous-processus Python figé avec PyInstaller, ses ressources React et ses migrations SQL. Ce moteur réserve lui-même une socket sur 127.0.0.1 avec port alloué par le système, configure les protections existantes avec ce port puis annonce sa disponibilité sur son stdout privé après le démarrage effectif. La fermeture du pipe stdin demande l’arrêt des workers et libère la bibliothèque, y compris si le parent meurt. Le parent borne l’attente au démarrage et à l’arrêt.
+
+La fenêtre charge cette seule origine HTTP locale : Range, médias et protection Origin/session restent identiques au navigateur. Aucune commande Tauri ni permission native n’est accordée au frontend distant ; les liens HTTP(S) externes partent vers le navigateur système et aucune fenêtre web externe n’est créée. Le catalogue et ses annotations ne sont pas convertis. Les préférences desktop sont dans un espace machine distinct (`yt-beat-m-desktop`) ; aucune bibliothèque personnelle n’est rouverte depuis les préférences web. Les références de sons externes restent locales au poste.
+
+Le binaire figé redispatche les appels internes `-m yt_dlp` vers le module embarqué : `sys.executable` n’est plus un interpréteur Python. Les outils FFmpeg/ffprobe/Node restent des prérequis d’import dans cette tranche ; leur distribution autonome, leurs licences et les signatures appartiennent à un prochain lot. Le DMG produit est un artefact de test local sur l’architecture du Mac de compilation. Les tests Chromium ne remplacent pas la recette WKWebView ; la compilation Windows et la distribution publique restent non validées. Détails dans [la recette desktop](design/122-desktop-mvp.md).
+
 ## ADR-002 — Bibliothèque transportable
 
 ```text

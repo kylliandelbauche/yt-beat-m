@@ -46,6 +46,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
+      - run: npm ci
+        working-directory: desktop
+      - name: Rust formatting and lockfile
+        working-directory: desktop/src-tauri
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal --component rustfmt
+          cargo fmt --check
+          cargo metadata --locked --no-deps --format-version 1 > /dev/null
       - run: npm run lint
         working-directory: frontend
       - run: npm run build
@@ -54,3 +62,15 @@ jobs:
         working-directory: frontend
       - run: npm run test:e2e
         working-directory: frontend
+      # The application remains a Mac-only prototype. Keep the automatic Checks
+      # job on Ubuntu; a manual Mac run also validates the packaged desktop.
+      - if: runner.os == 'macOS'
+        run: |
+          python3 scripts/desktop.py prepare
+          cd desktop/src-tauri
+          cargo fmt --check
+          cargo clippy --locked -- -D warnings
+          cargo test --locked
+          cd ../..
+          BEAT_M_TEST_ENGINE="$PWD/desktop/src-tauri/resources/engine/beat-m-engine" uv run --locked --group desktop pytest backend/tests/test_desktop.py
+          npm --prefix desktop run build

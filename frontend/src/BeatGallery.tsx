@@ -374,9 +374,12 @@ export function BeatGallery({
     setPlaybackError(null);
     const player = audio.current;
     if (selection?.beat.id === beat.id && player) {
-      if (!player.paused && !player.ended) player.pause();
+      // WebKit can report an error before its paused flag catches up. A failed
+      // source must always retry, even if that flag still says it is playing.
+      const failed = !!player.error || playbackError?.id === beat.id;
+      if (!failed && !player.paused && !player.ended) player.pause();
       else {
-        if (player.error) player.load();
+        if (failed) player.load();
         else if (player.ended) player.currentTime = 0;
         startPlayback(player, beat.id);
       }

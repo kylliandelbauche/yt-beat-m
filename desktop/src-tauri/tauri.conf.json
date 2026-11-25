@@ -1,0 +1,23 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Beat m Prototype",
+  "version": "0.1.0",
+  "identifier": "io.beatm.desktop.prototype",
+  "build": {
+    "frontendDist": "../splash"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "capabilities": [],
+      "csp": "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; frame-src 'none'; object-src 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": ["icons/icon.icns", "icons/icon.png"],
+    "targets": ["app", "dmg"],
+    "resources": { "resources/engine/": "engine/" },
+    "macOS": { "minimumSystemVersion": "14.0" }
+  }
+}
