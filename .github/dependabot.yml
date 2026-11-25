@@ -23,7 +23,9 @@ updates:
         patterns: ['*']
 
   - package-ecosystem: npm
-    directory: /frontend
+    directories:
+      - /frontend
+      - /desktop
     schedule:
       interval: monthly
     cooldown:
@@ -31,4 +33,15 @@ updates:
     open-pull-requests-limit: 1
     groups:
       frontend:
+        patterns: ['*']
+
+  - package-ecosystem: cargo
+    directory: /desktop/src-tauri
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 1
+    groups:
+      desktop:
         patterns: ['*']

@@ -2414,6 +2414,9 @@ button[aria-pressed="true"] {
 .covers-grid .beat-card {
   border: 0;
   padding: 8px;
+  /* WebKit can retain the previous grid row size as side panes resize. The
+     card must follow its square cover rather than stretch to that old row. */
+  align-self: start;
   height: auto;
   min-height: 0;
   display: block;

@@ -57,6 +57,16 @@ function Workspace() {
   return (
     <main
       className={`workspace${shell.left ? "" : " left-collapsed"}${shell.right ? " detail-open" : ""}`}
+      onClickCapture={(event) => {
+        // WebKit on Mac does not focus buttons on click by default. Capture the
+        // actual trigger before opening a dialog or starting an async save so
+        // focus can be restored consistently without scrolling the workspace.
+        const button =
+          event.target instanceof Element
+            ? event.target.closest<HTMLButtonElement>("button:not(:disabled)")
+            : null;
+        button?.focus({ preventScroll: true });
+      }}
     >
       <svg
         className="workspace-decoration"

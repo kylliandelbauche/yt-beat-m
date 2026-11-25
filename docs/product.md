@@ -6,6 +6,10 @@ Date de référence : 24 octobre 2026.
 
 L'utilisateur reporte Windows et donne la priorité à une validation essentielle sur Mac, puis aux pages Beatmakers (#62) et Mes sons (#11), développées une à une à partir de Paper. La recette Windows et le lancement à double-clic sont différés et ne bloquent plus ces fonctionnalités. Le lancement documenté existant reste utilisable. Les chemins relatifs et les garanties de conservation des bibliothèques restent nécessaires. Les mentions Mac/Windows ci-dessous décrivent l'objectif initial de portabilité, sans constituer un critère de sortie de la phase Mac actuelle.
 
+## Prototype desktop — #122 (25 novembre 2026)
+
+L’utilisateur choisit Tauri pour préparer un futur moteur Rust. Cette tranche valide une application Mac et un DMG local avec l’interface React et le moteur Python embarqués ; elle ne réécrit pas le moteur, ne change pas le catalogue et ne redessine pas l’interface. Le modèle reste une bibliothèque locale choisie explicitement, comparable à un coffre Obsidian. Le mode navigateur reste disponible. Les préférences desktop sont séparées ; une bibliothèque déjà verrouillée par le moteur web doit d’abord être fermée par celui-ci. Windows, distribution signée/notariée et mises à jour sont reportés. L’autonomie des imports sans outils système n’est pas promise dans ce prototype ; les dépendances manquantes restent visibles dans Diagnostic.
+
 ## Préparation publique — #86 (2 novembre 2026)
 
 Audit des secrets et des frontières de sécurité, licence MIT et README illustré sur données fictives. Le moteur reste local ; aucune fonctionnalité produit ni migration ajoutée. CI hébergée toujours manuelle. L’utilisateur a confirmé la conservation de l’historique ; la revue de publication inclut les scans #88 à #92. Voir [le rapport de préparation](security/public-readiness.md).

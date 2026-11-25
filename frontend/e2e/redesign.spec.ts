@@ -23,6 +23,8 @@ async function detail(page: Page, index = 0) {
   await expect(
     panel.getByLabel("Titre de la prod", { exact: true }),
   ).toHaveValue(titles[index]);
+  // Wait for local faces before comparing element and text geometry.
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
   return panel;
 }
 async function patch(request: APIRequestContext, index: number, data: object) {
@@ -70,9 +72,12 @@ async function stableText(panel: Locator) {
       }
       return [
         el.id || el.className,
-        ...[r.x, r.y, r.width, r.height, ...text].map(
+        ...[r.x, r.y, r.width, r.height].map(
           (n) => Math.round(n * 100) / 100,
         ),
+        // WebKit's glyph bounds vary by subpixel font rasterization (~0.2px).
+        // Keep layout at 0.01px precision; compare glyph origins in CSS pixels.
+        ...text.map(Math.round),
         css.fontFamily,
         css.fontSize,
         css.fontWeight,

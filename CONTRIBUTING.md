@@ -30,6 +30,8 @@ Ouvrir ensuite `http://127.0.0.1:5173`. Les choix techniques sont décrits dans 
 
 ## Vérification
 
+Le [prototype desktop Tauri sur Mac](docs/design/122-desktop-mvp.md) se construit avec `python3 scripts/desktop.py build`. Il conserve le moteur Python embarqué et ses propres préférences ; les limites de distribution et la recette native sont documentées dans ce guide.
+
 Exécuter les contrôles pertinents pour le changement :
 
 ```sh
