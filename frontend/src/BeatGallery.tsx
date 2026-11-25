@@ -59,6 +59,7 @@ export function BeatGallery({
   const shell = useShell();
   const setRight = shell.setRight;
   const dirtyDetails = useRef(false);
+  const playbackSelectionBlocked = useRef(false);
   const pendingAction = useRef<(() => void) | null>(null);
   const lastTrigger = useRef<HTMLElement | null>(null);
   const songs = useRef<SongsController | null>(null);
@@ -89,6 +90,7 @@ export function BeatGallery({
     const action = () => {
       lastTrigger.current = trigger;
       detailsRef.current = id;
+      setSelectedId(id);
       setPane("beat");
       setDetails(id);
       shell.setRight(true);
@@ -107,7 +109,11 @@ export function BeatGallery({
   function closeProducer() {
     producerRef.current = null;
     setProducer(null);
-    if (!detailsRef.current) closeDetails();
+    if (
+      !detailsRef.current ||
+      (pendingDetails.current.length && !playbackSelectionBlocked.current)
+    )
+      closeDetails();
   }
   const [producerRevision, setProducerRevision] = useState(0);
   const [profileFilter, setProfileFilter] = useState<{
@@ -133,6 +139,7 @@ export function BeatGallery({
   }, [layout]);
   const [page, setPage] = useState<BeatPage | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [playbackError, setPlaybackError] = useState<{
     id: string;
@@ -174,6 +181,7 @@ export function BeatGallery({
         } else pendingDetails.current.push({ identity, onShown });
       } else {
         detailsRef.current = identity;
+        setSelectedId(identity);
         setPane("beat");
         setDetails(identity);
         setRight(true);
@@ -192,6 +200,7 @@ export function BeatGallery({
     const next = pendingDetails.current.shift();
     if (next) {
       detailsRef.current = next.identity;
+      setSelectedId(next.identity);
       setPane("beat");
       setDetails(next.identity);
       shell.setRight(true);
@@ -379,13 +388,27 @@ export function BeatGallery({
       const failed = !!player.error || playbackError?.id === beat.id;
       if (!failed && !player.paused && !player.ended) player.pause();
       else {
+        selectPlayback(beat);
         if (failed) player.load();
         else if (player.ended) player.currentTime = 0;
         startPlayback(player, beat.id);
       }
     } else {
+      selectPlayback(beat);
       setPlayingId(null);
       setSelection({ beat, play: true });
+    }
+  }
+
+  function selectPlayback(beat: Beat) {
+    if (beat.id.startsWith("song:")) return;
+    setSelectedId(beat.id);
+    // Keep the pane's geometry and any editor intact. A clean beat pane can
+    // follow playback even while folded, without taking focus from Play.
+    if (pane === "beat" && !playbackSelectionBlocked.current) {
+      lastTrigger.current = document.activeElement as HTMLElement;
+      detailsRef.current = beat.id;
+      setDetails(beat.id);
     }
   }
 
@@ -805,7 +828,8 @@ export function BeatGallery({
               >
                 {page?.beats.map((beat) => (
                   <article
-                    className={`beat-card${details === beat.id ? " selected" : ""}${playingId === beat.id ? " is-playing" : ""}`}
+                    className={`beat-card${selectedId === beat.id ? " selected" : ""}${playingId === beat.id ? " is-playing" : ""}`}
+                    aria-current={selectedId === beat.id ? "true" : undefined}
                     key={beat.id}
                   >
                     <button
@@ -1070,6 +1094,9 @@ export function BeatGallery({
           }}
           onDirtyChange={(dirty) => {
             dirtyDetails.current = dirty;
+          }}
+          onPlaybackSelectionBlockedChange={(blocked) => {
+            playbackSelectionBlocked.current = blocked;
           }}
           playing={playingId === details}
           playbackError={

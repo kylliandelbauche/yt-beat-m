@@ -77,6 +77,7 @@ export function BeatDetailsPanel({
   onFavorite,
   onChanged,
   onDirtyChange,
+  onPlaybackSelectionBlockedChange,
   onCancelNavigation,
 }: {
   identity: string;
@@ -93,6 +94,7 @@ export function BeatDetailsPanel({
   onFavorite: (beat: Beat) => Promise<boolean>;
   onChanged: () => void;
   onDirtyChange: (dirty: boolean) => void;
+  onPlaybackSelectionBlockedChange: (blocked: boolean) => void;
   onCancelNavigation: () => void;
 }) {
   const shell = useShell();
@@ -271,6 +273,31 @@ export function BeatDetailsPanel({
     dirtyCallback.current(dirty);
     return () => dirtyCallback.current(false);
   }, [dirty]);
+  useLayoutEffect(() => {
+    onPlaybackSelectionBlockedChange(
+      editing ||
+        busy ||
+        revealing ||
+        confirmDiscard ||
+        marketOpen ||
+        picking ||
+        creating ||
+        !!keyAnchor ||
+        !!tagging,
+    );
+    return () => onPlaybackSelectionBlockedChange(false);
+  }, [
+    onPlaybackSelectionBlockedChange,
+    editing,
+    busy,
+    revealing,
+    confirmDiscard,
+    marketOpen,
+    picking,
+    creating,
+    keyAnchor,
+    tagging,
+  ]);
   useLayoutEffect(() => {
     navigationRef.current = (force = false) => {
       if (force || canClose()) {
