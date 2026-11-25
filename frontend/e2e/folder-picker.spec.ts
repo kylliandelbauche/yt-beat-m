@@ -3,6 +3,87 @@ import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+for (const width of [1440, 760]) {
+  test(`première ouverture : mauvais sous-dossier, erreur fixe et retour à la bibliothèque à ${width}`, async ({
+    page,
+  }) => {
+    const original = (await (await page.request.get("/api/library")).json())
+      .library;
+    const token = (await (await page.request.get("/api/session")).json()).token;
+    const headers = { Origin: "http://127.0.0.1:8767", "X-Session-Token": token };
+    try {
+      expect(
+        (await page.request.post("/api/library/close", { headers })).ok(),
+      ).toBe(true);
+      await page.setViewportSize({ width, height: 650 });
+      await page.goto("/");
+      const field = page.getByRole("textbox", {
+        name: "Dossier de bibliothèque",
+        exact: true,
+      });
+      await field.fill(path.join(original.root, "audio"));
+      const form = page.locator(".library-form");
+      const geometry = () =>
+        form
+          .locator(
+            ".mode-selector, label, .form-hint, .library-form-feedback, button[type=submit]",
+          )
+          .evaluateAll((elements) =>
+            elements.map((element) => {
+              const r = element.getBoundingClientRect();
+              return [r.x, r.y, r.width, r.height];
+            }),
+          );
+      const before = await geometry();
+      await form
+        .getByRole("button", { name: "Ouvrir la bibliothèque", exact: true })
+        .click();
+      const error = form.getByRole("alert");
+      await expect(error).toContainText("library.json");
+      await expect(error).toContainText("pas le sous-dossier audio");
+      await expect(field).toHaveValue(path.join(original.root, "audio"));
+      expect(await geometry()).toEqual(before);
+      expect(
+        (await (await page.request.get("/api/library")).json()).library,
+      ).toBeNull();
+      const bounds = (await error.boundingBox())!;
+      const container = (await form.boundingBox())!;
+      expect(bounds.x).toBeGreaterThanOrEqual(container.x);
+      expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+        container.x + container.width,
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await field.fill(original.root);
+      await form
+        .getByRole("button", { name: "Ouvrir la bibliothèque", exact: true })
+        .click();
+      await expect(
+        page.getByRole("searchbox", {
+          name: "Rechercher une prod",
+          exact: true,
+        }),
+      ).toBeVisible();
+      expect(
+        (await (await page.request.get("/api/library")).json()).library.id,
+      ).toBe(original.id);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+    } finally {
+      expect(
+        (
+          await page.request.post("/api/library", {
+            headers,
+            data: { path: original.root },
+          })
+        ).ok(),
+      ).toBe(true);
+    }
+  });
+}
+
 test("choisir un dossier sans copier son chemin, annuler et récupérer une erreur", async ({
   page,
 }) => {

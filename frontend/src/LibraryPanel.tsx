@@ -237,8 +237,11 @@ export function LibraryPanel({
       <p className="form-hint">
         {mode === "create"
           ? "Choisis un nouveau dossier ou un dossier vide. Il contiendra tes MP3, pochettes et annotations."
-          : "Choisis le dossier contenant library.json. Il peut se trouver sur ton disque externe."}
+          : "Choisis le dossier de ta bibliothèque contenant library.json, pas le sous-dossier audio avec les MP3."}
       </p>
+      <div className="library-form-feedback" role="alert">
+        {error || status?.error}
+      </div>
       <button
         type="submit"
         className="primary"
@@ -285,7 +288,7 @@ export function LibraryPanel({
           }}
         />
       ) : (
-        <div className="library-center">
+        <div className="library-center library-onboarding">
           {heading()}
           {!status && !error && (
             <p className="form-hint" role="status">
@@ -294,11 +297,6 @@ export function LibraryPanel({
           )}
           {form}
         </div>
-      )}
-      {!shell.settings && connected && (error || status?.error) && (
-        <p className="library-error" role="alert">
-          {error || status?.error}
-        </p>
       )}
       {shell.settings && (
         <Settings
@@ -314,9 +312,6 @@ export function LibraryPanel({
                 </strong>
                 <span>{library?.beat_count || 0} prods</span>
                 <p className="library-path">{library?.root}</p>
-              </div>
-              <div className="library-form-feedback" role="alert">
-                {error}
               </div>
               {form}
               <button

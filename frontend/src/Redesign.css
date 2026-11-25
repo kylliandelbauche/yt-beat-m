@@ -1848,11 +1848,12 @@ button[aria-pressed="true"] {
   font-size: 11px;
 }
 .library-form-feedback {
-  height: 24px;
-  font-size: 11px;
-  color: var(--error, #b73b3b);
-}
-.library-error {
+  height: 48px;
+  flex-shrink: 0;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
   color: var(--error, #b73b3b);
 }
 .discard-modal p {
@@ -2934,6 +2935,11 @@ button[aria-pressed="true"] {
 .workspace {
   grid-template-columns: var(--nav-width) minmax(480px, 1fr) var(--detail-width);
   min-width: calc(var(--nav-width) + 480px + var(--detail-width));
+}
+/* The first-opening form does not need the catalogue's minimum filter width. */
+.workspace:has(.library-onboarding) {
+  grid-template-columns: var(--nav-width) minmax(320px, 1fr) var(--detail-width);
+  min-width: calc(var(--nav-width) + 320px + var(--detail-width));
 }
 :root {
   --error: #b73b3b;

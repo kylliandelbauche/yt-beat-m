@@ -16,6 +16,8 @@ Sorties locales ignorées par Git : `desktop/src-tauri/target/release/bundle/mac
 
 Ouvrir l’application puis Réglages → Bibliothèque pour choisir explicitement une collection. Les préférences desktop sont distinctes (`yt-beat-m-desktop`) ; aucune collection web n’est ouverte silencieusement. Fermer la bibliothèque dans l’autre moteur avant de l’ouvrir ici : le verrou existant refuse deux moteurs concurrents. Les MP3 externes de Mes sons peuvent demander une reconnexion dans le registre propre au prototype ; aucun original n’est déplacé.
 
+Correctif #128 : choisir la racine qui contient `library.json`, et non le sous-dossier `audio`. Une sélection incorrecte conserve le chemin et affiche une aide dans un emplacement fixe du formulaire, au premier lancement comme dans Réglages. Aucun parent n’est ouvert automatiquement et aucun nouveau catalogue n’est créé.
+
 ## Frontières et cycle de vie
 
 - Le moteur réserve un port éphémère sur127.0.0.1 avant de configurer Host/Origin. Son stdout privé annonce le port après démarrage réel, sans secret ni chemin. Le parent ne s’attache jamais à un serveur existant.
