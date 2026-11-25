@@ -1,3 +1,4 @@
+import type { MarketStatus } from "./MarketplaceDialog";
 export type Beat = {
   id: string;
   tags?: string[];
@@ -15,6 +16,7 @@ export type Beat = {
     | "channel_alias_self_credit"
     | "unresolved_self_credit"
     | "manual"
+    | "marketplace"
     | "legacy"
     | null;
   channel: string | null;
@@ -35,6 +37,7 @@ export type BeatDetails = Beat & {
   channel_id_known: boolean;
   channel_alias: { beatmaker: string; uses_channel_id: boolean } | null;
   metadata_provenance: Record<string, unknown>;
+  marketplace?: MarketStatus;
   tags: string[];
   styles: string[];
   moods: string[];
@@ -68,6 +71,8 @@ export function musicalKeyLabel(value: string | null | undefined) {
 }
 
 export function beatmakerSourceLabel(source: Beat["beatmaker_source"]) {
+  if (source === "marketplace")
+    return "Crédit provenant de la page de vente correspondante.";
   if (source === "channel_self_credit")
     return "Auteur proposé depuis la chaîne YouTube ; les collaborateurs explicitement crédités sont conservés. À vérifier.";
   if (source === "channel_alias_self_credit")

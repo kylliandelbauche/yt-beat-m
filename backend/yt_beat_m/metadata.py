@@ -3,6 +3,7 @@
 import json
 import math
 import unicodedata
+from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
@@ -45,6 +46,9 @@ class MetadataUpdate(BaseModel):
     moods: list[str] = Field(default_factory=list, max_length=30)
     links: list[PurchaseLink] = Field(default_factory=list, max_length=20)
     beatmaker_ids: list[UUID] = Field(default_factory=list, max_length=20)
+    marketplace_fields: list[Literal["bpm", "musical_key", "beatmaker", "tags"]] = Field(
+        default_factory=list, max_length=4
+    )
 
 
 def clean_tags(values: list[str], field: str) -> list[str]:
@@ -85,6 +89,8 @@ def replace_tags(connection, identity, values):
 
 def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -> bool:
     changes = payload.model_dump(exclude_unset=True)
+    marketplace_fields = changes.pop("marketplace_fields", [])
+    proposed_changes = dict(changes)
     from yt_beat_m.catalog_tags import resolve_label
 
     common_tags = changes.pop("tags", None)
@@ -152,6 +158,17 @@ def correct_metadata(library: Library, identity: str, payload: MetadataUpdate) -
         row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
         if row is None:
             return False
+        if marketplace_fields:
+            from yt_beat_m.marketplace import accepted_fields
+
+            accepted = accepted_fields(connection, identity, marketplace_fields, proposed_changes)
+            fields = provenance(row)
+            fields.setdefault("marketplace_accepted", {}).update(accepted)
+            connection.execute(
+                "UPDATE beats SET field_provenance=? WHERE id=?",
+                (json.dumps(fields, ensure_ascii=False), identity),
+            )
+            row = connection.execute("SELECT * FROM beats WHERE id=?", (identity,)).fetchone()
         if profile_ids is not None:
             from yt_beat_m.profiles import assign_profiles
 

@@ -40,6 +40,7 @@ export function ImportPanel({
   const [refresh, setRefresh] = useState(0);
   const completed = useRef(new Set<string>());
   const initialized = useRef(false);
+  const enrichments = useRef(new Map<string, string>());
   const watched = useRef(new Set<string>());
   const [focusedJob, setFocusedJob] = useState<string | null>(null);
   const [shownJobs, setShownJobs] = useState(new Set<string>());
@@ -53,12 +54,20 @@ export function ImportPanel({
     let timer: ReturnType<typeof setTimeout>;
     async function poll() {
       try {
-        const result = await api<{ jobs: Job[] }>("/api/imports", {
+        const result = await api<{
+          jobs: Job[];
+          enrichments?: {
+            beat_id: string;
+            state: string;
+            updated_at: string;
+          }[];
+        }>("/api/imports", {
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         setJobs(result.jobs);
         setTrackingError("");
+        let refreshed = false;
         if (!initialized.current) {
           const resumable =
             result.jobs.find((job) =>
@@ -79,11 +88,25 @@ export function ImportPanel({
               job.beat_id
             ) {
               await onImported();
+              refreshed = true;
               if (controller.signal.aborted) return;
               setFocusedJob(job.id);
               onShowBeat(job.beat_id, () => acknowledge(job.id));
             }
             completed.current.add(job.id);
+          }
+        }
+        for (const enrichment of result.enrichments || []) {
+          if (
+            enrichment.state !== "ready" ||
+            enrichments.current.get(enrichment.beat_id) ===
+              enrichment.updated_at
+          )
+            continue;
+          enrichments.current.set(enrichment.beat_id, enrichment.updated_at);
+          if (initialized.current && !refreshed) {
+            await onImported();
+            refreshed = true;
           }
         }
         initialized.current = true;

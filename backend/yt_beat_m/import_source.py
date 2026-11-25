@@ -6,6 +6,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from yt_beat_m.library import LibraryError
 from yt_beat_m.musical_keys import extract_key
+from yt_beat_m.purchase_links import purchase_links
 
 
 def youtube_source(value: str) -> tuple[str, str]:
@@ -66,27 +67,7 @@ def source_metadata(info: dict, identity: str) -> dict:
         published = datetime.strptime(info.get("upload_date", ""), "%Y%m%d").date().isoformat()
     except (ValueError, TypeError):
         pass
-    links = []
-    for link in re.findall(r"https?://[^\s<>\"']+", description):
-        link = link.rstrip(".,);]")
-        try:
-            host = (urlsplit(link).hostname or "").lower()
-        except ValueError:
-            continue
-        if (
-            any(
-                host == domain or host.endswith("." + domain)
-                for domain in (
-                    "beatstars.com",
-                    "bsta.rs",
-                    "airbit.com",
-                    "traktrain.com",
-                    "soundee.com",
-                )
-            )
-            and link not in links
-        ):
-            links.append(link)
+    links = purchase_links(description)
     return {
         "title": title.strip()[:500],
         "channel": info.get("channel") or info.get("uploader"),

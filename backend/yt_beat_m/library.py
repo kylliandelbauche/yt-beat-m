@@ -22,6 +22,7 @@ MIGRATIONS = {
     8: Path(__file__).parent / "migrations" / "008_song_tags.sql",
     9: Path(__file__).parent / "migrations" / "009_song_text.sql",
     10: Path(__file__).parent / "migrations" / "010_song_artwork.sql",
+    11: Path(__file__).parent / "migrations" / "011_marketplace_metadata.sql",
 }
 
 

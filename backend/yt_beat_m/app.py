@@ -27,6 +27,8 @@ from yt_beat_m.key_refresh import refresh_missing_keys
 from yt_beat_m.library import LibraryBusyError, LibraryError
 from yt_beat_m.library_manager import LibraryManager
 from yt_beat_m.local_audio import media_path, scan_local_audio
+from yt_beat_m.marketplace import queue as queue_marketplace
+from yt_beat_m.marketplace import view as marketplace_view
 from yt_beat_m.metadata import MetadataUpdate, correct_metadata
 from yt_beat_m.profile_photos import request_photo
 from yt_beat_m.profiles import (
@@ -342,10 +344,37 @@ def create_app(
         with manager.active():
             return manager.worker.enqueue(payload.url)
 
+    @app.get("/api/beats/{identity}/enrichment")
+    def enrichment_status(identity: UUID):
+        with manager.active() as library, library.catalog() as c:
+            if not c.execute("SELECT 1 FROM beats WHERE id=?", (str(identity),)).fetchone():
+                raise HTTPException(404, "Prod introuvable.")
+            return marketplace_view(c, str(identity))
+
+    @app.post("/api/beats/{identity}/enrichment")
+    def enrichment_request(identity: UUID):
+        with manager.active() as library, library.catalog() as c:
+            return queue_marketplace(c, str(identity))
+
     @app.get("/api/imports")
     def import_jobs():
-        with manager.active():
-            return {"jobs": manager.worker.jobs()}
+        with manager.active() as library:
+            jobs = manager.worker.jobs()
+            identities = [j["beat_id"] for j in jobs if j["beat_id"]]
+            with library.catalog() as c:
+                enrichments = (
+                    [
+                        dict(r)
+                        for r in c.execute(
+                            "SELECT beat_id,state,updated_at FROM marketplace_enrichments "
+                            "WHERE beat_id IN (" + ",".join("?" for _ in identities) + ")",
+                            identities,
+                        )
+                    ]
+                    if identities
+                    else []
+                )
+            return {"jobs": jobs, "enrichments": enrichments}
 
     @app.post("/api/library/scan")
     def scan_library():
@@ -359,10 +388,14 @@ def create_app(
             scan = scan_local_audio(library)
             producers = refresh_beatmakers(library)
             keys = refresh_missing_keys(library)
+            from yt_beat_m.marketplace import refresh_links
+
+            links = refresh_links(library)
             return {
                 **scan,
                 "beatmakers": producers,
                 "musical_keys": keys,
+                "purchase_links": links,
                 "library": library.summary(),
             }
 
