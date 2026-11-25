@@ -100,6 +100,24 @@ def test_missing_database_never_recreates_empty_catalog(tmp_path):
     assert not (library.root / "catalog.sqlite3").exists()
 
 
+def test_audio_subfolder_is_rejected_without_replacing_or_opening_the_parent(tmp_path):
+    library = Library.create(tmp_path / "collection")
+    identity = library.manifest["id"]
+    root = library.root
+    library.close()
+    before = (root / "catalog.sqlite3").read_bytes()
+    with pytest.raises(LibraryError, match="pas le sous-dossier audio"):
+        Library.open(root / "audio")
+    assert not (root / "audio/library.json").exists()
+    assert not (root / "audio/catalog.sqlite3").exists()
+    assert (root / "catalog.sqlite3").read_bytes() == before
+    reopened = Library.open(root)
+    try:
+        assert reopened.manifest["id"] == identity
+    finally:
+        reopened.close()
+
+
 def test_never_overwrites_existing_directory(tmp_path):
     root = tmp_path / "personal"
     root.mkdir()

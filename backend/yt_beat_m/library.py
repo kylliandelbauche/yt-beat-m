@@ -163,6 +163,11 @@ class Library:
             if not isinstance(manifest.get("name"), str) or not manifest["name"].strip():
                 raise ValueError("name")
             return manifest
+        except FileNotFoundError as exc:
+            raise LibraryError(
+                "Ce dossier ne contient pas de bibliothèque Beat m. "
+                "Choisis le dossier contenant library.json, pas le sous-dossier audio."
+            ) from exc
         except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
             raise LibraryError(
                 "Ce dossier ne contient pas de manifeste de bibliothèque valide."
