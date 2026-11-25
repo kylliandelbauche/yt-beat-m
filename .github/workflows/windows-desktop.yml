@@ -1,0 +1,58 @@
+name: Windows desktop
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'backend/**'
+      - 'scripts/desktop.py'
+      - 'scripts/check_windows_package.py'
+      - 'uv.lock'
+      - '.github/workflows/windows-desktop.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows x64 package
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: '0.9.14'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - run: uv sync --locked --group desktop
+      - run: uv run --locked --group desktop pytest
+      - run: uv run --locked --group desktop python scripts/desktop.py build
+      - name: Rust validation
+        working-directory: desktop/src-tauri
+        run: |
+          cargo fmt --check
+          cargo clippy --locked -- -D warnings
+          cargo test --locked
+      - name: Frozen engine and installed application
+        run: |
+          $env:BEAT_M_TEST_ENGINE = "$pwd/desktop/src-tauri/resources/engine/beat-m-engine.exe"
+          uv run --locked --group desktop pytest backend/tests/test_desktop.py
+          uv run --locked --group desktop python scripts/check_windows_package.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: beat-m-windows-x64
+          path: |
+            desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            .local/windows-package-report.json
+          retention-days: 7
+          if-no-files-found: error

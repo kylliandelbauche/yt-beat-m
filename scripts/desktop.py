@@ -1,8 +1,9 @@
-"""Build the isolated Mac desktop prototype; never include a library or preferences."""
+"""Build the native desktop prototype; never include a library or preferences."""
 
 import argparse
 import os
 import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -11,6 +12,16 @@ DESKTOP = ROOT / "desktop"
 
 
 def run(*args, cwd=ROOT):
+    if os.name == "nt" and args[0] == "npm":
+        # Execute npm's JS entry directly instead of invoking a .cmd through a shell.
+        npm = shutil.which("npm")
+        node = shutil.which("node")
+        if not npm or not node:
+            raise RuntimeError("Node.js et npm sont requis pour construire l’application.")
+        cli = Path(npm).parent / "node_modules/npm/bin/npm-cli.js"
+        if not cli.is_file():
+            raise RuntimeError("Installation npm non reconnue ; utiliser Node.js officiel.")
+        args = (node, str(cli), *args[1:])
     subprocess.run(args, cwd=cwd, check=True)
 
 
@@ -55,8 +66,6 @@ def prepare():
         str(DESKTOP / "engine_entry.py"),
     )
     # Copy only the allowlisted build output, never the project tree or .local.
-    import shutil
-
     destination = DESKTOP / "src-tauri/resources/engine"
     if destination.exists():
         shutil.rmtree(destination)
@@ -67,8 +76,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=["prepare", "build", "dev"])
     args = parser.parse_args()
-    if platform.system() != "Darwin":
-        parser.error("Ce premier prototype se construit et se vérifie sur Mac uniquement.")
+    if platform.system() not in {"Darwin", "Windows"}:
+        parser.error("Construire sur Mac pour le DMG ou sur Windows pour le .exe.")
     prepare()
     if args.action != "prepare":
         run("npm", "run", args.action, cwd=DESKTOP)

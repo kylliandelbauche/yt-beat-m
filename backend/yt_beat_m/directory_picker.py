@@ -33,6 +33,21 @@ try {
 }
 """
 
+WINDOWS_FILE_SCRIPT = (
+    WINDOWS_SCRIPT.replace(
+        "System.Windows.Forms.FolderBrowserDialog", "System.Windows.Forms.OpenFileDialog"
+    )
+    .replace(
+        "$dialog.Description = 'Choisir le dossier de bibliothèque Beat m'",
+        "$dialog.Title = 'Choisir un fichier pour Beat m'",
+    )
+    .replace(
+        "$dialog.ShowNewFolderButton = $true",
+        "$dialog.Multiselect = $false\n$dialog.CheckFileExists = $true\n$dialog.Filter = 'FILTER'",
+    )
+    .replace("$dialog.SelectedPath", "$dialog.FileName")
+)
+
 
 class DirectoryPicker:
     def __init__(self, system: str | None = None, *, audio: bool = False, image: bool = False):
@@ -60,7 +75,13 @@ class DirectoryPicker:
                         'of type {"public.jpeg", "public.png"}',
                     )
                 command = ["/usr/bin/osascript", "-e", script]
-            elif self.system == "win32" and not self.audio and not self.image:
+            elif self.system == "win32":
+                script = WINDOWS_SCRIPT
+                if self.audio or self.image:
+                    file_filter = (
+                        "Images JPEG et PNG|*.jpg;*.jpeg;*.png" if self.image else "Audio MP3|*.mp3"
+                    )
+                    script = WINDOWS_FILE_SCRIPT.replace("FILTER", file_filter)
                 command = [
                     "powershell.exe",
                     "-NoLogo",
@@ -68,7 +89,7 @@ class DirectoryPicker:
                     "-NonInteractive",
                     "-STA",
                     "-Command",
-                    WINDOWS_SCRIPT,
+                    script,
                 ]
             else:
                 if self.image:

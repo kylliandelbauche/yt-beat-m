@@ -22,11 +22,17 @@ fn open_external(url: &tauri::Url) {
 fn main() {
     let app = tauri::Builder::default()
         .setup(|app| {
+            let filename = if cfg!(windows) {
+                "beat-m-engine.exe"
+            } else {
+                "beat-m-engine"
+            };
             #[cfg(debug_assertions)]
             let binary = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("resources/engine/beat-m-engine");
+                .join("resources/engine")
+                .join(filename);
             #[cfg(not(debug_assertions))]
-            let binary = app.path().resource_dir()?.join("engine/beat-m-engine");
+            let binary = app.path().resource_dir()?.join("engine").join(filename);
             match engine::Engine::start(&binary) {
                 Ok((engine, origin)) => {
                     app.manage(Mutex::new(Some(engine)));

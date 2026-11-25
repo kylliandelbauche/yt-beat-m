@@ -1,0 +1,10 @@
+{
+  "bundle": {
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico"],
+    "windows": {
+      "nsis": { "installMode": "currentUser", "languages": ["French", "English"] },
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true }
+    }
+  }
+}

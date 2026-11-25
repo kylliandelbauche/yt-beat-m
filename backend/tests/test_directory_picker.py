@@ -46,6 +46,23 @@ def test_cancellation_is_not_an_error(monkeypatch, system, output):
     assert DirectoryPicker(system).choose() is None
 
 
+@pytest.mark.parametrize("kind,extension", [("audio", "*.mp3"), ("image", "*.png")])
+def test_windows_file_selection_preserves_unicode_and_cancellation(monkeypatch, kind, extension):
+    chosen = "D:\\Mes sons été\\Mon fichier.mp3"
+    runner = Mock(
+        side_effect=[
+            subprocess.CompletedProcess([], 0, json.dumps({"path": chosen}), ""),
+            subprocess.CompletedProcess([], 0, '{"path":null}', ""),
+        ]
+    )
+    monkeypatch.setattr(subprocess, "run", runner)
+    picker = DirectoryPicker("win32", **{kind: True})
+    assert picker.choose() == chosen
+    command = runner.call_args.args[0]
+    assert "OpenFileDialog" in command[-1] and extension in command[-1]
+    assert picker.choose() is None
+
+
 @pytest.mark.parametrize(
     "failure",
     [

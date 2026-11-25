@@ -56,7 +56,7 @@ class ProcessRunner:
             if self.stopping.is_set():
                 raise ImportInterrupted
             options = (
-                {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+                {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW}
                 if os.name == "nt"
                 else {"start_new_session": True}
             )
