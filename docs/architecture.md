@@ -123,6 +123,8 @@ Le téléchargement dépend des évolutions de YouTube. Prévoir un diagnostic d
 
 ## API et lecture
 
+Depuis #130, la sélection visuelle de prod est un état local distinct de la piste audio et de la fiche protégée. Play sélectionne son UUID ; Pause ne le réinitialise pas. La fiche disponible suit cet UUID sans changer l’ouverture du volet, le focus ou les filtres. Elle signale les éditions, sauvegardes et interactions imbriquées pour empêcher un démontage implicite. Les imports différés restent prioritaires à la fermeture d’un profil lorsque la fiche est disponible. Aucun changement d’API, de schéma ou de média.
+
 Ressources disponibles : bibliothèque/diagnostic, tâches d'import, liste et fiche des prods, favori persistant et fichiers audio/pochette. La liste est paginée après filtrage et combine recherche textuelle normalisée (titre, beatmaker, chaîne, tags), favoris et catégories musicales. La localisation du MP3 est disponible depuis la fiche (#7, #41).
 
 Le fichier audio est servi avec les requêtes HTTP Range pour permettre le déplacement dans la piste. Tester les statuts 200, 206 et 416, ainsi que l'absence du fichier. Un seul élément audio persistant dans l'interface évite la lecture simultanée de plusieurs cartes. Les fichiers et pochettes sont servis localement, sans dépendance à un embed YouTube.

@@ -77,6 +77,7 @@ export function BeatDetailsPanel({
   onFavorite,
   onChanged,
   onDirtyChange,
+  onPlaybackSelectionBlockedChange,
   onCancelNavigation,
 }: {
   identity: string;
@@ -93,6 +94,7 @@ export function BeatDetailsPanel({
   onFavorite: (beat: Beat) => Promise<boolean>;
   onChanged: () => void;
   onDirtyChange: (dirty: boolean) => void;
+  onPlaybackSelectionBlockedChange: (blocked: boolean) => void;
   onCancelNavigation: () => void;
 }) {
   const shell = useShell();
@@ -272,6 +274,31 @@ export function BeatDetailsPanel({
     return () => dirtyCallback.current(false);
   }, [dirty]);
   useLayoutEffect(() => {
+    onPlaybackSelectionBlockedChange(
+      editing ||
+        busy ||
+        revealing ||
+        confirmDiscard ||
+        marketOpen ||
+        picking ||
+        creating ||
+        !!keyAnchor ||
+        !!tagging,
+    );
+    return () => onPlaybackSelectionBlockedChange(false);
+  }, [
+    onPlaybackSelectionBlockedChange,
+    editing,
+    busy,
+    revealing,
+    confirmDiscard,
+    marketOpen,
+    picking,
+    creating,
+    keyAnchor,
+    tagging,
+  ]);
+  useLayoutEffect(() => {
     navigationRef.current = (force = false) => {
       if (force || canClose()) {
         cancel();
@@ -355,7 +382,9 @@ export function BeatDetailsPanel({
     setError("");
     setInvalid([]);
     setSaveError(false);
-    focusEditor();
+    // Folding keeps focus on the persistent rail, outside the hidden editor.
+    if (!document.activeElement?.matches(".detail-rail .pane-toggle"))
+      focusEditor();
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
