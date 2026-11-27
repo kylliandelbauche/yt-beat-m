@@ -34,6 +34,7 @@ class ProcessRunner:
                         capture_output=True,
                         timeout=5,
                         check=False,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
                     )
                     if process.poll() is None:
                         process.kill()

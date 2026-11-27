@@ -43,8 +43,8 @@ jobs:
         working-directory: desktop/src-tauri
         run: |
           cargo fmt --check
-          cargo clippy --locked -- -D warnings
-          cargo test --locked
+          cargo clippy --locked --release -- -D warnings
+          cargo test --locked --release
       - name: Frozen engine and installed application
         run: |
           $env:BEAT_M_TEST_ENGINE = "$pwd/desktop/src-tauri/resources/engine/beat-m-engine.exe"

@@ -28,7 +28,7 @@ def powershell(script):
         capture_output=True,
         text=True,
         encoding="utf-8",
-        timeout=15,
+        timeout=30,
         check=True,
         creationflags=subprocess.CREATE_NO_WINDOW,
     )
@@ -37,19 +37,40 @@ def powershell(script):
 
 def state(pid):
     # Only numeric process IDs enter this fixed script, never paths or user text.
-    return powershell(
+    info = powershell(
         f"$a=Get-Process -Id {int(pid)} -ErrorAction SilentlyContinue; "
-        f'$e=Get-CimInstance Win32_Process -Filter "ParentProcessId = {int(pid)}" | '
-        "Where-Object Name -eq 'beat-m-engine.exe' | Select-Object -First 1; "
-        "if($e){ $p=Get-NetTCPConnection -OwningProcess $e.ProcessId -State Listen "
-        "-ErrorAction SilentlyContinue | Where-Object LocalAddress -eq '127.0.0.1' | "
-        "Select-Object -First 1; "
-        f'$w=@(Get-CimInstance Win32_Process -Filter "ParentProcessId = {int(pid)}" | '
+        f'$children=@(Get-CimInstance Win32_Process -Filter "ParentProcessId = {int(pid)}" '
+        "-OperationTimeoutSec 10); "
+        "$e=$children | Where-Object Name -eq 'beat-m-engine.exe' | Select-Object -First 1; "
+        "if($e){ $w=@($children | "
         "Where-Object Name -eq 'msedgewebview2.exe'); "
-        "@{engine=$e.ProcessId;port=$p.LocalPort;title=$a.MainWindowTitle;"
+        "@{engine=$e.ProcessId;title=$a.MainWindowTitle;"
         "window=$a.MainWindowHandle.ToInt64();webview=($w.Count -gt 0)} | "
         "ConvertTo-Json -Compress }"
     )
+    if info:
+        # Get-NetTCPConnection has a slow first CIM provider load on clean runners.
+        # netstat reads the same OS ownership table without that provider startup.
+        result = subprocess.run(
+            [str(Path(os.environ["SystemRoot"]) / "System32/netstat.exe"), "-ano", "-p", "tcp"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        for line in result.stdout.splitlines():
+            fields = line.split()
+            if (
+                len(fields) == 5
+                and fields[0] == "TCP"
+                and fields[1].startswith("127.0.0.1:")
+                and fields[3] == "LISTENING"
+                and fields[4] == str(info["engine"])
+            ):
+                info["port"] = int(fields[1].rsplit(":", 1)[1])
+                break
+    return info
 
 
 def request(port, method, path, body=None, headers=None):
@@ -118,7 +139,7 @@ def main():
             )
             info = None
             try:
-                deadline = time.monotonic() + 40
+                deadline = time.monotonic() + 90
                 while time.monotonic() < deadline:
                     assert app.poll() is None, "Installed application exited during startup"
                     info = state(app.pid)
