@@ -64,7 +64,9 @@ def request(port, method, path, body=None, headers=None):
 
 def stop(process):
     if process.poll() is None:
-        powershell(f"(Get-Process -Id {int(process.pid)}).CloseMainWindow()")
+        powershell(
+            f"(Get-Process -Id {int(process.pid)}).CloseMainWindow() | ConvertTo-Json -Compress"
+        )
         try:
             process.wait(timeout=50)
         except subprocess.TimeoutExpired:
@@ -153,7 +155,8 @@ def main():
             finally:
                 stop(app)
             assert info and not powershell(
-                f"[bool](Get-Process -Id {int(info['engine'])} -ErrorAction SilentlyContinue)"
+                f"[bool](Get-Process -Id {int(info['engine'])} -ErrorAction SilentlyContinue) "
+                "| ConvertTo-Json -Compress"
             ), "Owned engine survived window closure"
         assert media.read_bytes() == audio
     report = {
