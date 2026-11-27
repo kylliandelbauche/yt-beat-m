@@ -56,7 +56,7 @@ def legacy(tmp_path, monkeypatch):
 
 
 def rows(root, table):
-    with sqlite3.connect(root / "catalog.sqlite3") as c:
+    with closing(sqlite3.connect(root / "catalog.sqlite3")) as c:
         return c.execute(f"SELECT * FROM {table} ORDER BY 1,2").fetchall()
 
 
