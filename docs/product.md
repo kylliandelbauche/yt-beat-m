@@ -14,6 +14,10 @@ L’utilisateur choisit Tauri pour préparer un futur moteur Rust. Cette tranche
 
 Play sélectionne immédiatement la prod visée, sans ouvrir un volet replié ni modifier les filtres. La fiche de prod disponible suit cette sélection, même repliée. Une édition, sauvegarde ou fenêtre imbriquée garde sa fiche et son brouillon ; la carte sélectionnée suit tout de même la prod lancée. Pause conserve la sélection ; une nouvelle reprise resynchronise la fiche si elle est disponible. Aucun média ni catalogue n’est modifié.
 
+## Prototype Windows — #132
+
+Demande du25 novembre2026 après #130 : installateur NSIS Windows10/11 x64, Python embarqué, installation par utilisateur et WebView2 avec bootstrapper officiel si absent. Les bibliothèques restent choisies explicitement et transportables ; les références externes de Mes sons se reconnectent sur chaque poste. Les imports nécessitent toujours FFmpeg/ffprobe/Node accessibles. Paquet non signé de test, sans certificat payant ; écoute physique, sélecteurs natifs et DAW à confirmer sur le poste Windows. Voir [la recette Windows](design/132-windows-desktop.md).
+
 ## Préparation publique — #86 (2 novembre 2026)
 
 Audit des secrets et des frontières de sécurité, licence MIT et README illustré sur données fictives. Le moteur reste local ; aucune fonctionnalité produit ni migration ajoutée. CI hébergée toujours manuelle. L’utilisateur a confirmé la conservation de l’historique ; la revue de publication inclut les scans #88 à #92. Voir [le rapport de préparation](security/public-readiness.md).

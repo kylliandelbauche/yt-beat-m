@@ -17,12 +17,20 @@ pub struct Engine(Child);
 
 impl Engine {
     pub fn start(binary: &Path) -> Result<(Self, tauri::Url), &'static str> {
-        let mut child = Command::new(binary)
+        let mut command = Command::new(binary);
+        command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .env_remove("PYTHONHOME")
-            .env_remove("PYTHONPATH")
+            .env_remove("PYTHONPATH");
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            // Keep the real pipes required by Python; --windowed would remove them.
+            command.creation_flags(0x08000000);
+        }
+        let mut child = command
             .spawn()
             .map_err(|_| "Le moteur embarqué est introuvable.")?;
         let stdout = child.stdout.take().ok_or("Canal du moteur indisponible.")?;

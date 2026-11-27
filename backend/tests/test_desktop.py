@@ -5,10 +5,11 @@ import hashlib
 import http.client
 import json
 import os
-import select
+import queue
 import socket
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from uuid import UUID
 
@@ -18,7 +19,6 @@ from yt_beat_m.library import Library
 ROOT = Path(__file__).resolve().parents[2]
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Desktop prototype currently targets macOS")
 @pytest.mark.parametrize("frozen", [False, True])
 def test_owned_port_origin_audio_persistence_and_pipe_shutdown(tmp_path, frozen):
     binary = os.environ.get("BEAT_M_TEST_ENGINE")
@@ -63,14 +63,17 @@ def test_owned_port_origin_audio_persistence_and_pipe_shutdown(tmp_path, frozen)
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=ROOT,
-            env={**os.environ, "PATH": "/usr/bin:/bin"} if frozen else None,
+            env={**os.environ, "PATH": minimal_path()} if frozen else None,
         )
         try:
             if frozen:
                 process.stdin.write((json.dumps({"preferences": str(preferences)}) + "\n").encode())
                 process.stdin.flush()
-            assert select.select([process.stdout], [], [], 15)[0], "Engine not ready"
-            ready = json.loads(process.stdout.readline())
+            lines = queue.Queue()
+            threading.Thread(
+                target=lambda: lines.put(process.stdout.readline()), daemon=True
+            ).start()
+            ready = json.loads(lines.get(timeout=20))
             return process, ready["port"]
         except BaseException:
             process.kill()
@@ -162,10 +165,17 @@ def test_frozen_downloader_dispatch():
 
     result = subprocess.run(
         [binary, "-m", "yt_dlp", "--ignore-config", "--no-plugin-dirs", "--version"],
-        env={**os.environ, "PATH": "/usr/bin:/bin"},
+        env={**os.environ, "PATH": minimal_path()},
         capture_output=True,
         text=True,
         timeout=15,
         check=True,
     )
     assert result.stdout.strip() == version("yt-dlp")
+
+
+def minimal_path():
+    if os.name == "nt":
+        system = Path(os.environ["SystemRoot"])
+        return os.pathsep.join((str(system / "System32"), str(system)))
+    return "/usr/bin:/bin"

@@ -34,6 +34,7 @@ class ProcessRunner:
                         capture_output=True,
                         timeout=5,
                         check=False,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
                     )
                     if process.poll() is None:
                         process.kill()
@@ -56,7 +57,7 @@ class ProcessRunner:
             if self.stopping.is_set():
                 raise ImportInterrupted
             options = (
-                {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+                {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW}
                 if os.name == "nt"
                 else {"start_new_session": True}
             )
