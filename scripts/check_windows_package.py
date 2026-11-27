@@ -1,6 +1,7 @@
 """Exercise the installed Windows package with synthetic data, never a personal library."""
 
 import base64
+import ctypes
 import hashlib
 import http.client
 import json
@@ -11,66 +12,72 @@ import time
 from pathlib import Path
 from uuid import UUID
 
+import psutil
 from yt_beat_m.library import Library
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def powershell(script):
-    result = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            "[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); " + script,
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=30,
-        check=True,
-        creationflags=subprocess.CREATE_NO_WINDOW,
-    )
-    return json.loads(result.stdout) if result.stdout.strip() else None
+def window(pid, *, close=False):
+    """Inspect only this process's visible window; post the ordinary Close action."""
+    from ctypes import wintypes
+
+    user = ctypes.WinDLL("user32", use_last_error=True)
+    callback = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    user.EnumWindows.argtypes = [callback, wintypes.LPARAM]
+    user.EnumWindows.restype = wintypes.BOOL
+    user.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user.IsWindowVisible.argtypes = [wintypes.HWND]
+    user.IsWindowVisible.restype = wintypes.BOOL
+    user.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user.GetWindowTextW.restype = ctypes.c_int
+    user.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user.PostMessageW.restype = wintypes.BOOL
+    found = (0, "")
+
+    @callback
+    def inspect(handle, _):
+        nonlocal found
+        owner = wintypes.DWORD()
+        user.GetWindowThreadProcessId(handle, ctypes.byref(owner))
+        if owner.value == pid and user.IsWindowVisible(handle):
+            title = ctypes.create_unicode_buffer(512)
+            user.GetWindowTextW(handle, title, len(title))
+            found = (handle, title.value)
+            return False
+        return True
+
+    user.EnumWindows(inspect, 0)
+    if close and found[0]:
+        assert user.PostMessageW(found[0], 0x0010, 0, 0), "Could not request window closure"
+    return found
 
 
 def state(pid):
-    # Only numeric process IDs enter this fixed script, never paths or user text.
-    info = powershell(
-        f"$a=Get-Process -Id {int(pid)} -ErrorAction SilentlyContinue; "
-        f'$children=@(Get-CimInstance Win32_Process -Filter "ParentProcessId = {int(pid)}" '
-        "-OperationTimeoutSec 10); "
-        "$e=$children | Where-Object Name -eq 'beat-m-engine.exe' | Select-Object -First 1; "
-        "if($e){ $w=@($children | "
-        "Where-Object Name -eq 'msedgewebview2.exe'); "
-        "@{engine=$e.ProcessId;title=$a.MainWindowTitle;"
-        "window=$a.MainWindowHandle.ToInt64();webview=($w.Count -gt 0)} | "
-        "ConvertTo-Json -Compress }"
-    )
-    if info:
-        # Get-NetTCPConnection has a slow first CIM provider load on clean runners.
-        # netstat reads the same OS ownership table without that provider startup.
-        result = subprocess.run(
-            [str(Path(os.environ["SystemRoot"]) / "System32/netstat.exe"), "-ano", "-p", "tcp"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=True,
-            creationflags=subprocess.CREATE_NO_WINDOW,
+    try:
+        children = psutil.Process(pid).children()
+        engine = next((p for p in children if p.name() == "beat-m-engine.exe"), None)
+        if engine is None:
+            return None
+        handle, title = window(pid)
+        port = next(
+            (
+                c.laddr.port
+                for c in engine.net_connections(kind="tcp4")
+                if c.status == psutil.CONN_LISTEN and c.laddr.ip == "127.0.0.1"
+            ),
+            None,
         )
-        for line in result.stdout.splitlines():
-            fields = line.split()
-            if (
-                len(fields) == 5
-                and fields[0] == "TCP"
-                and fields[1].startswith("127.0.0.1:")
-                and fields[3] == "LISTENING"
-                and fields[4] == str(info["engine"])
-            ):
-                info["port"] = int(fields[1].rsplit(":", 1)[1])
-                break
-    return info
+        return {
+            "engine": engine.pid,
+            "port": port,
+            "window": handle,
+            "title": title,
+            "webview": any(p.name() == "msedgewebview2.exe" for p in children),
+        }
+    except psutil.NoSuchProcess:
+        return None
 
 
 def request(port, method, path, body=None, headers=None):
@@ -85,9 +92,7 @@ def request(port, method, path, body=None, headers=None):
 
 def stop(process):
     if process.poll() is None:
-        powershell(
-            f"(Get-Process -Id {int(process.pid)}).CloseMainWindow() | ConvertTo-Json -Compress"
-        )
+        window(process.pid, close=True)
         try:
             process.wait(timeout=50)
         except subprocess.TimeoutExpired:
@@ -175,10 +180,9 @@ def main():
                 )
             finally:
                 stop(app)
-            assert info and not powershell(
-                f"[bool](Get-Process -Id {int(info['engine'])} -ErrorAction SilentlyContinue) "
-                "| ConvertTo-Json -Compress"
-            ), "Owned engine survived window closure"
+            assert info and not psutil.pid_exists(info["engine"]), (
+                "Owned engine survived window closure"
+            )
         assert media.read_bytes() == audio
     report = {
         "installer": installer.name,
