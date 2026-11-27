@@ -135,6 +135,7 @@ def test_failed_save_rolls_back_artwork_text_tags_revision_and_file_binding(song
         b"x" * (IMAGE_LIMIT + 1),
         raster(size=(4097, 1)),
     ],
+    ids=["svg", "truncated-png", "truncated-jpeg", "oversized-bytes", "oversized-dimensions"],
 )
 def test_invalid_images_do_not_mutate_song_or_bind_files(songs, data):
     c, h, *_ = songs
@@ -217,7 +218,7 @@ def test_v9_upgrade_rollback_backup_and_portable_image_after_move(tmp_path, monk
         p.setattr(storage, "MIGRATIONS", {**migrations, 10: bad})
         with pytest.raises(LibraryError):
             Library.open(root)
-    with sqlite3.connect(root / "catalog.sqlite3") as db:
+    with closing(sqlite3.connect(root / "catalog.sqlite3")) as db:
         assert db.execute("PRAGMA user_version").fetchone()[0] == 9
         assert not db.execute("SELECT 1 FROM sqlite_master WHERE name='song_artwork'").fetchone()
     with closing(Library.open(root)) as lib, lib.catalog() as db:

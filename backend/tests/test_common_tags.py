@@ -73,7 +73,7 @@ def test_v4_preserves_all_legacy_rows_variants_links_media_backup_and_portabilit
     assert len(rows(root, "beat_catalog_tags")) == 7
     backup = list((root / "backups").glob("catalog-v4-*.sqlite3"))
     assert len(backup) == 1
-    with sqlite3.connect(backup[0]) as c:
+    with closing(sqlite3.connect(backup[0])) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == 4
         assert c.execute("SELECT COUNT(*) FROM beat_tags").fetchone()[0] == 8
     entities = rows(root, "catalog_tags")

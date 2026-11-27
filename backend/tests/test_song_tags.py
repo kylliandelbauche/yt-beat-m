@@ -211,7 +211,7 @@ def test_v7_migration_backup_failure_and_portable_media(tmp_path, monkeypatch):
         p.setattr(storage, "MIGRATIONS", {**migrations, 8: bad})
         with pytest.raises(LibraryError):
             Library.open(root)
-    with sqlite3.connect(root / "catalog.sqlite3") as c:
+    with closing(sqlite3.connect(root / "catalog.sqlite3")) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == 7
         assert not c.execute(
             "SELECT name FROM sqlite_master WHERE name='song_catalog_tags'"

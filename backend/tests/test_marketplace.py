@@ -476,7 +476,7 @@ def test_v10_upgrade_backup_rollback_then_move_preserves_catalog(tmp_path, monke
         p.setattr(storage, "MIGRATIONS", {**migrations, 11: bad})
         with pytest.raises(LibraryError):
             Library.open(root)
-    with sqlite3.connect(root / "catalog.sqlite3") as c:
+    with closing(sqlite3.connect(root / "catalog.sqlite3")) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == 10
         assert not c.execute(
             "SELECT 1 FROM sqlite_master WHERE name='marketplace_enrichments'"

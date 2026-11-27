@@ -142,7 +142,7 @@ def test_v8_migration_backup_rollback_and_portable_metadata(tmp_path, monkeypatc
         p.setattr(storage, "MIGRATIONS", {**migrations, 9: bad})
         with pytest.raises(LibraryError):
             Library.open(root)
-    with sqlite3.connect(root / "catalog.sqlite3") as c:
+    with closing(sqlite3.connect(root / "catalog.sqlite3")) as c:
         assert c.execute("PRAGMA user_version").fetchone()[0] == 8
         assert "notes" not in [r[1] for r in c.execute("PRAGMA table_info(songs)")]
         assert c.execute("SELECT count(*) FROM song_catalog_tags").fetchone()[0] == 1
