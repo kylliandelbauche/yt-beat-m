@@ -35,9 +35,15 @@ jobs:
         with:
           node-version: '24'
       - run: uv sync --locked --group desktop
+      - name: API smoke tests
+        run: uv run --locked --group desktop pytest backend/tests/test_app.py -vv -o faulthandler_timeout=20
+        timeout-minutes: 2
+      - name: Owned engine tests
+        run: uv run --locked --group desktop pytest backend/tests/test_desktop.py -vv -o faulthandler_timeout=20
+        timeout-minutes: 2
       - name: Backend tests (bounded process tree)
         run: |
-          $tests = Start-Process uv -ArgumentList 'run','--locked','--group','desktop','pytest','-vv','-o','faulthandler_timeout=30' -NoNewWindow -PassThru
+          $tests = Start-Process uv -ArgumentList 'run','--locked','--group','desktop','pytest','--ignore=backend/tests/test_app.py','--ignore=backend/tests/test_desktop.py','-vv','-o','faulthandler_timeout=30' -NoNewWindow -PassThru
           if (!$tests.WaitForExit(120000)) {
             taskkill /PID $tests.Id /T /F
             throw 'Backend tests exceeded 120 seconds; inspect the Python thread dump above.'
